@@ -7,7 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Building2, Upload, Save, RefreshCw, Trash2, ImageIcon } from "lucide-react";
+import { Building2, Upload, Save, RefreshCw, Trash2, ImageIcon, Download, Database, AlertTriangle } from "lucide-react";
+import { API } from "@/lib/api";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 const FIELDS = [
   { key: "nome", label: "Nome cantiere *", placeholder: "Es. Cantiere Portomare" },
@@ -26,6 +31,9 @@ export default function Impostazioni() {
   const [c, setC] = useState(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
+  const restoreRef = useRef(null);
+  const [restoreData, setRestoreData] = useState(null);
+  const [restoring, setRestoring] = useState(false);
 
   const load = () => api.get("/cantiere").then((r) => setC(r.data));
   useEffect(() => { load(); }, []);
@@ -66,6 +74,42 @@ export default function Impostazioni() {
     const reader = new FileReader();
     reader.onload = () => update("logo_base64", reader.result);
     reader.readAsDataURL(file);
+  };
+
+  const onRestoreSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data.clienti && !data.tariffe && !data.cantiere) {
+          toast.error("File di backup non valido");
+          return;
+        }
+        setRestoreData(data);
+      } catch {
+        toast.error("File JSON non valido");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const doRestore = async () => {
+    if (!restoreData) return;
+    setRestoring(true);
+    try {
+      const r = await api.post("/restore", restoreData);
+      const rst = r.data.restored;
+      toast.success(`Ripristinati: ${rst.clienti} clienti, ${rst.lavori} lavori`);
+      setRestoreData(null);
+      load();
+    } catch (e) {
+      toast.error("Errore durante il ripristino");
+    } finally {
+      setRestoring(false);
+    }
   };
 
   if (!c) return <div className="p-8 text-muted-foreground">Caricamento…</div>;
@@ -154,6 +198,66 @@ export default function Impostazioni() {
           </div>
         </Card>
       </div>
+
+      {/* Backup & Restore */}
+      <Card className="p-6 mt-6" data-testid="backup-card">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 label-mini mb-2">
+              <Database className="w-3.5 h-3.5" /> Backup & Ripristino
+            </div>
+            <h3 className="font-display text-xl font-semibold">Salva tutti i dati del cantiere</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+              Scarica un file JSON con tutti i clienti, lavori, tariffe e informazioni cantiere.
+              Puoi conservare il file come archivio o ripristinarlo su un altro dispositivo.
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button asChild variant="outline" data-testid="btn-backup-download">
+              <a href={`${API}/backup`} download>
+                <Download className="w-4 h-4 mr-2" />
+                Scarica backup
+              </a>
+            </Button>
+            <input ref={restoreRef} type="file" accept="application/json,.json" hidden onChange={onRestoreSelected} data-testid="input-restore-file" />
+            <Button variant="outline" onClick={() => restoreRef.current?.click()} data-testid="btn-restore-open">
+              <Upload className="w-4 h-4 mr-2" />
+              Ripristina da file
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <AlertDialog open={!!restoreData} onOpenChange={(o) => !o && setRestoreData(null)}>
+        <AlertDialogContent data-testid="restore-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Confermi il ripristino?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-2 mt-2">
+                <div>Il backup contiene:</div>
+                <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><b>{restoreData?.clienti?.length || 0}</b> clienti</li>
+                  <li><b>{restoreData?.lavori?.length || 0}</b> lavori</li>
+                  <li>Tariffe: <b>{restoreData?.tariffe ? "sì" : "no"}</b></li>
+                  <li>Cantiere: <b>{restoreData?.cantiere ? "sì" : "no"}</b></li>
+                </ul>
+                <div className="text-destructive mt-3 text-sm font-medium">
+                  ⚠️ Tutti i dati attuali verranno sovrascritti. L'operazione non è reversibile.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="restore-cancel">Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={doRestore} disabled={restoring} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" data-testid="restore-confirm">
+              {restoring ? "Ripristino…" : "Sì, ripristina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
