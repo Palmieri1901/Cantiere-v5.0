@@ -1,0 +1,136 @@
+{
+  "theme_details": {
+    "theme_name": "Premium Maritime",
+    "description": "A sophisticated nautical-themed management dashboard tailored for boatyard professionals. Avoids AI slop and cheesy maritime tropes (no anchors, ship wheels). Focuses on high-end marina aesthetics using deep sea navy and teak wood accents.",
+    "archetype": "Organic & Earthy + Luxury Hybrid",
+    "mode": "light/dark"
+  },
+  "typography": {
+    "instructions": "Use Satoshi for Headings to provide a structured, premium tech feel. Use Chivo for Body and Data to ensure high legibility for numbers, lengths, and pricing. AVOID Inter, Roboto, or generic sans-serif fonts for headings.",
+    "primary_heading_font": "Satoshi",
+    "secondary_body_font": "Chivo",
+    "font_weights": {
+      "headings": "font-black or font-medium (Avoid default bold, create contrast)",
+      "body": "font-normal",
+      "labels": "font-semibold tracking-[0.1em] uppercase"
+    },
+    "hierarchy": {
+      "h1": "text-4xl md:text-5xl tracking-tighter",
+      "h2": "text-2xl md:text-3xl tracking-tight",
+      "h3": "text-xl md:text-2xl",
+      "body": "text-base",
+      "labels_and_table_headers": "text-xs tracking-wider uppercase text-muted-foreground"
+    }
+  },
+  "colors": {
+    "instructions": "Map these values to the Tailwind CSS variables in index.css. Never use teal green or teal blue. Never use generic purple gradients.",
+    "light_mode": {
+      "background": "40 14% 96%",
+      "foreground": "225 60% 11%",
+      "card": "0 0% 100%",
+      "card-foreground": "225 60% 11%",
+      "popover": "0 0% 100%",
+      "popover-foreground": "225 60% 11%",
+      "primary": "15 50% 48%",
+      "primary-foreground": "0 0% 100%",
+      "secondary": "225 30% 90%",
+      "secondary-foreground": "225 60% 11%",
+      "muted": "225 20% 90%",
+      "muted-foreground": "225 20% 45%",
+      "accent": "225 30% 90%",
+      "accent-foreground": "225 60% 11%",
+      "destructive": "0 84% 60%",
+      "destructive-foreground": "0 0% 100%",
+      "border": "225 20% 85%",
+      "input": "225 20% 85%",
+      "ring": "15 50% 48%"
+    },
+    "dark_mode": {
+      "background": "225 60% 11%",
+      "foreground": "40 14% 96%",
+      "card": "225 50% 15%",
+      "card-foreground": "40 14% 96%",
+      "popover": "225 50% 15%",
+      "popover-foreground": "40 14% 96%",
+      "primary": "15 50% 48%",
+      "primary-foreground": "0 0% 100%",
+      "secondary": "225 40% 25%",
+      "secondary-foreground": "40 14% 96%",
+      "muted": "225 40% 25%",
+      "muted-foreground": "225 20% 70%",
+      "accent": "225 40% 25%",
+      "accent-foreground": "40 14% 96%",
+      "destructive": "0 62% 30%",
+      "destructive-foreground": "40 14% 96%",
+      "border": "225 30% 25%",
+      "input": "225 30% 25%",
+      "ring": "15 50% 48%"
+    },
+    "semantic_notes": "Primary is 'Teak Wood' (burnt orange/terracotta), Background is 'Sea Salt' (warm off-white) or 'Deep Ocean' (Navy) depending on the theme. Avoid pure black and pure white."
+  },
+  "visual_enhancers": {
+    "surfaces": "Use crisp, cardless designs or very subtle roundness (max 8px). Flat solid surfaces. Use 1px inner borders to separate elements.",
+    "shadows": "Ambient diffuse shadows for floating elements, but prefer solid borders (border-border/40) for dashboard structure.",
+    "textures": "Subtle noise overlays can be used on dark blue headers to emulate water depth, but keep it minimal and professional.",
+    "motion": "Fast, functional micro-interactions. Ensure buttons and table rows have hover states. Use framer-motion for smooth entry of data grids."
+  },
+  "layouts": {
+    "grid_system": "High-Density Grid for the dashboard (Bento Style). Base Grid: grid-cols-1 md:grid-cols-3 lg:grid-cols-4. Gap Strategy: Tight (gap-4 or gap-6).",
+    "spacing": "Generous padding inside containers. Never let text touch borders. p-6 or p-8 inside primary cards.",
+    "navigation": "Left sidebar or top navigation with solid background. NO fully transparent headers if content scrolls underneath.",
+    "alignment": "Left-align all data labels and tabular data for optimal scannability. Numbers and currency can be right-aligned in tables."
+  },
+  "components": {
+    "forms": "Detailed form for customer data (name, boat type, length, parking type). Group related fields intuitively. Use Shadcn Input, Select, and Switch/Checkbox.",
+    "tables": "Use Shadcn Table for the client list. Implement hover states on rows. Include distinct status badges for 'Inside' vs 'Outside' parking.",
+    "buttons": "Primary actions in Teak color. Pill-shaped or subtle rounded-md. Include hover and active state transformations.",
+    "charts": "Use Recharts (Shadcn Chart). Bar charts for estimated revenue, pie/donut charts for occupied vs free boat spaces. Use a nautical palette (Navy, Sand, Teak, Light Blue).",
+    "cards": "Subtle borders, no excessive drop shadows. 'Tactical Minimalism' - rely on 1px strokes rather than soft shadows.",
+    "modals": "Use for Tariff configurations and detailed notes on performed maintenance work."
+  },
+  "media": {
+    "icons": "Use lucide-react. Keep icons minimal. Examples: Anchor/Ship for branding (sparingly), FileText for notes, Map for mooring spots, Euro for tariffs.",
+    "images": [
+      {
+        "url": "https://images.pexels.com/photos/32779020/pexels-photo-32779020.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "background/hero",
+        "description": "Aerial shot of numerous boats docked in a marina under sunlight. Good for login background or header banners."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1514480854622-ef7d8f2c572f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHx5YWNodCUyMHRlYWslMjBkZWNrJTIwdGV4dHVyZXxlbnwwfHx8fDE3ODQzOTg3NTJ8MA&ixlib=rb-4.1.0&q=85",
+        "category": "texture/accent",
+        "description": "Brown ship deck teak texture. Can be used as a subtle overlay or accent image in the UI."
+      }
+    ]
+  },
+  "accessibility": {
+    "testing": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case. Example: data-testid='client-form-submit'.",
+    "contrast": "Ensure text contrast on teak buttons is at least 4.5:1. Use white text over the primary Teak color.",
+    "focus": "Clear focus rings on all inputs and buttons. ring-2 ring-primary ring-offset-background."
+  },
+  "instructions_to_main_agent": [
+    "Load 'Satoshi' and 'Chivo' via Google Fonts or Fontsource in index.html/CSS.",
+    "Implement the HSL color variables provided in this file directly into the :root and .dark selectors of index.css.",
+    "Create a responsive dashboard featuring statistics: occupied/free spots, estimated revenue.",
+    "Create a client list view (table) with filtering capabilities for the 200 boat spots.",
+    "Build a detailed customer form including: name, surname, boat type, length, inside/outside parking switch, and dynamic cost calculation fields (cover, hauling, launching, antifouling, engine maintenance).",
+    "Include an interface to configure base tariffs (€/meter) with manual override.",
+    "Create a view for the grid/map of parking spots with their status.",
+    "Provide a simulated export to Excel/PDF button with loading states.",
+    "The UI must be entirely in Italian as requested."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Do not converge toward generic outputs. Avoid 'AI slop' aesthetics (e.g., simplistic purple gradients, boring layouts).",
+    "Create depth through layered design elements with z-index hierarchy and crisp borders.",
+    "Never apply universal transitions (e.g., transition: all). Add transitions to specific properties like color, opacity, transform.",
+    "Never center-align the app container via .App { text-align: center; }. Maintain natural reading flow.",
+    "Always use modern button styles (pill-shaped or sharp) with interaction animations.",
+    "Never use AI assistant Emojis (🤖🧠💭) for icons. Use proper SVG icons.",
+    "Every interaction needs micro-animations - hover states, active states, entrance animations.",
+    "Use generous spacing; cramped designs look cheap.",
+    "Never use placeholder URLs (via.placeholder.com). Use the provided image URLs.",
+    "Use 'sonner' for toast notifications.",
+    "Prioritize using pre-existing components from src/components/ui.",
+    "DO NOT use complete `transparent` background in headers, overlays, or dropdowns."
+  ]
+}
