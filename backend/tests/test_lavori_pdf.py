@@ -13,11 +13,7 @@ if not BASE_URL:
 API = f"{BASE_URL}/api"
 
 
-@pytest.fixture(scope="module")
-def session():
-    s = requests.Session()
-    s.headers.update({"Content-Type": "application/json"})
-    return s
+# session fixture provided by conftest.py (authenticated)
 
 
 @pytest.fixture(scope="module")

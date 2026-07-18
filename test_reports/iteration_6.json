@@ -1,0 +1,67 @@
+{
+  "summary": "Iteration 6 validates JWT email/password auth (httpOnly cookie + Bearer token) protecting all /api/* except /api/auth/*, plus /api/export/preventivi.zip bulk PDF export. Backend: 26 new auth+bulk-PDF tests + 47 regression tests, all 73 pass. Frontend: unauth redirect to /login, correct/wrong password flows, session persistence via cookie, logout, and post-logout redirect all work. Zero critical bugs.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "passed_tests_backend": [
+    "GET /api/clienti /api/stats /api/tariffe /api/cantiere /api/posti-barca /api/export/preventivi.zip /api/auth/me WITHOUT auth all return 401",
+    "POST /api/auth/login admin@portomare.it/portomare2026 -> 200 with {id,email:'admin@portomare.it',nome:'Admin',role:'admin',token} and Set-Cookie access_token (no password_hash leaked)",
+    "POST /api/auth/login wrong password -> 401 with detail",
+    "POST /api/auth/login non-existent email -> 401 with detail",
+    "POST /api/auth/login is case-insensitive on email (ADMIN@PORTOMARE.IT works, normalized to lowercase)",
+    "GET /api/auth/me with cookie -> {id,email,nome:'Admin',role:'admin'} (no password_hash)",
+    "GET /api/clienti with cookie -> 200 list",
+    "GET /api/clienti with Authorization: Bearer <token> -> 200 (both auth methods supported)",
+    "GET /api/auth/me with Bearer token -> 200",
+    "GET /api/clienti with invalid Bearer token -> 401",
+    "POST /api/auth/logout clears access_token cookie; subsequent GET /api/clienti -> 401",
+    "POST /api/auth/register new email -> 200 with token+cookie; /api/auth/me works with same session",
+    "POST /api/auth/register duplicate email -> 400",
+    "POST /api/auth/register missing email -> 400",
+    "GET /api/export/preventivi.zip authenticated -> valid application/zip; PDFs inside all >2000 bytes and start with %PDF magic; filenames sanitized (alnum/./_/-) and prefixed by posto zfill(3) like '042_verdi_giovanni.pdf'",
+    "GET /api/export/preventivi.zip works via Bearer token as well",
+    "Regression: 47 pre-existing tests (tariffe motore + cantiere/fuori_sede + lavori/PDF) all pass after adding auth-aware session in conftest.py"
+  ],
+  "passed_tests_frontend": [
+    "Unauthed GET / -> immediate redirect to /login (React Router Navigate with 'from' state)",
+    "/login renders [data-testid=login-page] with input-login-email, input-login-password, btn-login",
+    "Wrong password shows [data-testid=login-error] with backend detail 'Email o password non corretta'",
+    "Correct credentials navigate to '/' Home; user context populated",
+    "Layout sidebar (on /dashboard etc.) shows [data-testid=user-nome]='Admin', email 'admin@portomare.it', and [data-testid=btn-logout] icon",
+    "Page reload keeps session (cookie-based, no localStorage), user-nome still visible after reload",
+    "Click btn-logout -> navigates to /login; subsequent direct nav to /dashboard also redirects to /login"
+  ],
+  "failed": [],
+  "test_report_links": [
+    "/app/backend/tests/test_auth_and_bulk_pdf.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/iter6_auth.xml",
+    "/app/test_reports/pytest/iter6_all.xml"
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 1273 lines (nearly 2x the 700-line threshold). Auth (setup + routes), Cantiere, Lavori, PDF generation, Backup/Restore, and Tariffe should be split into routers/services modules. Currently the auth block appears BEFORE routes and models which forces ordering constraints.",
+    "CORS misconfiguration risk: backend/.env has CORS_ORIGINS='*' AND middleware uses allow_credentials=True + expose_headers=['*']. Per fetch spec browsers reject Access-Control-Allow-Origin:* with credentials, so cross-origin cookie auth from a different domain would silently fail. It only works today because the frontend is served through the same preview domain (proxied /api). For future custom domains, replace '*' with an explicit list.",
+    "The startup handler _startup calls seed_admin() which references module-level `logger`, but `logger = logging.getLogger(__name__)` is defined at line 1267 AFTER `_startup` registration. This currently works because startup fires after full module import, but it's fragile — move logger initialization to top of module.",
+    "JWT secret is stored in plain .env (good) but there is no key rotation strategy; tokens are HS256 with 8h TTL and no refresh token endpoint. If secret ever leaks, all sessions must be invalidated by rotating and forcing re-login. Consider a jti + revocation list in DB, or shorter TTL + refresh flow.",
+    "No brute-force lockout / rate limiting on /api/auth/login. Playbook guideline mentions lockout after 5 fails — not implemented. For a single-tenant admin app this is low risk, but flag as follow-up.",
+    "Password validation: /api/auth/register accepts ANY password length (even 1 char). Add min-length + complexity policy at Pydantic layer.",
+    "auth.jsx: `if (user && user !== false)` uses truthy check but user can be null (checking), false (guest), or object; explicit === object check would be clearer. Also login() sets user from response body but does NOT call check() so if backend adds fields (created_at etc.) they will be missing until reload — minor.",
+    "ProtectedRoute renders 'Caricamento…' during initial auth check but there is no timeout — if /auth/me hangs the user sees an infinite spinner. Add a 5-10s timeout to axios or auth check.",
+    "The bulk PDF export loads ALL clienti + serializes ALL PDFs synchronously in a single request. With 200 clients and current PDF sizes (~5-10KB each) the ZIP is small, but with logos+lavori history it could take >30s and hit ingress timeouts. Consider a background job pattern for scale.",
+    "Home page ('/') is NOT wrapped in Layout, so a user landing on '/' sees no sidebar / no logout button. To log out they must navigate to /dashboard first. Consider adding a compact user menu / logout button on Home too."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auth_and_bulk_pdf.py (new, 26 tests)",
+    "/app/backend/tests/conftest.py (new, provides authenticated `session` fixture for all regression tests)",
+    "/app/backend/tests/test_cantiere_fuori_sede.py (removed local unauth'd session fixture — now inherits authenticated one from conftest)",
+    "/app/backend/tests/test_lavori_pdf.py (removed local unauth'd session fixture)",
+    "/app/backend/tests/test_tariffe_motore.py (removed local unauth'd session fixture)"
+  ],
+  "success_rate": {"backend": "100% (73/73)", "frontend": "100% (7/7 flows)"},
+  "test_credentials": "admin@portomare.it / portomare2026 (auto-seeded on startup, verified from /app/memory/test_credentials.md)",
+  "seed_data_creation": "TestBulkPDFExport creates 2 test clienti (Giovanni Verdi_TEST, Mario Rossi_TEST) on next free posti_barca and deletes them in teardown. TestRegister creates a time-scoped user test_user_<ms>@example.test (NOT deleted — no user delete endpoint; low volume). Admin auto-seeded by seed_admin() on backend startup.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run `python -m pytest /app/backend/tests/ -v` (73 tests). Auth via cookie is enforced on all /api/* except /api/auth/*. conftest.py `session` fixture auto-logs in admin — regression tests that create Session() directly will need the same treatment. Bearer token is also supported (Authorization: Bearer <jwt>). PDF ZIP filenames follow pattern '{posto:03d}_{cognome}_{nome}.pdf' with only alnum/._- allowed. Frontend uses withCredentials:true; cookie is httpOnly samesite=lax secure=false (dev). Note: Home '/' is NOT wrapped in Layout so sidebar/logout only appear on /dashboard, /clienti, /posti-barca, /tariffe, /impostazioni.",
+  "rca_of_issue": "n/a - no bugs. Initial 47 regression failures were due to pre-existing test files using unauthenticated requests.Sessions; fixed by centralizing session fixture in conftest.py with automatic admin login. This is a test-infrastructure change only; no production code was modified."
+}

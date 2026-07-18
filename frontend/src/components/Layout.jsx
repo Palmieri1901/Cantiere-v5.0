@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, Link } from "react-router-dom";
-import { LayoutDashboard, Users, Grid3x3, Settings2, Sailboat, Building2, Home as HomeIcon } from "lucide-react";
+import { LayoutDashboard, Users, Grid3x3, Settings2, Sailboat, Building2, Home as HomeIcon, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
@@ -15,6 +17,7 @@ const nav = [
 export default function Layout() {
   const loc = useLocation();
   const [c, setC] = useState(null);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     api.get("/cantiere").then((r) => setC(r.data)).catch(() => {});
@@ -71,10 +74,26 @@ export default function Layout() {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-border/60">
-          <div className="label-mini mb-1">Capacità</div>
-          <div className="font-mono-num text-2xl font-semibold">200</div>
-          <div className="text-xs text-muted-foreground">posti barca totali</div>
+        <div className="p-4 border-t border-border/60 space-y-3">
+          {user && user !== false && (
+            <div className="flex items-center gap-2 pb-3 border-b border-border/60">
+              <div className="w-8 h-8 rounded-full bg-primary/15 text-primary grid place-items-center text-sm font-semibold shrink-0">
+                {(user.nome || user.email || "?").slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-medium truncate" data-testid="user-nome">{user.nome || "Utente"}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={logout} title="Esci" data-testid="btn-logout">
+                <LogOut className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          )}
+          <div>
+            <div className="label-mini mb-1">Capacità</div>
+            <div className="font-mono-num text-2xl font-semibold">200</div>
+            <div className="text-xs text-muted-foreground">posti barca totali</div>
+          </div>
         </div>
       </aside>
 

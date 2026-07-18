@@ -44,11 +44,7 @@ DEFAULTS = {
 REQUIRED_TARIFFE_FIELDS = list(DEFAULTS.keys())
 
 
-@pytest.fixture(scope="module")
-def session():
-    s = requests.Session()
-    s.headers.update({"Content-Type": "application/json"})
-    return s
+# session fixture provided by conftest.py (authenticated)
 
 
 @pytest.fixture(scope="function", autouse=True)

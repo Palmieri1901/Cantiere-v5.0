@@ -6,6 +6,10 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import io
+import zipfile
+import bcrypt
+import jwt
+from datetime import timedelta
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -27,9 +31,60 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 app = FastAPI(title="Cantiere Nautico API")
-api_router = APIRouter(prefix="/api")
 
 TOTAL_POSTI = 200
+
+
+# ---------- AUTH (setup precoce per protezione router) ----------
+
+from fastapi import Request, Depends, Response
+
+JWT_ALGORITHM = "HS256"
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def create_access_token(user_id: str, email: str) -> str:
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=8),
+        "type": "access",
+    }
+    return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm=JWT_ALGORITHM)
+
+
+async def get_current_user(request: Request) -> dict:
+    token = request.cookies.get("access_token")
+    if not token:
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            token = auth[7:]
+    if not token:
+        raise HTTPException(status_code=401, detail="Non autenticato")
+    try:
+        payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Token non valido")
+        user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="Utente non trovato")
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Sessione scaduta")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token non valido")
+
+
+api_router = APIRouter(prefix="/api", dependencies=[Depends(get_current_user)])
 
 
 # ---------- MODELS ----------
@@ -677,7 +732,47 @@ async def preventivo_pdf(cliente_id: str):
         raise HTTPException(404, "Cliente non trovato")
     lavori_docs = await db.lavori.find({"cliente_id": cliente_id}, {"_id": 0}).sort("data", -1).to_list(500)
     cantiere_doc = await db.cantiere.find_one({"id": "default"}, {"_id": 0}) or {}
+    t_current = await get_tariffe_doc()
 
+    pdf_bytes = _build_preventivo_pdf(doc, lavori_docs, cantiere_doc, t_current)
+    filename = f"preventivo_{doc.get('cognome','cliente').lower()}_{doc.get('nome','').lower()}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.get("/export/preventivi.zip")
+async def export_tutti_pdf():
+    """Esporta un archivio ZIP con un PDF preventivo per ogni cliente."""
+    clienti_docs = await db.clienti.find({}, {"_id": 0}).to_list(10000)
+    if not clienti_docs:
+        raise HTTPException(404, "Nessun cliente da esportare")
+    cantiere_doc = await db.cantiere.find_one({"id": "default"}, {"_id": 0}) or {}
+    t_current = await get_tariffe_doc()
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for c in clienti_docs:
+            lavori_docs = await db.lavori.find({"cliente_id": c["id"]}, {"_id": 0}).sort("data", -1).to_list(500)
+            pdf_bytes = _build_preventivo_pdf(c, lavori_docs, cantiere_doc, t_current)
+            posto = f"{int(c['posto_barca']):03d}_" if c.get("posto_barca") else ""
+            filename = f"{posto}{(c.get('cognome') or 'cliente').lower()}_{(c.get('nome') or '').lower()}.pdf"
+            # Sanitize filename
+            filename = "".join(ch for ch in filename if ch.isalnum() or ch in "._-")
+            zf.writestr(filename, pdf_bytes)
+    zip_buf.seek(0)
+    zip_filename = f"preventivi_cantiere_{datetime.now().strftime('%Y%m%d')}.zip"
+    return StreamingResponse(
+        zip_buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={zip_filename}"}
+    )
+
+
+def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_current: Tariffe) -> bytes:
+    """Genera il PDF preventivo come bytes. Estratto per riuso in singolo + bulk export."""
     buf = io.BytesIO()
     pdf = SimpleDocTemplate(
         buf, pagesize=A4,
@@ -807,8 +902,7 @@ async def preventivo_pdf(cliente_id: str):
     ricambi_tot = float(doc.get("costo_ricambi_totale") or 0)
     if manodopera > 0 or ricambi_tot > 0:
         elems.append(Paragraph("DETTAGLIO MANUTENZIONE MOTORE", h2))
-        # Ricalcola breakdown ricambi da tariffe correnti
-        t_current = await get_tariffe_doc()
+        # Ricalcola breakdown ricambi da tariffe correnti (passate come parametro)
         nc = int(doc.get("numero_candele") or 0)
         nt = int(doc.get("numero_termostati") or 0)
         girante_attivo = bool(doc.get("girante_attivo", True))
@@ -912,12 +1006,7 @@ async def preventivo_pdf(cliente_id: str):
 
     pdf.build(elems)
     buf.seek(0)
-    filename = f"preventivo_{doc.get('cognome','cliente').lower()}_{doc.get('nome','').lower()}.pdf"
-    return StreamingResponse(
-        buf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+    return buf.getvalue()
 
 
 # ---------- CANTIERE INFO (logo + indirizzo) ----------
@@ -1064,13 +1153,114 @@ async def restore_data(payload: RestoreRequest):
     return {"ok": True, "restored": restored}
 
 
+# ---------- AUTH ROUTES ----------
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    nome: Optional[str] = ""
+
+
+auth_router = APIRouter(prefix="/api/auth")
+
+
+def _set_cookie(response: Response, token: str):
+    response.set_cookie(
+        key="access_token", value=token, httponly=True, secure=False,
+        samesite="lax", max_age=8 * 3600, path="/",
+    )
+
+
+@auth_router.post("/register")
+async def register(payload: RegisterRequest, response: Response):
+    email = payload.email.strip().lower()
+    if not email or not payload.password:
+        raise HTTPException(400, "Email e password obbligatorie")
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(400, "Email già registrata")
+    user_id = str(uuid.uuid4())
+    doc = {
+        "id": user_id,
+        "email": email,
+        "password_hash": hash_password(payload.password),
+        "nome": payload.nome or email.split("@")[0],
+        "role": "user",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(doc)
+    token = create_access_token(user_id, email)
+    _set_cookie(response, token)
+    return {"id": user_id, "email": email, "nome": doc["nome"], "role": "user", "token": token}
+
+
+@auth_router.post("/login")
+async def login(payload: LoginRequest, response: Response):
+    email = payload.email.strip().lower()
+    user = await db.users.find_one({"email": email})
+    if not user or not verify_password(payload.password, user.get("password_hash", "")):
+        raise HTTPException(401, "Email o password non corretta")
+    token = create_access_token(user["id"], email)
+    _set_cookie(response, token)
+    return {"id": user["id"], "email": email, "nome": user.get("nome", ""), "role": user.get("role", "user"), "token": token}
+
+
+@auth_router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("access_token", path="/")
+    return {"ok": True}
+
+
+@auth_router.get("/me")
+async def me(user: dict = Depends(get_current_user)):
+    return {"id": user["id"], "email": user["email"], "nome": user.get("nome", ""), "role": user.get("role", "user")}
+
+
+app.include_router(auth_router)
+
+
+async def seed_admin():
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@portomare.it").strip().lower()
+    admin_password = os.environ.get("ADMIN_PASSWORD", "portomare2026")
+    existing = await db.users.find_one({"email": admin_email})
+    if existing is None:
+        await db.users.insert_one({
+            "id": str(uuid.uuid4()),
+            "email": admin_email,
+            "password_hash": hash_password(admin_password),
+            "nome": "Admin",
+            "role": "admin",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        logger.info(f"Admin seeded: {admin_email}")
+    elif not verify_password(admin_password, existing.get("password_hash", "")):
+        await db.users.update_one(
+            {"email": admin_email},
+            {"$set": {"password_hash": hash_password(admin_password)}}
+        )
+        logger.info(f"Admin password updated: {admin_email}")
+
+
+@app.on_event("startup")
+async def _startup():
+    await db.users.create_index("email", unique=True)
+    await seed_admin()
+
+
 app.include_router(api_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
