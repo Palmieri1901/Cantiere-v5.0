@@ -23,10 +23,12 @@ const empty = {
   telefono: "", email: "",
   potenza_motore: 0, litri_olio_motore: 3, numero_candele: 4, numero_termostati: 1,
   antivegetativa_attiva: true, girante_attivo: true,
+  lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
   costo_varo: 0, costo_antivegetativa: 0, costo_manutenzione_motore: 0,
   costo_ricambi_totale: 0, costo_manodopera_motore: 0,
+  costo_lavaggio_inizio: 0, costo_lavaggio_fine: 0, costo_scafo_sporco: 0,
   note_lavori: "",
   scadenza_antivegetativa: "", scadenza_manutenzione: "",
 };
@@ -65,6 +67,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         numero_termostati: f.numero_termostati || 0,
         antivegetativa_attiva: f.antivegetativa_attiva ? "true" : "false",
         girante_attivo: f.girante_attivo ? "true" : "false",
+        lavaggio_inizio_attivo: f.lavaggio_inizio_attivo ? "true" : "false",
+        lavaggio_fine_attivo: f.lavaggio_fine_attivo ? "true" : "false",
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -75,14 +79,16 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
   const totale =
     (Number(f.costo_sosta) || 0) + (Number(f.costo_copertura) || 0) +
     (Number(f.costo_alaggio) || 0) + (Number(f.costo_varo) || 0) +
-    (Number(f.costo_antivegetativa) || 0) + (Number(f.costo_manutenzione_motore) || 0);
+    (Number(f.costo_antivegetativa) || 0) + (Number(f.costo_manutenzione_motore) || 0) +
+    (Number(f.costo_lavaggio_inizio) || 0) + (Number(f.costo_lavaggio_fine) || 0) +
+    (Number(f.costo_scafo_sporco) || 0);
 
   const save = async () => {
     if (!f.nome || !f.cognome || !f.tipo_barca || !f.lunghezza) {
@@ -99,6 +105,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       numero_termostati: Number(f.numero_termostati) || 0,
       antivegetativa_attiva: !!f.antivegetativa_attiva,
       girante_attivo: !!f.girante_attivo,
+      lavaggio_inizio_attivo: !!f.lavaggio_inizio_attivo,
+      lavaggio_fine_attivo: !!f.lavaggio_fine_attivo,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -106,6 +114,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       costo_varo: Number(f.costo_varo) || 0,
       costo_antivegetativa: Number(f.costo_antivegetativa) || 0,
       costo_manutenzione_motore: Number(f.costo_manutenzione_motore) || 0,
+      costo_lavaggio_inizio: Number(f.costo_lavaggio_inizio) || 0,
+      costo_lavaggio_fine: Number(f.costo_lavaggio_fine) || 0,
+      costo_scafo_sporco: Number(f.costo_scafo_sporco) || 0,
       scadenza_antivegetativa: f.scadenza_antivegetativa || null,
       scadenza_manutenzione: f.scadenza_manutenzione || null,
     };
@@ -127,6 +138,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
   };
 
   const isFuori = f.tipo_sosta === "fuori";
+  const isFuoriSede = f.tipo_sosta === "fuori_sede";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -178,6 +190,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                   <SelectContent>
                     <SelectItem value="dentro">Al coperto (dentro)</SelectItem>
                     <SelectItem value="fuori">A terra (fuori)</SelectItem>
+                    <SelectItem value="fuori_sede">Fuori sede</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
@@ -226,7 +239,26 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 onChange={(v) => update("girante_attivo", v)}
                 testId="switch-girante"
               />
+              <ToggleRow
+                label="Lavaggio inizio stagione"
+                description="Includi lavaggio a inizio stagione"
+                checked={!!f.lavaggio_inizio_attivo}
+                onChange={(v) => update("lavaggio_inizio_attivo", v)}
+                testId="switch-lavaggio-inizio"
+              />
+              <ToggleRow
+                label="Lavaggio fine stagione"
+                description="Includi lavaggio a fine stagione"
+                checked={!!f.lavaggio_fine_attivo}
+                onChange={(v) => update("lavaggio_fine_attivo", v)}
+                testId="switch-lavaggio-fine"
+              />
             </div>
+            {!f.antivegetativa_attiva && (
+              <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2" data-testid="info-scafo-sporco">
+                Antivegetativa disattivata → viene applicata la maggiorazione scafo sporco (€ / metro).
+              </div>
+            )}
           </section>
 
           <Separator />
@@ -247,8 +279,21 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <CostField label="Costo sosta" value={f.costo_sosta} onChange={(v) => update("costo_sosta", v)} disabled={!f.override_costi} testId="costo-sosta" />
+              {!isFuoriSede && (
+                <CostField label="Costo sosta" value={f.costo_sosta} onChange={(v) => update("costo_sosta", v)} disabled={!f.override_costi} testId="costo-sosta" />
+              )}
+              {isFuoriSede && (
+                <>
+                  <CostField label="Movimentazione" value={f.costo_movimentazione} onChange={(v) => update("costo_movimentazione", v)} disabled={!f.override_costi} testId="costo-movimentazione" />
+                  <CostField label="Taccaggio" value={f.costo_taccaggio} onChange={(v) => update("costo_taccaggio", v)} disabled={!f.override_costi} testId="costo-taccaggio" />
+                </>
+              )}
               <CostField label="Antivegetativa" value={f.costo_antivegetativa} onChange={(v) => update("costo_antivegetativa", v)} disabled={!f.override_costi} testId="costo-antivegetativa" />
+              {!f.antivegetativa_attiva && (
+                <CostField label="Magg. scafo sporco" value={f.costo_scafo_sporco} onChange={(v) => update("costo_scafo_sporco", v)} disabled={!f.override_costi} testId="costo-scafo-sporco" />
+              )}
+              <CostField label="Lavaggio inizio stagione" value={f.costo_lavaggio_inizio} onChange={(v) => update("costo_lavaggio_inizio", v)} disabled={!f.override_costi} testId="costo-lavaggio-inizio" />
+              <CostField label="Lavaggio fine stagione" value={f.costo_lavaggio_fine} onChange={(v) => update("costo_lavaggio_fine", v)} disabled={!f.override_costi} testId="costo-lavaggio-fine" />
               <CostField label="Manutenzione motore" value={f.costo_manutenzione_motore} onChange={(v) => update("costo_manutenzione_motore", v)} disabled={!f.override_costi} testId="costo-manutenzione" />
               {isFuori && <CostField label="Copertura" value={f.costo_copertura} onChange={(v) => update("costo_copertura", v)} disabled={!f.override_costi} testId="costo-copertura" />}
               {isFuori && <CostField label="Alaggio" value={f.costo_alaggio} onChange={(v) => update("costo_alaggio", v)} disabled={!f.override_costi} testId="costo-alaggio" />}

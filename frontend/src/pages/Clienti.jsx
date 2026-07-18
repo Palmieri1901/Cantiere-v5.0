@@ -54,7 +54,8 @@ export default function Clienti() {
 
   const totale = (c) =>
     (c.costo_sosta || 0) + (c.costo_copertura || 0) + (c.costo_alaggio || 0) +
-    (c.costo_varo || 0) + (c.costo_antivegetativa || 0) + (c.costo_manutenzione_motore || 0);
+    (c.costo_varo || 0) + (c.costo_antivegetativa || 0) + (c.costo_manutenzione_motore || 0) +
+    (c.costo_lavaggio_inizio || 0) + (c.costo_lavaggio_fine || 0) + (c.costo_scafo_sporco || 0);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -117,6 +118,7 @@ export default function Clienti() {
               <SelectItem value="all">Tutti i tipi</SelectItem>
               <SelectItem value="dentro">Sosta al coperto</SelectItem>
               <SelectItem value="fuori">Sosta fuori</SelectItem>
+              <SelectItem value="fuori_sede">Fuori sede</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -164,9 +166,11 @@ export default function Clienti() {
                       variant="outline"
                       className={c.tipo_sosta === "dentro"
                         ? "border-primary/50 text-primary bg-primary/5"
+                        : c.tipo_sosta === "fuori_sede"
+                        ? "border-chart-3/50 text-chart-3 bg-chart-3/5"
                         : "border-chart-2/50"}
                     >
-                      {c.tipo_sosta === "dentro" ? "Coperto" : "Fuori"}
+                      {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Fuori"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(totale(c))}</TableCell>

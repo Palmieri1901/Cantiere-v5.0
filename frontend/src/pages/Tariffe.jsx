@@ -15,6 +15,8 @@ const GROUPS = [
     fields: [
       { key: "sosta_dentro_per_metro", label: "Sosta al coperto", desc: "€ / metro / anno (posto coperto/dentro)" },
       { key: "sosta_fuori_per_metro", label: "Sosta a terra (fuori)", desc: "€ / metro / anno" },
+      { key: "costo_movimentazione_per_metro", label: "Movimentazione (fuori sede)", desc: "€ / metro (sosta fuori sede)" },
+      { key: "costo_taccaggio_per_metro", label: "Taccaggio (fuori sede)", desc: "€ / metro (sosta fuori sede)" },
     ],
   },
   {
@@ -33,6 +35,15 @@ const GROUPS = [
     fields: [
       { key: "copertura_per_metro", label: "Copertura", desc: "€ / metro (solo sosta fuori)" },
       { key: "antivegetativa_per_metro", label: "Antivegetativa", desc: "€ / metro" },
+      { key: "maggiorazione_scafo_sporco_per_metro", label: "Magg. scafo sporco", desc: "€ / metro (se antivegetativa disattivata)" },
+    ],
+  },
+  {
+    title: "Lavaggi stagionali",
+    icon: Waves,
+    fields: [
+      { key: "costo_lavaggio_inizio_stagione", label: "Lavaggio inizio stagione", desc: "Costo fisso" },
+      { key: "costo_lavaggio_fine_stagione", label: "Lavaggio fine stagione", desc: "Costo fisso" },
     ],
   },
   {

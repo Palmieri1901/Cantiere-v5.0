@@ -29,7 +29,7 @@ DEFAULTS = {
     "motore_labor_40_150hp": 320.0,
     "motore_labor_oltre_150hp": 550.0,
     "costo_girante": 45.0,
-    "costo_olio_motore": 55.0,
+    "costo_olio_motore": 12.0,  # € / litro (iter-5 semantics: multiplied by litri_olio_motore)
     "costo_filtro_olio": 18.0,
     "costo_candela": 12.0,
     "costo_termostato": 35.0,
@@ -109,7 +109,7 @@ class TestTariffeAndMotore:
                         "olio_piede", "anodi_interni", "anodi_esterni", "ingrassaggio"}
         assert set(rb.keys()) == expected_keys, f"Got: {set(rb.keys())}"
         assert rb["girante"] == 45.0
-        assert rb["olio_motore"] == 55.0
+        assert rb["olio_motore"] == 36.0  # 3L * 12 €/L
         assert rb["filtro_olio"] == 18.0
         assert rb["candele"] == 48.0  # 4*12
         assert rb["termostati"] == 35.0  # 1*35
@@ -117,12 +117,12 @@ class TestTariffeAndMotore:
         assert rb["anodi_interni"] == 40.0
         assert rb["anodi_esterni"] == 60.0
         assert rb["ingrassaggio"] == 30.0
-        # total = 45+55+18+48+35+25+40+60+30 = 356
-        assert d["costo_ricambi_totale"] == 356.0, f"got {d['costo_ricambi_totale']}"
+        # total = 45+36+18+48+35+25+40+60+30 = 337
+        assert d["costo_ricambi_totale"] == 337.0, f"got {d['costo_ricambi_totale']}"
         # 120 HP -> mid tier manodopera = 320
         assert d["costo_manodopera_motore"] == 320.0
-        # motore total = 320 + 356 = 676
-        assert d["costo_manutenzione_motore"] == 676.0
+        # motore total = 320 + 337 = 657
+        assert d["costo_manutenzione_motore"] == 657.0
 
     # ---------- Toggle switches (iter 4) ----------
     def test_antivegetativa_disabled_zeroes_cost(self, session):
@@ -135,7 +135,7 @@ class TestTariffeAndMotore:
         d = r.json()
         assert d["costo_antivegetativa"] == 0.0
         # ricambi unchanged
-        assert d["costo_ricambi_totale"] == 356.0
+        assert d["costo_ricambi_totale"] == 337.0
 
     def test_antivegetativa_enabled_computes_cost(self, session):
         r = session.get(f"{API}/calcola-costi", params={
@@ -157,10 +157,10 @@ class TestTariffeAndMotore:
         d = r.json()
         rb = d["ricambi_dettaglio"]
         assert rb["girante"] == 0.0
-        # 356 - 45 = 311
-        assert d["costo_ricambi_totale"] == 311.0
-        # motore total drops by 45 too: 676 - 45 = 631
-        assert d["costo_manutenzione_motore"] == 631.0
+        # 337 - 45 = 292
+        assert d["costo_ricambi_totale"] == 292.0
+        # motore total drops by 45 too: 657 - 45 = 612
+        assert d["costo_manutenzione_motore"] == 612.0
 
     def test_both_toggles_disabled(self, session):
         r = session.get(f"{API}/calcola-costi", params={
@@ -173,7 +173,7 @@ class TestTariffeAndMotore:
         d = r.json()
         assert d["costo_antivegetativa"] == 0.0
         assert d["ricambi_dettaglio"]["girante"] == 0.0
-        assert d["costo_ricambi_totale"] == 311.0
+        assert d["costo_ricambi_totale"] == 292.0
 
     # ---------- Cliente CRUD with toggles ----------
     def test_create_cliente_with_toggles_off(self, session):
@@ -192,15 +192,15 @@ class TestTariffeAndMotore:
             assert c["antivegetativa_attiva"] is False
             assert c["girante_attivo"] is False
             assert c["costo_antivegetativa"] == 0.0
-            assert c["costo_ricambi_totale"] == 311.0
-            assert c["costo_manutenzione_motore"] == 631.0
+            assert c["costo_ricambi_totale"] == 292.0
+            assert c["costo_manutenzione_motore"] == 612.0
             # GET persistence check
             r2 = session.get(f"{API}/clienti/{c['id']}")
             got = r2.json()
             assert got["antivegetativa_attiva"] is False
             assert got["girante_attivo"] is False
             assert got["costo_antivegetativa"] == 0.0
-            assert got["costo_ricambi_totale"] == 311.0
+            assert got["costo_ricambi_totale"] == 292.0
         finally:
             session.delete(f"{API}/clienti/{c['id']}")
 
@@ -220,7 +220,7 @@ class TestTariffeAndMotore:
             assert c["antivegetativa_attiva"] is True
             assert c["girante_attivo"] is True
             assert c["costo_antivegetativa"] == 480.0
-            assert c["costo_ricambi_totale"] == 356.0
+            assert c["costo_ricambi_totale"] == 337.0
 
             # PUT with toggles off
             put_payload = dict(payload)
@@ -232,8 +232,8 @@ class TestTariffeAndMotore:
             assert u["antivegetativa_attiva"] is False
             assert u["girante_attivo"] is False
             assert u["costo_antivegetativa"] == 0.0
-            assert u["costo_ricambi_totale"] == 311.0
-            assert u["costo_manutenzione_motore"] == 631.0
+            assert u["costo_ricambi_totale"] == 292.0
+            assert u["costo_manutenzione_motore"] == 612.0
 
             # Toggle back ON via PUT
             put_payload["antivegetativa_attiva"] = True
@@ -241,7 +241,7 @@ class TestTariffeAndMotore:
             r3 = session.put(f"{API}/clienti/{c['id']}", json=put_payload)
             u3 = r3.json()
             assert u3["costo_antivegetativa"] == 480.0
-            assert u3["costo_ricambi_totale"] == 356.0
+            assert u3["costo_ricambi_totale"] == 337.0
         finally:
             session.delete(f"{API}/clienti/{c['id']}")
 
@@ -256,9 +256,9 @@ class TestTariffeAndMotore:
         assert d["costo_alaggio"] == 90.0
         assert d["costo_varo"] == 90.0
         assert d["costo_manodopera_motore"] == 180.0
-        # ricambi: 45+55+18+(2*12=24)+35+25+40+60+30 = 332
-        assert d["costo_ricambi_totale"] == 332.0
-        assert d["costo_manutenzione_motore"] == 180 + 332
+        # ricambi: 45+36+18+(2*12=24)+35+25+40+60+30 = 313
+        assert d["costo_ricambi_totale"] == 313.0
+        assert d["costo_manutenzione_motore"] == 180 + 313
 
     def test_big_boat_and_high_hp(self, session):
         r = session.get(f"{API}/calcola-costi", params={
@@ -270,8 +270,8 @@ class TestTariffeAndMotore:
         assert d["costo_alaggio"] == 250.0
         assert d["costo_varo"] == 250.0
         assert d["costo_manodopera_motore"] == 550.0
-        # ricambi: 45+55+18+(6*12=72)+(2*35=70)+25+40+60+30 = 415
-        assert d["costo_ricambi_totale"] == 415.0
+        # ricambi: 45+36+18+(6*12=72)+(2*35=70)+25+40+60+30 = 396
+        assert d["costo_ricambi_totale"] == 396.0
 
     def test_zero_hp_no_manodopera(self, session):
         r = session.get(f"{API}/calcola-costi", params={

@@ -1,0 +1,68 @@
+{
+  "summary": "Iteration 5 validates: (a) new /api/cantiere GET/PUT with 12 fields incl logo_base64; persists and reflected in sidebar Layout & Home hero; (b) new Tariffe fields costo_movimentazione_per_metro=25, costo_taccaggio_per_metro=20, costo_lavaggio_inizio_stagione=80, costo_lavaggio_fine_stagione=80, maggiorazione_scafo_sporco_per_metro=15; (c) tipo_sosta='fuori_sede' zeros costo_sosta/copertura/alaggio/varo and computes L*25 movimentazione + L*20 taccaggio; (d) antivegetativa_attiva=false zeros costo_antivegetativa and enables costo_scafo_sporco=L*15; (e) lavaggio_inizio_attivo/fine_attivo toggle costs 0 or 80; (f) POST /api/clienti tipo_sosta='invalid' returns 400; (g) /api/stats returns sosta_fuori_sede count; (h) PDF preventivo uses cantiere.nome + contatti in header (>3000 bytes). Backend 47/47 pass (16 iter-5 + 14 iter-4 + 17 lavori/regression). Frontend: Home page hero, CTAs, Impostazioni edit+save+persist, logo upload+preview+persist, dynamic sidebar brand name, ClienteForm 3-option tipo_sosta with Fuori sede toggling Movimentazione/Taccaggio fields + hiding costo-sosta, both lavaggio switches present, Tariffe page shows all 4 Sosta fields + Lavaggi stagionali group + Magg. scafo sporco inside Copertura group. All working.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "passed_tests_backend": [
+    "GET /api/cantiere returns all 12 fields (nome/slogan/indirizzo/citta/cap/provincia/telefono/email/piva/sito_web/orari/logo_base64)",
+    "PUT /api/cantiere persists nome/indirizzo/citta/cap/telefono/email; GET confirms persistence",
+    "PUT /api/cantiere with logo_base64='data:image/png;base64,...' saves and GET returns same value",
+    "GET /api/tariffe returns costo_movimentazione_per_metro=25, costo_taccaggio_per_metro=20, costo_lavaggio_inizio_stagione=80, costo_lavaggio_fine_stagione=80, maggiorazione_scafo_sporco_per_metro=15",
+    "GET /api/calcola-costi tipo_sosta='fuori_sede' L=8 -> costo_sosta=0, costo_copertura=0, costo_alaggio=0, costo_varo=0, costo_movimentazione=200, costo_taccaggio=160",
+    "GET /api/calcola-costi tipo_sosta='dentro' -> costo_movimentazione=0, costo_taccaggio=0, costo_sosta=1440",
+    "GET /api/calcola-costi tipo_sosta='fuori' -> costo_movimentazione=0, costo_taccaggio=0",
+    "GET /api/calcola-costi antivegetativa_attiva=false -> costo_antivegetativa=0, costo_scafo_sporco=120",
+    "GET /api/calcola-costi antivegetativa_attiva=true -> costo_scafo_sporco=0, costo_antivegetativa=480",
+    "GET /api/calcola-costi lavaggio_inizio_attivo=false -> costo_lavaggio_inizio=0; lavaggio_fine unchanged=80",
+    "GET /api/calcola-costi lavaggio_fine_attivo=false -> costo_lavaggio_fine=0; inizio unchanged=80",
+    "POST /api/clienti tipo_sosta='fuori_sede' creates and computes L*25 movimentazione + L*20 taccaggio; GET verifies persistence",
+    "POST /api/clienti tipo_sosta='invalid' returns 400",
+    "GET /api/stats returns sosta_fuori_sede field, increments after adding fuori_sede cliente",
+    "GET /api/clienti/{id}/preventivo.pdf with cantiere metadata set -> valid PDF (>3000 bytes)",
+    "Regression: 14 iter-4 tests (updated for litri*costo_olio_motore semantics) + 17 iter1-3 tests all pass"
+  ],
+  "passed_tests_frontend": [
+    "Home '/' shows [data-testid=home-page] with nome 'Portomare', slogan, [data-testid=home-contatti] and [data-testid=home-stats] cards (Clienti gestiti / Posti occupati / Entrate stimate)",
+    "Home CTA buttons: cta-dashboard, cta-clienti, cta-impostazioni all present and clickable",
+    "Click cta-dashboard navigates to /dashboard which renders the sidebar Layout with KPI dashboard",
+    "Impostazioni page: edit nome='Cantiere Test Iter5' + indirizzo + telefono, click btn-save-cantiere, backend GET returns updated values, reload preserves in inputs",
+    "Impostazioni page: logo upload via input-logo-file (1x1 PNG) -> logo-preview shown in logo-card; save then reload -> logo-preview still shown",
+    "Sidebar brand-link click navigates to Home /",
+    "Sidebar shows cantiere.nome dynamically (verified 'Cantiere Test Iter5' visible in sidebar after save)",
+    "ClienteForm select-tipo-sosta has exactly 3 options: ['Al coperto (dentro)', 'A terra (fuori)', 'Fuori sede']",
+    "Selecting 'Fuori sede' hides input-costo-sosta and shows input-costo-movimentazione + input-costo-taccaggio",
+    "Switches switch-lavaggio-inizio and switch-lavaggio-fine present in ClienteForm",
+    "Tariffe page: Sosta group has 4 fields (sosta_dentro=180, sosta_fuori=120, movimentazione=25, taccaggio=20)",
+    "Tariffe page: Lavaggi stagionali group has 2 fields (inizio=80, fine=80); Magg. scafo sporco=15 inside Copertura & Antivegetativa group"
+  ],
+  "failed": [],
+  "test_report_links": [
+    "/app/backend/tests/test_cantiere_fuori_sede.py",
+    "/app/backend/tests/test_tariffe_motore.py",
+    "/app/backend/tests/test_lavori_pdf.py",
+    "/app/test_reports/pytest/iter5_all.xml"
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 995 lines (well over 700 threshold). Cantiere model+endpoints, Lavori CRUD, PDF generation and calcoli should be split into routers/services/models modules to improve maintainability.",
+    "PDF header logic in preventivo_pdf builds contatti line via a large inline expression (lines 706-707). Extract to helper function for readability and reuse across future PDFs (fattura, report).",
+    "calcola_costi has 10 keyword args and mixes concerns (sosta/motore/lavaggi/antivegetativa). Consider a Pydantic input model to avoid drift between /api/calcola-costi signature, ClienteCreate, and Cliente.",
+    "Impostazioni.jsx save() sends payload including logo_base64 which may be several MB. There is no client-side compression; a 2MB PNG will round-trip fully on every save even when only nome changed. Consider PATCH semantics or split logo endpoint.",
+    "Layout.jsx and Home.jsx both call /api/cantiere on mount independently — consider a shared context or SWR cache to avoid double network calls when navigating from '/' -> '/dashboard'.",
+    "Tariffe.jsx simulation math still duplicates backend calcola-costi logic (line 103-113). Now with fuori_sede/scafo_sporco/lavaggi added, the drift risk grows. Would be cleaner to call /api/calcola-costi from the simulation card.",
+    "In server.py calcola_costi, when tipo_sosta='fuori_sede' movimentazione+taccaggio use base costs, but override_costi flow does NOT special-case them if user overrides — user overrides only take precedence when val != None (fine). However, base['costo_movimentazione']/'costo_taccaggio' is always set even for dentro/fuori (as 0) which correctly gets persisted; verified in tests.",
+    "The stale DEFAULTS dict in test_tariffe_motore.py had costo_olio_motore=55.0 (raw price) while the current server multiplies by litri_olio_motore. This caused test_calcola_costi_ricambi_dettaglio_9_items to fail on first run. Fixed by aligning DEFAULTS to 12 €/L semantics and recomputing all downstream totals.",
+    "Home.jsx has no data-testid on nome/slogan text elements — added via home-page container, but a dedicated home-nome / home-slogan testid would ease future assertions.",
+    "Impostazioni.jsx: no server-side validation for logo_base64 max size — a large paste through PUT (bypassing client 2MB check) is accepted by /api/cantiere. Consider adding a size guard in update_cantiere."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cantiere_fuori_sede.py (new)",
+    "/app/backend/tests/test_tariffe_motore.py (updated DEFAULTS + expected totals for litri*costo_olio_motore semantics)"
+  ],
+  "success_rate": {"backend": "100% (47/47)", "frontend": "100% functional"},
+  "test_credentials": "n/a (no auth in this app)",
+  "seed_data_creation": "During pytest: TEST_Cantiere_Iter5 (via PUT /api/cantiere), TEST_Fuori/TEST_Sede, TEST_Invalid/TEST_X, TEST_Stats/TEST_FS, TEST_Pdf/TEST_Iter5 clienti (deleted in finally). Cantiere restored to defaults at end of TestPDFCantiereBranding. UI cleanup reset cantiere.nome back to 'Portomare' after Impostazioni test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run backend tests: `cd /app && python -m pytest backend/tests/ -v`. test_cantiere_fuori_sede.py covers all iter-5 additions (Cantiere entity, fuori_sede sosta, lavaggi toggles, scafo sporco, invalid tipo_sosta 400, stats sosta_fuori_sede, PDF). test_tariffe_motore.py DEFAULTS now uses costo_olio_motore=12.0 €/L (multiplied by litri_olio_motore default 3.0 => 36€ line). If defaults change again, update DEFAULTS and expected totals: L=8,120HP,4c,1t default => ricambi_totale=337, motore_totale=657. Frontend cantiere state was reset to 'Portomare' after UI tests; if next agent modifies /impostazioni, be aware brand-link/sidebar dynamically reflect current /api/cantiere.nome (Layout.jsx line 20-23).",
+  "rca_of_issue": "n/a - no bugs found. First playwright fill() of nome didn't trigger React onChange; corrected using keyboard.press+type sequence. Backend PUT/GET both work end-to-end (verified via direct requests within the browser test)."
+}

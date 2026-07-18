@@ -61,6 +61,13 @@ class Tariffe(BaseModel):
     # Sosta
     sosta_dentro_per_metro: float = 180.0
     sosta_fuori_per_metro: float = 120.0
+    # Sosta fuori sede: nessun costo sosta, ma movimentazione + taccaggio
+    costo_movimentazione_per_metro: float = 25.0
+    costo_taccaggio_per_metro: float = 20.0
+    # Lavaggi ed extra
+    costo_lavaggio_inizio_stagione: float = 80.0
+    costo_lavaggio_fine_stagione: float = 80.0
+    maggiorazione_scafo_sporco_per_metro: float = 15.0  # applicata se antivegetativa disattivata
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -85,6 +92,11 @@ class TariffeUpdate(BaseModel):
     costo_ingrassaggio: Optional[float] = None
     sosta_dentro_per_metro: Optional[float] = None
     sosta_fuori_per_metro: Optional[float] = None
+    costo_movimentazione_per_metro: Optional[float] = None
+    costo_taccaggio_per_metro: Optional[float] = None
+    costo_lavaggio_inizio_stagione: Optional[float] = None
+    costo_lavaggio_fine_stagione: Optional[float] = None
+    maggiorazione_scafo_sporco_per_metro: Optional[float] = None
 
 
 class Cliente(BaseModel):
@@ -106,6 +118,8 @@ class Cliente(BaseModel):
     # Interruttori applicabilità
     antivegetativa_attiva: bool = True
     girante_attivo: bool = True
+    lavaggio_inizio_attivo: bool = True
+    lavaggio_fine_attivo: bool = True
     # Costi (auto o manuali)
     costo_sosta: float = 0.0
     costo_copertura: float = 0.0
@@ -113,6 +127,11 @@ class Cliente(BaseModel):
     costo_varo: float = 0.0
     costo_antivegetativa: float = 0.0
     costo_manutenzione_motore: float = 0.0
+    costo_lavaggio_inizio: float = 0.0
+    costo_lavaggio_fine: float = 0.0
+    costo_scafo_sporco: float = 0.0
+    costo_movimentazione: float = 0.0
+    costo_taccaggio: float = 0.0
     # Breakdown ricambi (informativo)
     costo_ricambi_totale: float = 0.0
     costo_manodopera_motore: float = 0.0
@@ -141,12 +160,19 @@ class ClienteCreate(BaseModel):
     numero_termostati: Optional[int] = 1
     antivegetativa_attiva: Optional[bool] = True
     girante_attivo: Optional[bool] = True
+    lavaggio_inizio_attivo: Optional[bool] = True
+    lavaggio_fine_attivo: Optional[bool] = True
     costo_sosta: Optional[float] = None
     costo_copertura: Optional[float] = None
     costo_alaggio: Optional[float] = None
     costo_varo: Optional[float] = None
     costo_antivegetativa: Optional[float] = None
     costo_manutenzione_motore: Optional[float] = None
+    costo_lavaggio_inizio: Optional[float] = None
+    costo_lavaggio_fine: Optional[float] = None
+    costo_scafo_sporco: Optional[float] = None
+    costo_movimentazione: Optional[float] = None
+    costo_taccaggio: Optional[float] = None
     override_costi: bool = False
     note_lavori: str = ""
     scadenza_antivegetativa: Optional[str] = None
@@ -233,7 +259,9 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   numero_termostati: int = 1,
                   antivegetativa_attiva: bool = True,
                   girante_attivo: bool = True,
-                  litri_olio_motore: float = 3.0) -> dict:
+                  litri_olio_motore: float = 3.0,
+                  lavaggio_inizio_attivo: bool = True,
+                  lavaggio_fine_attivo: bool = True) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e motore."""
     manodopera = calcola_motore_labor(potenza_motore, t)
     ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore)
@@ -241,14 +269,26 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     motore_tot = round(manodopera + ricambi_tot, 2)
 
     antiveg = round(lunghezza * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
+    scafo_sporco = round(lunghezza * t.maggiorazione_scafo_sporco_per_metro, 2) if not antivegetativa_attiva else 0.0
+    lav_inizio = round(t.costo_lavaggio_inizio_stagione, 2) if lavaggio_inizio_attivo else 0.0
+    lav_fine = round(t.costo_lavaggio_fine_stagione, 2) if lavaggio_fine_attivo else 0.0
 
     base = {
         "costo_antivegetativa": antiveg,
         "costo_manutenzione_motore": motore_tot,
         "costo_manodopera_motore": manodopera,
         "costo_ricambi_totale": ricambi_tot,
+        "costo_lavaggio_inizio": lav_inizio,
+        "costo_lavaggio_fine": lav_fine,
+        "costo_scafo_sporco": scafo_sporco,
         "ricambi_dettaglio": ricambi,
     }
+
+    # Movimentazione e taccaggio applicati solo per sosta fuori sede
+    movimentazione = round(lunghezza * t.costo_movimentazione_per_metro, 2) if tipo_sosta == "fuori_sede" else 0.0
+    taccaggio = round(lunghezza * t.costo_taccaggio_per_metro, 2) if tipo_sosta == "fuori_sede" else 0.0
+    base["costo_movimentazione"] = movimentazione
+    base["costo_taccaggio"] = taccaggio
 
     if tipo_sosta == "fuori":
         base.update({
@@ -256,6 +296,14 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
             "costo_copertura": round(lunghezza * t.copertura_per_metro, 2),
             "costo_alaggio": calcola_alaggio(lunghezza, t),
             "costo_varo": calcola_varo(lunghezza, t),
+        })
+    elif tipo_sosta == "fuori_sede":
+        # Nessun costo sosta/copertura/alaggio/varo: la barca è custodita dal cliente
+        base.update({
+            "costo_sosta": 0.0,
+            "costo_copertura": 0.0,
+            "costo_alaggio": 0.0,
+            "costo_varo": 0.0,
         })
     else:
         base.update({
@@ -300,13 +348,16 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         numero_termostati: int = 1,
                         antivegetativa_attiva: bool = True,
                         girante_attivo: bool = True,
-                        litri_olio_motore: float = 3.0):
-    if tipo_sosta not in ("dentro", "fuori"):
-        raise HTTPException(400, "tipo_sosta deve essere 'dentro' o 'fuori'")
+                        litri_olio_motore: float = 3.0,
+                        lavaggio_inizio_attivo: bool = True,
+                        lavaggio_fine_attivo: bool = True):
+    if tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
+        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
     t = await get_tariffe_doc()
     return calcola_costi(lunghezza, tipo_sosta, t, potenza_motore,
                          numero_candele, numero_termostati,
-                         antivegetativa_attiva, girante_attivo, litri_olio_motore)
+                         antivegetativa_attiva, girante_attivo, litri_olio_motore,
+                         lavaggio_inizio_attivo, lavaggio_fine_attivo)
 
 
 # --- Clienti ---
@@ -326,8 +377,8 @@ async def get_cliente(cliente_id: str):
 
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(payload: ClienteCreate):
-    if payload.tipo_sosta not in ("dentro", "fuori"):
-        raise HTTPException(400, "tipo_sosta deve essere 'dentro' o 'fuori'")
+    if payload.tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
+        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
     if payload.posto_barca is not None:
         if payload.posto_barca < 1 or payload.posto_barca > TOTAL_POSTI:
             raise HTTPException(400, f"Posto barca deve essere tra 1 e {TOTAL_POSTI}")
@@ -344,6 +395,8 @@ async def create_cliente(payload: ClienteCreate):
         bool(payload.antivegetativa_attiva if payload.antivegetativa_attiva is not None else True),
         bool(payload.girante_attivo if payload.girante_attivo is not None else True),
         float(payload.litri_olio_motore if payload.litri_olio_motore is not None else 3.0),
+        bool(payload.lavaggio_inizio_attivo if payload.lavaggio_inizio_attivo is not None else True),
+        bool(payload.lavaggio_fine_attivo if payload.lavaggio_fine_attivo is not None else True),
     )
     # Rimuovi dettaglio non-modello prima di applicarlo
     ricambi_dettaglio = auto_costi.pop("ricambi_dettaglio", None)
@@ -368,8 +421,8 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
     if not existing:
         raise HTTPException(404, "Cliente non trovato")
 
-    if payload.tipo_sosta not in ("dentro", "fuori"):
-        raise HTTPException(400, "tipo_sosta deve essere 'dentro' o 'fuori'")
+    if payload.tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
+        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
 
     if payload.posto_barca is not None:
         if payload.posto_barca < 1 or payload.posto_barca > TOTAL_POSTI:
@@ -387,6 +440,8 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         bool(payload.antivegetativa_attiva if payload.antivegetativa_attiva is not None else True),
         bool(payload.girante_attivo if payload.girante_attivo is not None else True),
         float(payload.litri_olio_motore if payload.litri_olio_motore is not None else 3.0),
+        bool(payload.lavaggio_inizio_attivo if payload.lavaggio_inizio_attivo is not None else True),
+        bool(payload.lavaggio_fine_attivo if payload.lavaggio_fine_attivo is not None else True),
     )
     auto_costi.pop("ricambi_dettaglio", None)
 
@@ -421,6 +476,7 @@ async def stats():
     docs = await db.clienti.find({}, {"_id": 0}).to_list(1000)
     dentro = sum(1 for d in docs if d.get("tipo_sosta") == "dentro")
     fuori = sum(1 for d in docs if d.get("tipo_sosta") == "fuori")
+    fuori_sede = sum(1 for d in docs if d.get("tipo_sosta") == "fuori_sede")
     occupati = sum(1 for d in docs if d.get("posto_barca"))
     liberi = TOTAL_POSTI - occupati
 
@@ -428,11 +484,16 @@ async def stats():
     for d in docs:
         entrate_totali += sum([
             d.get("costo_sosta", 0) or 0,
+            d.get("costo_movimentazione", 0) or 0,
+            d.get("costo_taccaggio", 0) or 0,
             d.get("costo_copertura", 0) or 0,
             d.get("costo_alaggio", 0) or 0,
             d.get("costo_varo", 0) or 0,
             d.get("costo_antivegetativa", 0) or 0,
             d.get("costo_manutenzione_motore", 0) or 0,
+            d.get("costo_lavaggio_inizio", 0) or 0,
+            d.get("costo_lavaggio_fine", 0) or 0,
+            d.get("costo_scafo_sporco", 0) or 0,
         ])
 
     # Scadenze prossime (entro 30 giorni)
@@ -465,6 +526,7 @@ async def stats():
         "posti_liberi": liberi,
         "sosta_dentro": dentro,
         "sosta_fuori": fuori,
+        "sosta_fuori_sede": fuori_sede,
         "entrate_totali": round(entrate_totali, 2),
         "scadenze_prossime": scadenze[:10],
     }
@@ -614,6 +676,7 @@ async def preventivo_pdf(cliente_id: str):
     if not doc:
         raise HTTPException(404, "Cliente non trovato")
     lavori_docs = await db.lavori.find({"cliente_id": cliente_id}, {"_id": 0}).sort("data", -1).to_list(500)
+    cantiere_doc = await db.cantiere.find_one({"id": "default"}, {"_id": 0}) or {}
 
     buf = io.BytesIO()
     pdf = SimpleDocTemplate(
@@ -636,9 +699,24 @@ async def preventivo_pdf(cliente_id: str):
 
     elems = []
 
-    # Header
+    # Header con logo/nome cantiere + indirizzo
+    from reportlab.platypus import Image as RLImage
+    import base64 as _b64
+    nome_cantiere = (cantiere_doc.get("nome") or "PORTOMARE").upper()
+    indirizzo_parts = [x for x in [cantiere_doc.get("indirizzo"), " ".join(filter(None, [cantiere_doc.get("cap"), cantiere_doc.get("citta"), (f"({cantiere_doc.get('provincia')})" if cantiere_doc.get("provincia") else "")])), cantiere_doc.get("telefono"), cantiere_doc.get("email"), cantiere_doc.get("piva") and f"P.IVA {cantiere_doc.get('piva')}"] if x]
+    contatti_txt = " · ".join(indirizzo_parts) if indirizzo_parts else ""
+
+    logo_b64 = cantiere_doc.get("logo_base64") or ""
+    logo_cell = Paragraph(f"<b>{nome_cantiere}</b>", ParagraphStyle("brand", fontName="Helvetica-Bold", fontSize=18, textColor=NAVY))
+    if logo_b64 and "," in logo_b64:
+        try:
+            raw = _b64.b64decode(logo_b64.split(",", 1)[1])
+            logo_cell = RLImage(io.BytesIO(raw), width=30*mm, height=18*mm, kind="proportional")
+        except Exception:
+            pass
+
     header_tbl = Table([
-        [Paragraph("<b>PORTOMARE</b>", ParagraphStyle("brand", fontName="Helvetica-Bold", fontSize=18, textColor=NAVY)),
+        [logo_cell,
          Paragraph(f"<para align=right><font color='#5B6478' size=8>PREVENTIVO</font><br/><font size=14 color='#B0562E'><b>#{doc.get('posto_barca') or '—'}</b></font><br/><font color='#5B6478' size=8>{date.today().strftime('%d/%m/%Y')}</font></para>", body)]
     ], colWidths=[100*mm, 74*mm])
     header_tbl.setStyle(TableStyle([
@@ -646,6 +724,9 @@ async def preventivo_pdf(cliente_id: str):
         ("BOTTOMPADDING", (0,0), (-1,-1), 4),
     ]))
     elems.append(header_tbl)
+    if contatti_txt:
+        elems.append(Spacer(1, 2*mm))
+        elems.append(Paragraph(f"<font color='#5B6478' size=8>{contatti_txt}</font>", body))
     elems.append(Spacer(1, 4*mm))
     # separator
     sep = Table([[""]], colWidths=[174*mm], rowHeights=[2])
@@ -656,6 +737,7 @@ async def preventivo_pdf(cliente_id: str):
     elems.append(Paragraph("CLIENTE E IMBARCAZIONE", h2))
     potenza = doc.get('potenza_motore') or 0
     litri_pdf = doc.get('litri_olio_motore') or 0
+    sosta_label = 'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'Fuori sede' if doc.get('tipo_sosta')=='fuori_sede' else 'A terra (fuori)'
     info_tbl = Table([
         [Paragraph("Cliente", label), Paragraph("Contatti", label)],
         [Paragraph(f"<b>{doc.get('cognome','')} {doc.get('nome','')}</b>", val),
@@ -663,7 +745,7 @@ async def preventivo_pdf(cliente_id: str):
         [Spacer(1, 3*mm), Spacer(1, 3*mm)],
         [Paragraph("Imbarcazione", label), Paragraph("Sosta", label)],
         [Paragraph(f"<b>{doc.get('tipo_barca','')}</b><br/><font color='#5B6478' size=9>Lunghezza: {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP · Olio: {litri_pdf:g} L</font>", body),
-         Paragraph(f"<b>{'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'A terra (fuori)'}</b><br/><font color='#5B6478' size=9>Posto barca: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
+         Paragraph(f"<b>{sosta_label}</b><br/><font color='#5B6478' size=9>Posto barca: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
     ], colWidths=[87*mm, 87*mm])
     info_tbl.setStyle(TableStyle([
         ("VALIGN", (0,0), (-1,-1), "TOP"),
@@ -679,12 +761,17 @@ async def preventivo_pdf(cliente_id: str):
         if v > 0:
             voci.append([label_txt, _euro(v)])
     add("Sosta", "costo_sosta")
+    add("Movimentazione", "costo_movimentazione")
+    add("Taccaggio", "costo_taccaggio")
     add("Copertura", "costo_copertura")
     add("Alaggio", "costo_alaggio")
     add("Varo", "costo_varo")
     add("Antivegetativa", "costo_antivegetativa")
+    add("Magg. scafo sporco", "costo_scafo_sporco")
+    add("Lavaggio inizio stagione", "costo_lavaggio_inizio")
+    add("Lavaggio fine stagione", "costo_lavaggio_fine")
     add("Manutenzione motore", "costo_manutenzione_motore")
-    totale = sum(float(doc.get(k) or 0) for k in ("costo_sosta","costo_copertura","costo_alaggio","costo_varo","costo_antivegetativa","costo_manutenzione_motore"))
+    totale = sum(float(doc.get(k) or 0) for k in ("costo_sosta","costo_movimentazione","costo_taccaggio","costo_copertura","costo_alaggio","costo_varo","costo_antivegetativa","costo_scafo_sporco","costo_lavaggio_inizio","costo_lavaggio_fine","costo_manutenzione_motore"))
 
     if not voci:
         voci = [["Nessun costo configurato", "—"]]
@@ -816,8 +903,9 @@ async def preventivo_pdf(cliente_id: str):
         elems.append(Paragraph(doc["note_lavori"].replace("\n", "<br/>"), body))
 
     elems.append(Spacer(1, 10*mm))
+    footer_name = cantiere_doc.get("nome") or "Portomare"
     elems.append(Paragraph(
-        "Documento generato automaticamente da Portomare — Gestione Cantiere Nautico. "
+        f"Documento generato automaticamente da {footer_name} — Gestione Cantiere Nautico. "
         f"Il presente preventivo ha validità 30 giorni dalla data di emissione ({date.today().strftime('%d/%m/%Y')}).",
         tiny
     ))
@@ -832,8 +920,64 @@ async def preventivo_pdf(cliente_id: str):
     )
 
 
-app.include_router(api_router)
+# ---------- CANTIERE INFO (logo + indirizzo) ----------
 
+class Cantiere(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: "default")
+    nome: str = "Portomare"
+    slogan: str = "Cantiere nautico dal 1985"
+    indirizzo: str = ""
+    citta: str = ""
+    cap: str = ""
+    provincia: str = ""
+    telefono: str = ""
+    email: str = ""
+    piva: str = ""
+    sito_web: str = ""
+    orari: str = ""
+    logo_base64: str = ""  # data:image/...;base64,...
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CantiereUpdate(BaseModel):
+    nome: Optional[str] = None
+    slogan: Optional[str] = None
+    indirizzo: Optional[str] = None
+    citta: Optional[str] = None
+    cap: Optional[str] = None
+    provincia: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    piva: Optional[str] = None
+    sito_web: Optional[str] = None
+    orari: Optional[str] = None
+    logo_base64: Optional[str] = None
+
+
+@api_router.get("/cantiere", response_model=Cantiere)
+async def get_cantiere():
+    doc = await db.cantiere.find_one({"id": "default"}, {"_id": 0})
+    if not doc:
+        c = Cantiere()
+        await db.cantiere.insert_one(serialize(c))
+        return c
+    return Cantiere(**doc)
+
+
+@api_router.put("/cantiere", response_model=Cantiere)
+async def update_cantiere(payload: CantiereUpdate):
+    current = await get_cantiere()
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    new_data = current.model_dump()
+    new_data.update(updates)
+    new_data["updated_at"] = datetime.now(timezone.utc)
+    c = Cantiere(**new_data)
+    await db.cantiere.update_one({"id": "default"}, {"$set": serialize(c)}, upsert=True)
+    return c
+
+
+app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
