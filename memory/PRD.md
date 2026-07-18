@@ -56,6 +56,17 @@ Sono circa 200 posti barca"
 - ✅ **Cavalli motore** (HP) evidenziato meglio in griglia 4-col: Cavalli / Litri / N° candele / N° termostati
 - ✅ PDF preventivo mostra "Olio: X L" nell'intestazione e la quantità nella riga olio motore
 
+## Iteration 5 (2026-02-19)
+- ✅ **Home landing page** (`/`) con logo, nome cantiere, slogan, indirizzo completo, contatti, orari, sito web, P.IVA. Card stats "Attività in corso". CTA Dashboard / Clienti / Impostazioni.
+- ✅ **Impostazioni Cantiere** (`/impostazioni`): editor completo con caricamento logo (base64, PNG/JPG/SVG max 2MB, preview live)
+- ✅ **Endpoint `/api/cantiere` GET/PUT** con modello Cantiere (12 campi)
+- ✅ **PDF preventivo dinamico**: header mostra logo (se caricato) + nome cantiere + riga contatti completa (indirizzo, telefono, email, P.IVA)
+- ✅ **Sidebar Layout dinamica**: brand-link → Home, logo/nome caricati da /api/cantiere
+- ✅ **Sosta fuori sede** (nuovo tipo_sosta): sostituisce costo sosta con `costo_movimentazione` (€/m) + `costo_taccaggio` (€/m). Nessuna copertura/alaggio/varo.
+- ✅ **Lavaggi stagionali**: switch e costi separati per inizio + fine stagione
+- ✅ **Maggiorazione scafo sporco**: applicata automaticamente quando antivegetativa disattivata (€/metro)
+- ✅ Testing iter5: 47/47 backend, 100% frontend
+
 
 
 ## Backlog (P0 → P2)
