@@ -391,13 +391,13 @@ function CostField({ label, value, onChange, disabled, testId }) {
     <div className="space-y-1.5">
       <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</Label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
         <Input
           type="number" step="0.01" min="0"
           disabled={disabled}
           value={value ?? 0}
           onChange={(e) => onChange(e.target.value)}
-          className="pl-7 font-mono-num"
+          className="pl-10 font-mono-num"
           data-testid={`input-${testId}`}
         />
       </div>

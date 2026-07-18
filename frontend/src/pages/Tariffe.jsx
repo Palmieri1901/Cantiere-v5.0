@@ -158,12 +158,12 @@ export default function Tariffe() {
                           <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
                         </div>
                         <div className="relative w-32 shrink-0">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
                           <Input
                             type="number" step="0.01" min="0"
                             value={t[f.key]}
                             onChange={(e) => setT({ ...t, [f.key]: e.target.value })}
-                            className="pl-7 font-mono-num text-right h-9"
+                            className="pl-10 font-mono-num text-right h-9"
                             data-testid={`input-${f.key}`}
                           />
                         </div>

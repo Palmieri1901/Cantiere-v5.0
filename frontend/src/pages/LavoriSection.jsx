@@ -179,8 +179,8 @@ export default function LavoriSection({ clienteId }) {
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Costo</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                    <Input type="number" step="0.01" min="0" className="pl-7 font-mono-num" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} data-testid="input-lavoro-costo" />
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                    <Input type="number" step="0.01" min="0" className="pl-10 font-mono-num" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} data-testid="input-lavoro-costo" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
