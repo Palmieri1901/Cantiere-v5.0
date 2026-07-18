@@ -1,0 +1,35 @@
+{
+  "summary": "First-finish smoke testing for Portomare marina management app. Backend endpoints (stats, tariffe GET/PUT, clienti CRUD, posti-barca, calcola-costi, CSV/XLSX exports) and validations (duplicate posto, out-of-range posto, invalid tipo_sosta) all passed. Frontend flows (Dashboard KPIs, Clienti list, new client sheet with auto-cost calc, override toggle changing total, filter, search, delete confirm, Tariffe page, Posti Barca 200-spot grid) all working.",
+  "tested_scope": ["frontend", "backend", "integration"],
+  "passed": [
+    "GET /api/stats returns 200 with posti_totali=200",
+    "GET /api/tariffe returns default tariff document",
+    "PUT /api/tariffe updates sosta_fuori_per_metro=150 correctly",
+    "GET /api/posti-barca returns 200 spots array",
+    "GET /api/calcola-costi?lunghezza=10&tipo_sosta=fuori returns all 6 cost components",
+    "POST /api/clienti creates client with server-side calculated costs (Marco Rossi, posto 5)",
+    "Validation: duplicate posto_barca returns 400 with Italian message",
+    "Validation: posto_barca=300 returns 400 (deve essere tra 1 e 200)",
+    "Validation: tipo_sosta='invalid' returns 400",
+    "GET /api/export/clienti.csv returns text/csv with expected headers",
+    "GET /api/export/clienti.xlsx returns valid xlsx (5230 bytes, correct MIME)",
+    "Dashboard renders: Posti Occupati, Clienti Totali, Entrate Stimate, Scadenze, 1/200, pie + bar charts",
+    "Nav Clienti works; Marco Rossi row visible with #005 and 3000,00 € totale",
+    "Search 'Rossi' filters row correctly",
+    "New client sheet (btn-nuovo-cliente): fills nome/cognome/tipo_barca/lunghezza/posto, auto-fills costs via /api/calcola-costi",
+    "For tipo_sosta='dentro', only costo-sosta/antivegetativa/manutenzione fields visible (copertura/alaggio/varo hidden)",
+    "Save creates client, toast appears, row shown as Luca Bianchi #012",
+    "Edit + switch-override toggle enables cost editing; changing costo_sosta updates totale (3300 -> 2799 €)",
+    "Delete with confirm dialog removes row, toast 'Cliente eliminato' shown",
+    "Nav Tariffe loads with 18 tariff-related inputs",
+    "Nav Posti Barca renders exactly 200 posto tiles; posto #5 highlighted as occupied"
+  ],
+  "failed": [],
+  "action_items": [
+    "Minor cosmetic: Recharts logs 'width(-1) height(-1)' warnings on Dashboard load until container sizes settle (non-blocking).",
+    "Note: review request referenced testid 'nuovo-cliente' but actual is 'btn-nuovo-cliente' — code is fine, just clarifying for future test specs."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true
+}
