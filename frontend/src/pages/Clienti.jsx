@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
 import { API } from "@/lib/api";
@@ -132,7 +132,7 @@ export default function Clienti() {
               <TableHead className="text-right">Lungh.</TableHead>
               <TableHead>Sosta</TableHead>
               <TableHead className="text-right">Totale</TableHead>
-              <TableHead className="w-24 text-right">Azioni</TableHead>
+              <TableHead className="w-32 text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -172,6 +172,11 @@ export default function Clienti() {
                   <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(totale(c))}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button size="icon" variant="ghost" asChild data-testid={`btn-pdf-${c.id}`} title="Scarica preventivo PDF">
+                        <a href={`${API}/clienti/${c.id}/preventivo.pdf`} download target="_blank" rel="noreferrer">
+                          <FileText className="w-4 h-4" />
+                        </a>
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setFormOpen(true); }} data-testid={`btn-edit-${c.id}`}>
                         <Pencil className="w-4 h-4" />
                       </Button>

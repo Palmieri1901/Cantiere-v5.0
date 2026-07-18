@@ -13,14 +13,19 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import LavoriSection from "@/pages/LavoriSection";
+import { API } from "@/lib/api";
+import { FileText } from "lucide-react";
 
 const empty = {
   nome: "", cognome: "", tipo_barca: "", lunghezza: 8,
   tipo_sosta: "dentro", posto_barca: "",
   telefono: "", email: "",
+  potenza_motore: 0, numero_candele: 4, numero_termostati: 1,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
   costo_varo: 0, costo_antivegetativa: 0, costo_manutenzione_motore: 0,
+  costo_ricambi_totale: 0, costo_manodopera_motore: 0,
   note_lavori: "",
   scadenza_antivegetativa: "", scadenza_manutenzione: "",
 };
@@ -28,6 +33,7 @@ const empty = {
 export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
   const [f, setF] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [ricambiDettaglio, setRicambiDettaglio] = useState(null);
 
   useEffect(() => {
     if (cliente) {
@@ -41,19 +47,31 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
     } else {
       setF(empty);
     }
+    setRicambiDettaglio(null);
   }, [cliente, open]);
 
-  // Ricalcolo automatico costi quando cambiano lunghezza o tipo_sosta e override off
+  // Ricalcolo automatico costi
   useEffect(() => {
     if (!open || f.override_costi) return;
     if (!f.lunghezza || f.lunghezza <= 0) return;
     const t = setTimeout(() => {
-      api.get(`/calcola-costi?lunghezza=${f.lunghezza}&tipo_sosta=${f.tipo_sosta}`)
-        .then((r) => setF((prev) => ({ ...prev, ...r.data })))
+      const params = new URLSearchParams({
+        lunghezza: f.lunghezza,
+        tipo_sosta: f.tipo_sosta,
+        potenza_motore: f.potenza_motore || 0,
+        numero_candele: f.numero_candele || 0,
+        numero_termostati: f.numero_termostati || 0,
+      });
+      api.get(`/calcola-costi?${params}`)
+        .then((r) => {
+          const { ricambi_dettaglio, ...rest } = r.data;
+          setRicambiDettaglio(ricambi_dettaglio || null);
+          setF((prev) => ({ ...prev, ...rest }));
+        })
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.numero_candele, f.numero_termostati, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -71,6 +89,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
     const payload = {
       ...f,
       lunghezza: Number(f.lunghezza),
+      potenza_motore: Number(f.potenza_motore) || 0,
+      numero_candele: Number(f.numero_candele) || 0,
+      numero_termostati: Number(f.numero_termostati) || 0,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -161,6 +182,27 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
 
           <Separator />
 
+          {/* Motore */}
+          <section>
+            <div className="label-mini mb-3">Motore</div>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Potenza (HP)">
+                <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
+              </Field>
+              <Field label="N° candele">
+                <Input type="number" min="0" step="1" value={f.numero_candele} onChange={(e) => update("numero_candele", e.target.value)} data-testid="input-numero-candele" />
+              </Field>
+              <Field label="N° termostati">
+                <Input type="number" min="0" step="1" value={f.numero_termostati} onChange={(e) => update("numero_termostati", e.target.value)} data-testid="input-numero-termostati" />
+              </Field>
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-2">
+              Fasce manodopera: ≤40 HP · 40-150 HP · &gt;150 HP. I ricambi vengono moltiplicati per il numero indicato.
+            </div>
+          </section>
+
+          <Separator />
+
           {/* Costi */}
           <section>
             <div className="flex items-center justify-between mb-3">
@@ -185,6 +227,22 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               {isFuori && <CostField label="Varo" value={f.costo_varo} onChange={(v) => update("costo_varo", v)} disabled={!f.override_costi} testId="costo-varo" />}
             </div>
 
+            {/* Dettaglio motore breakdown */}
+            {!f.override_costi && ricambiDettaglio && Number(f.potenza_motore) > 0 && (
+              <div className="mt-4 p-3 bg-muted/40 border border-border rounded-md" data-testid="ricambi-breakdown">
+                <div className="label-mini mb-2">Dettaglio motore</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <BreakdownRow label="Manodopera" value={f.costo_manodopera_motore} />
+                  <BreakdownRow label="Girante" value={ricambiDettaglio.girante} />
+                  <BreakdownRow label="Olio motore" value={ricambiDettaglio.olio_motore} />
+                  <BreakdownRow label="Filtro olio" value={ricambiDettaglio.filtro_olio} />
+                  <BreakdownRow label={`Candele (${f.numero_candele || 0})`} value={ricambiDettaglio.candele} />
+                  <BreakdownRow label={`Termostati (${f.numero_termostati || 0})`} value={ricambiDettaglio.termostati} />
+                  <BreakdownRow label="Olio piede" value={ricambiDettaglio.olio_piede} />
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-md flex items-center justify-between">
               <div className="label-mini">Totale annuale stimato</div>
               <div className="font-display text-2xl font-semibold text-primary font-mono-num" data-testid="totale-costi">{fmtEuro(totale)}</div>
@@ -195,8 +253,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
 
           {/* Lavori & scadenze */}
           <section>
-            <div className="label-mini mb-3">Lavori & scadenze</div>
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="label-mini mb-3">Scadenze</div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <Field label="Prossima antivegetativa">
                 <Input type="date" value={f.scadenza_antivegetativa || ""} onChange={(e) => update("scadenza_antivegetativa", e.target.value)} data-testid="input-scadenza-antiveg" />
               </Field>
@@ -204,10 +262,32 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 <Input type="date" value={f.scadenza_manutenzione || ""} onChange={(e) => update("scadenza_manutenzione", e.target.value)} data-testid="input-scadenza-motore" />
               </Field>
             </div>
-            <Field label="Note lavori eseguiti">
-              <Textarea rows={5} placeholder="Storico interventi, materiali usati, osservazioni…" value={f.note_lavori} onChange={(e) => update("note_lavori", e.target.value)} data-testid="input-note" />
+            <Field label="Note generali">
+              <Textarea rows={3} placeholder="Note generiche sul cliente o sulla barca…" value={f.note_lavori} onChange={(e) => update("note_lavori", e.target.value)} data-testid="input-note" />
             </Field>
           </section>
+
+          <Separator />
+
+          {/* Storico lavori strutturato */}
+          <section>
+            <LavoriSection clienteId={cliente?.id} />
+          </section>
+
+          {cliente?.id && (
+            <>
+              <Separator />
+              <section>
+                <div className="label-mini mb-3">Documenti</div>
+                <Button variant="outline" asChild className="w-full" data-testid="btn-download-pdf">
+                  <a href={`${API}/clienti/${cliente.id}/preventivo.pdf`} download target="_blank" rel="noreferrer">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Scarica preventivo PDF
+                  </a>
+                </Button>
+              </section>
+            </>
+          )}
         </div>
 
         <SheetFooter className="gap-2 sticky bottom-0 bg-background py-4 border-t">
@@ -248,3 +328,13 @@ function CostField({ label, value, onChange, disabled, testId }) {
     </div>
   );
 }
+
+function BreakdownRow({ label, value }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-mono-num">{new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(Number(value) || 0)}</span>
+    </div>
+  );
+}
+

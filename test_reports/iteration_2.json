@@ -1,0 +1,81 @@
+{
+  "summary": "Iteration 2 verified the two new features (Lavori CRUD + Preventivo PDF) plus regression on existing endpoints and UI. 17/17 backend pytest cases pass, all target frontend flows pass. Note: backend required a supervisor restart at test start because the in-memory Tariffe class had stale attribute lookups after the schema was updated (calcola_costi referenced attribute manutenzione_motore_base that no longer exists in the updated Tariffe model). After restart everything worked. All UI flows for lavori dialog (create/edit/delete), PDF download button (both row-level btn-pdf-{id} and form-level btn-download-pdf), and 'Salva il cliente per poter aggiungere lo storico lavori' placeholder verified end-to-end.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "backend (startup)",
+        "issue": "After Tariffe schema evolution the running backend process kept a stale calcola_costi reference that raised AttributeError: 'Tariffe' object has no attribute 'manutenzione_motore_base'. Fixed by 'supervisorctl restart backend' — hot-reload had not picked up the change. Not reproducible on fresh boot. Recommend adding pytest smoke on POST /api/clienti as part of CI."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Cliente edit sheet (dev preview)",
+        "issues": [
+          "React dev overlay occasionally shows 'ResizeObserver loop completed with undelivered notifications.' — benign CRA/Radix-known warning triggered by Sheet + Dialog resize animations. Does not affect functionality. Consider swallowing via window.onerror handler for the dev overlay if it distracts stakeholders during demos."
+        ]
+      }
+    ]
+  },
+  "passed_tests_backend": [
+    "GET /api/ root",
+    "GET /api/stats (200, posti_totali=200)",
+    "GET /api/tariffe",
+    "GET /api/clienti list",
+    "GET /api/posti-barca (200 posti)",
+    "GET /api/export/clienti.csv (text/csv)",
+    "GET /api/export/clienti.xlsx (spreadsheetml)",
+    "POST /api/lavori creates lavoro (returns id, created_at, tipo, costo, stato)",
+    "POST /api/lavori for second entry",
+    "GET /api/clienti/{id}/lavori sorted by data desc",
+    "POST /api/lavori with invalid stato -> 400",
+    "POST /api/lavori with non-existent cliente_id -> 404",
+    "PUT /api/lavori/{id} updates costo+stato, GET verifies persistence",
+    "DELETE /api/lavori/{id} removes and GET confirms removal",
+    "DELETE /api/lavori/{unknown} -> 404",
+    "GET /api/clienti/{id}/preventivo.pdf -> application/pdf, attachment CD, %PDF header, size>1500 bytes",
+    "GET /api/clienti/nope/preventivo.pdf -> 404"
+  ],
+  "passed_tests_frontend": [
+    "Clienti page loads (data-testid=clienti-page)",
+    "Row has 3 action buttons: btn-pdf-{id}, btn-edit-{id}, btn-delete-{id}",
+    "PDF link href points to {backend}/api/clienti/{id}/preventivo.pdf",
+    "Click btn-edit opens ClienteForm sheet; data-testid=lavori-section visible",
+    "btn-download-pdf visible in form for existing cliente with correct href",
+    "btn-nuovo-lavoro opens lavoro-dialog",
+    "Fill lavoro form (data, tipo select, descrizione, costo, stato select, materiali) and Save triggers toast 'Lavoro aggiunto' and creates row (lavoro-row-{id})",
+    "btn-edit-lavoro-{id} opens dialog pre-filled (costo=320 verified), save updates value (450)",
+    "btn-delete-lavoro-{id} removes row after confirm",
+    "New cliente (btn-nuovo-cliente) shows placeholder 'Salva il cliente per poter aggiungere lo storico lavori.'",
+    "btn-download-pdf hidden for new (unsaved) cliente"
+  ],
+  "failed": [],
+  "test_report_links": [
+    "/app/backend/tests/test_lavori_pdf.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "critical_code_review_comments": [
+    "server.py has 764 lines — approaching the 700-line split threshold; consider splitting into routers/clienti.py, routers/lavori.py, routers/pdf.py, and models.py for maintainability.",
+    "get_tariffe_doc() rehydrates a Tariffe(**doc) but doc may contain legacy keys (extra='ignore' handles this). However any DB doc missing a NEW field will silently use the default, potentially masking migration issues. Consider an explicit migration or a version field.",
+    "PDF endpoint sets Content-Disposition using un-escaped cognome/nome — if a client name contains a comma or non-ASCII characters the header could be malformed in some clients. Use urllib.parse.quote and RFC 5987 filename* form for safety.",
+    "LavoriSection.load() has no error handling: axios rejection is unhandled and would leave loading=true forever if the endpoint fails.",
+    "Delete lavoro uses window.confirm() (native), while cliente delete uses shadcn AlertDialog. Inconsistent UX — recommend unifying with AlertDialog.",
+    "ClienteForm imports { API } from '@/lib/api' but if REACT_APP_BACKEND_URL is missing at build time, API links would break silently — fine given .env is provisioned but flagging.",
+    "Lavoro model: 'data' is a plain string (YYYY-MM-DD) with no server-side validation; a malformed date would still be accepted and only fail during PDF/sort. Consider Pydantic date validation."
+  ],
+  "updated_files": [
+    "/app/backend/tests/__init__.py (created)",
+    "/app/backend/tests/test_lavori_pdf.py (created)"
+  ],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "100% (11/11)"},
+  "seed_data_creation": "Created 1 test cliente ('TEST_Mario TEST_Verdi') during pytest and deleted at teardown; UI test created a lavoro on the first existing cliente (id e9595648-...) and deleted it at end. No residual test data left in DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend Tariffe collection may have legacy fields due to prior iterations; the model uses extra='ignore' so it's transparent. If POST /api/clienti fails with AttributeError on Tariffe, restart backend to refresh the reload. Test file uses xdist loadscope automatically via /app/backend/pytest.ini; run: `python -m pytest backend/tests/test_lavori_pdf.py -v`.",
+  "rca_of_the_issue": "Initial POST /api/clienti failed with 500 because backend calcola_costi referenced t.manutenzione_motore_base which no longer exists on the current Tariffe model. Uvicorn hot-reload apparently missed the change (or the server was launched before the edit). Fix: `sudo supervisorctl restart backend`. Not a code bug — a runtime staleness issue. Recommend adding smoke test to CI to detect early."
+}
