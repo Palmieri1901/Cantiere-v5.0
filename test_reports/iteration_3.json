@@ -1,0 +1,73 @@
+{
+  "summary": "Iteration 3 validates tiered pricing (Alaggio/Varo forfait <=5m vs €/m >5m), tiered motor labor by HP (<=40 / 40-150 / >150), motor parts (ricambi: girante, olio motore, filtro olio, candele*qty, termostato*qty, olio piede), Tariffe expanded schema, Cliente motor fields, and PDF preventivo with motor breakdown. Backend: 26/26 pytest cases pass (9 new for iter3 + 17 regression from iter2). Frontend: All new UI (Tariffe grouped sections + simulation, ClienteForm motor section + ricambi breakdown, Clienti btn-pdf-{id}) verified working. One minor UI issue: Annulla/Salva sticky footer inside the edit sheet ends up below the viewport when the form is tall (with motor + ricambi + lavori sections) — sticky bottom-0 not clamping to viewport as expected in Radix Sheet on 1200px height.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ClienteForm SheetFooter",
+        "issue": "The sticky footer (Annulla + Salva cliente) drops below the visible viewport on tall forms (existing cliente with LavoriSection). sticky bottom-0 is applied on the footer, but the SheetContent uses `overflow-y-auto` without a `flex flex-col` container, so the footer is not clamped to the bottom edge of the sheet visible area. Users must scroll to the bottom of the form to reach Salva/Annulla.",
+        "selector": "[data-testid='btn-annulla'], [data-testid='btn-salva']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests_backend": [
+    "GET /api/tariffe returns all 17 required fields (numeric)",
+    "PUT /api/tariffe updates motore_labor_40_150hp and costo_candela; GET verifies persistence",
+    "GET /api/calcola-costi lunghezza=4 fuori 30HP,2 candele,1 termostato -> alaggio=90, varo=90, manodopera=180, ricambi breakdown correct",
+    "GET /api/calcola-costi lunghezza=10 fuori 200HP,6 candele,2 termostati -> alaggio=250, varo=250, manodopera=550, ricambi correct",
+    "GET /api/calcola-costi 100HP -> manodopera=320 (mid-tier); dentro sosta => alaggio/varo/copertura=0",
+    "GET /api/calcola-costi 0HP -> manodopera=0; costo_manutenzione_motore == costo_ricambi_totale",
+    "POST /api/clienti with motor computes manodopera+ricambi correctly; GET verifies persistence of potenza_motore, candele, termostati",
+    "POST /api/clienti with 4m boat -> forfait alaggio/varo=90",
+    "GET /api/clienti/{id}/preventivo.pdf -> application/pdf, %PDF header, size > 3000 bytes (with lavori + motor sections)",
+    "Regression: 17 iteration-2 tests still green (Lavori CRUD, PDF, root/stats/tariffe/clienti/posti-barca/export)"
+  ],
+  "passed_tests_frontend": [
+    "Tariffe page loads, all 5 grouped sections (Sosta, Alaggio&Varo, Copertura&Antivegetativa, Manodopera motore, Ricambi motore) present",
+    "All 13 new tariff inputs (alaggio_fino_5m ... costo_olio_piede) rendered with data-testid input-{key}",
+    "Simulation card shows 'Barca 8m · 120 HP', Manodopera + Ricambi + Motore totale + Totale annuale",
+    "Clienti page row shows btn-pdf-{id} + btn-edit-{id} + btn-delete-{id}; btn-pdf href = {backend}/api/clienti/{id}/preventivo.pdf",
+    "Edit form has Motore section with input-potenza-motore, input-numero-candele, input-numero-termostati",
+    "ricambi-breakdown block shows 7 rows: Manodopera, Girante, Olio motore, Filtro olio, Candele(N), Termostati(N), Olio piede - values match tiered logic",
+    "For 200HP + 6 candele + 2 termostati at L=10m fuori: Manodopera=550, Candele=72, Termostati=70, totale-costi=3585,00 € (matches backend math)",
+    "For 120HP + 4 candele + 1 termostato at L=8m fuori: Manodopera=320 (mid tier), Candele=48, Termostati=35",
+    "btn-download-pdf visible in ClienteForm for existing cliente, href points to correct backend PDF endpoint",
+    "btn-download-pdf hidden when creating NEW cliente (verified on fresh page load)",
+    "Lavori placeholder 'Salva il cliente per poter aggiungere lo storico' shown in new cliente form",
+    "Storico lavori section header rendered in edit form"
+  ],
+  "failed": [],
+  "test_report_links": [
+    "/app/backend/tests/test_tariffe_motore.py",
+    "/app/backend/tests/test_lavori_pdf.py",
+    "/app/test_reports/pytest/pytest_iter3.xml"
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 809 lines — well past the 700-line threshold. Split into modules: routers/tariffe.py, routers/clienti.py, routers/lavori.py, routers/pdf.py, services/calcoli.py (calcola_alaggio/varo/motore_labor/ricambi), models/*.py.",
+    "calcola_alaggio/varo boundary: '<=5' means 5m boats get forfait but 5.01m goes to per-metro (5.01*25=125.25 > 90). This is a discontinuity where a marginally-larger boat pays MORE than the forfait despite being longer — acceptable business rule but worth documenting; some cantieri prefer max(forfait, perMetro) to avoid jumps.",
+    "ClienteForm.jsx SheetFooter sticky bottom-0 does not clamp to viewport in tall forms — should either wrap SheetContent in `flex flex-col` and use `flex-1 overflow-y-auto` on the body + non-sticky footer, OR add `max-h-screen` with proper column layout. Users hitting the tallest form (existing cliente + lavori section) must scroll to reach Salva/Annulla.",
+    "Ricambi are ALWAYS billed even when potenza_motore=0 (backend calcola_ricambi doesn't gate on HP), so a 'no engine' cliente still gets girante+olio+filtro+candele+termostato+olio_piede (~215€ by default). If the intent is 'no motor -> no maintenance charge at all', gate ricambi on potenza_motore>0 too. Otherwise the UI hides the breakdown when HP=0 (good) but the backend still returns and stores costo_manutenzione_motore = ricambi_totale, which will appear in the PDF/table.",
+    "Tariffe.jsx save() coerces empty/invalid inputs to 0 silently (`Number(t[k]) || 0`) — user can accidentally wipe a tariff by clearing the input. Should validate and warn.",
+    "PDF endpoint hardcodes 'PORTOMARE' brand and orange/navy palette — no configurability; consider extracting brand config for white-labeling.",
+    "calcola_ricambi uses `nc * t.costo_candela` with nc from int(numero_candele or 0) — a negative input would produce negative ricambi (no clamp). Add max(0, nc) guard.",
+    "Cliente model default `numero_candele=4` / `numero_termostati=1` — reasonable, but ensure UI form shows these defaults for a new cliente (verified: it does)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_tariffe_motore.py (created)",
+    "/app/test_reports/pytest/pytest_iter3.xml (generated by pytest)"
+  ],
+  "success_rate": {"backend": "100% (26/26)", "frontend": "100% functional; 1 minor UX regression on sticky footer"},
+  "test_credentials": "n/a (no auth in this app)",
+  "seed_data_creation": "During pytest: created and deleted TEST_Luca/TEST_Rossi, TEST_Anna/TEST_Bianchi, TEST_Pdf/TEST_Cliente with associated lavori. All cleaned up in test finally blocks. No residual test data in DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run backend tests via `cd /app && python -m pytest backend/tests/ -v` (uses xdist loadscope with 2 workers). test_tariffe_motore.py consolidates all tariffe-dependent tests in ONE class to avoid parallel worker races on shared tariffe state. Frontend viewport 1920x1200 recommended. Note: edit form's sticky footer can go below viewport - use `force=True` clicks and consider scrolling into view before clicking btn-annulla/btn-salva on existing clienti with lots of data. The 'btn-nuovo-cliente' correctly resets state after page reload; a slight React state flicker may briefly leave old form content visible immediately after annulla→nuovo-cliente sequence without navigation - verified by reloading the page. All new fields (alaggio_fino_5m, alaggio_oltre_5m_per_metro, varo_fino_5m, varo_oltre_5m_per_metro, motore_labor_fino_40hp, motore_labor_40_150hp, motore_labor_oltre_150hp, costo_girante, costo_olio_motore, costo_filtro_olio, costo_candela, costo_termostato, costo_olio_piede) are wired end-to-end.",
+  "rca_of_the_issue": "During test authoring, I hit a race condition: pytest-xdist loadscope splits tests across workers by class; when TestTariffeSchema.test_put_tariffe_updates_new_fields (setting motore_labor_40_150hp=333) ran on worker gw1 in parallel with TestCalcolaCosti.test_mid_range_hp_40_150 (asserting manodopera=320) on gw0, the shared tariffe backend state caused the calc test to see the mutated value. Fix: consolidated all tariffe-related classes into one class TestTariffeAndMotore so loadscope pins the whole suite to a single worker, plus an autouse function-scope fixture resetting tariffe to defaults before every test. All 26 tests now pass consistently across parallel runs."
+}
