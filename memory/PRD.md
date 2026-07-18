@@ -31,7 +31,7 @@ Sono circa 200 posti barca"
 ## Implemented (2026-02-18)
 - ✅ Backend FastAPI con MongoDB (motor)
   - CRUD `/api/clienti`
-  - `/api/tariffe` GET/PUT
+  - `/api/tariffe` GET/PUT (con scaglioni motore HP e lunghezza)
   - `/api/calcola-costi` preview costi
   - `/api/stats` KPI dashboard + scadenze prossime 30gg
   - `/api/posti-barca` griglia 200 posti con stato
@@ -39,12 +39,16 @@ Sono circa 200 posti barca"
   - Validazioni: posto duplicato, range 1-200, tipo_sosta valido
 - ✅ Frontend React con react-router:
   - **Dashboard** — 4 KPI cards, occupancy progress, pie chart, bar chart, scadenze
-  - **Clienti** — tabella con ricerca, filtri sosta, export CSV/Excel, edit/delete
-  - **ClienteForm** — sheet form con auto-calcolo costi live via API, toggle override
-  - **Tariffe** — configurazione tariffe base con preview simulazione barca 10m
+  - **Clienti** — tabella con ricerca, filtri sosta, export CSV/Excel, PDF preventivo per riga, edit/delete
+  - **ClienteForm** — sheet form con auto-calcolo costi live via API, toggle override, storico lavori strutturato, download PDF
+  - **Tariffe** — configurazione con scaglioni (alaggio/varo per lunghezza, manodopera motore per HP, ricambi unitari) + simulazione live
   - **Posti Barca** — griglia 200 tile con popover dettagli cliente
-- ✅ Design tema "Portomare": Fraunces (display) + Chivo (body), palette Deep Ocean + Teak
-- ✅ Testing agent: 100% backend, 100% frontend
+
+## Iteration 2 (2026-02-18)
+- ✅ **PDF Preventivo/Fattura** — endpoint `/api/clienti/{id}/preventivo.pdf` con reportlab (tema navy/teak Portomare), include anagrafica, dettaglio costi, scadenze, storico lavori
+- ✅ **Storico lavori strutturato** — nuovo model `Lavoro`, CRUD `/api/lavori`, componente `LavoriSection` con dialog crea/modifica/elimina, stati pianificato/in_corso/completato
+- ✅ Bottone PDF in ogni riga della lista Clienti + nel form cliente
+- ✅ Testing: 17/17 backend, 11/11 frontend passati al 100%
 
 ## Backlog (P0 → P2)
 ### P1 — enhancements
