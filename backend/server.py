@@ -84,7 +84,7 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Token non valido")
 
 
-api_router = APIRouter(prefix="/api", dependencies=[Depends(get_current_user)])
+api_router = APIRouter(prefix="/api")
 
 
 # ---------- MODELS ----------

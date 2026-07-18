@@ -67,6 +67,23 @@ Sono circa 200 posti barca"
 - ✅ **Maggiorazione scafo sporco**: applicata automaticamente quando antivegetativa disattivata (€/metro)
 - ✅ Testing iter5: 47/47 backend, 100% frontend
 
+## Iteration 7 (2026-02-19)
+- ✅ **Autenticazione rimossa** su richiesta utente
+- Backend `/api/*` routes ora pubbliche (rimosso `Depends(get_current_user)` da api_router). Router `/api/auth/*` e seed admin ancora presenti nel codice ma non utilizzati.
+- Frontend: rimossi `ProtectedRoute`, `AuthProvider`, redirect a `/login`, bottoni logout in Home e sidebar. Ripristinato Layout originale.
+- App accessibile direttamente senza credenziali.
+- ✅ **Endpoint `/api/backup` GET** — esporta clienti, lavori, tariffe, cantiere in JSON scaricabile
+- ✅ **Endpoint `/api/restore` POST** — ripristina completamente da JSON, con validazione pydantic e overwrite totale
+- ✅ **Export PDF bulk**: nuovo endpoint `/api/export/preventivi.zip` che genera un archivio con un PDF per ogni cliente (filename `{posto}_{cognome}_{nome}.pdf` sanitizzato)
+- ✅ **Autenticazione JWT email/password**:
+  - Modello `users` in Mongo con bcrypt hash, seed admin automatico da `.env` (ADMIN_EMAIL/ADMIN_PASSWORD)
+  - Auth router: `/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/me`
+  - Cookie httpOnly `access_token` + supporto Bearer token
+  - Tutti gli endpoint `/api/*` protetti tramite dependency router-level
+  - Frontend: `AuthProvider` + `ProtectedRoute` + pagina `/login` + logout in sidebar e in Home
+  - Admin default: `admin@portomare.it` / `portomare2026` (aggiorna in Impostazioni consigliato)
+- ✅ Testing iter6: 73/73 backend, 7/7 frontend flows
+
 
 
 ## Backlog (P0 → P2)
