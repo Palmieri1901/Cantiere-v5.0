@@ -21,7 +21,7 @@ const empty = {
   nome: "", cognome: "", tipo_barca: "", lunghezza: 8,
   tipo_sosta: "dentro", posto_barca: "",
   telefono: "", email: "",
-  potenza_motore: 0, numero_candele: 4, numero_termostati: 1,
+  potenza_motore: 0, litri_olio_motore: 3, numero_candele: 4, numero_termostati: 1,
   antivegetativa_attiva: true, girante_attivo: true,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
@@ -60,6 +60,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         lunghezza: f.lunghezza,
         tipo_sosta: f.tipo_sosta,
         potenza_motore: f.potenza_motore || 0,
+        litri_olio_motore: f.litri_olio_motore || 0,
         numero_candele: f.numero_candele || 0,
         numero_termostati: f.numero_termostati || 0,
         antivegetativa_attiva: f.antivegetativa_attiva ? "true" : "false",
@@ -74,7 +75,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -93,6 +94,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       ...f,
       lunghezza: Number(f.lunghezza),
       potenza_motore: Number(f.potenza_motore) || 0,
+      litri_olio_motore: Number(f.litri_olio_motore) || 0,
       numero_candele: Number(f.numero_candele) || 0,
       numero_termostati: Number(f.numero_termostati) || 0,
       antivegetativa_attiva: !!f.antivegetativa_attiva,
@@ -190,9 +192,12 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
           {/* Motore */}
           <section>
             <div className="label-mini mb-3">Motore</div>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Potenza (HP)">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Field label="Cavalli (HP)">
                 <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
+              </Field>
+              <Field label="Litri olio motore">
+                <Input type="number" min="0" step="0.1" value={f.litri_olio_motore} onChange={(e) => update("litri_olio_motore", e.target.value)} data-testid="input-litri-olio" />
               </Field>
               <Field label="N° candele">
                 <Input type="number" min="0" step="1" value={f.numero_candele} onChange={(e) => update("numero_candele", e.target.value)} data-testid="input-numero-candele" />
@@ -202,7 +207,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               </Field>
             </div>
             <div className="text-[11px] text-muted-foreground mt-2">
-              Fasce manodopera: ≤40 HP · 40-150 HP · &gt;150 HP. I ricambi vengono moltiplicati per il numero indicato.
+              Fasce manodopera: ≤40 HP · 40-150 HP · &gt;150 HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
             </div>
 
             {/* Servizi opzionali */}
@@ -257,7 +262,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                   <BreakdownRow label="Manodopera" value={f.costo_manodopera_motore} />
                   <BreakdownRow label="Girante" value={ricambiDettaglio.girante} />
-                  <BreakdownRow label="Olio motore" value={ricambiDettaglio.olio_motore} />
+                  <BreakdownRow label={`Olio motore (${f.litri_olio_motore || 0}L)`} value={ricambiDettaglio.olio_motore} />
                   <BreakdownRow label="Filtro olio" value={ricambiDettaglio.filtro_olio} />
                   <BreakdownRow label={`Candele (${f.numero_candele || 0})`} value={ricambiDettaglio.candele} />
                   <BreakdownRow label={`Termostati (${f.numero_termostati || 0})`} value={ricambiDettaglio.termostati} />

@@ -50,7 +50,7 @@ class Tariffe(BaseModel):
     motore_labor_oltre_150hp: float = 550.0
     # Ricambi motore (costo unitario)
     costo_girante: float = 45.0
-    costo_olio_motore: float = 55.0
+    costo_olio_motore: float = 12.0  # € al litro
     costo_filtro_olio: float = 18.0
     costo_candela: float = 12.0
     costo_termostato: float = 35.0
@@ -99,7 +99,8 @@ class Cliente(BaseModel):
     telefono: Optional[str] = ""
     email: Optional[str] = ""
     # Motore
-    potenza_motore: float = 0.0  # HP
+    potenza_motore: float = 0.0  # HP (cavalli)
+    litri_olio_motore: float = 3.0  # capacità olio motore in litri
     numero_candele: int = 4
     numero_termostati: int = 1
     # Interruttori applicabilità
@@ -135,6 +136,7 @@ class ClienteCreate(BaseModel):
     telefono: Optional[str] = ""
     email: Optional[str] = ""
     potenza_motore: Optional[float] = 0.0
+    litri_olio_motore: Optional[float] = 3.0
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
     antivegetativa_attiva: Optional[bool] = True
@@ -208,13 +210,14 @@ def calcola_motore_labor(potenza_hp: float, t: Tariffe) -> float:
 
 
 def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,
-                    girante_attivo: bool = True) -> dict:
-    """Costo ricambi motore: girante, olio motore, filtro olio, candele, termostati, olio piede."""
+                    girante_attivo: bool = True, litri_olio_motore: float = 3.0) -> dict:
+    """Costo ricambi motore: girante, olio motore (× litri), filtro olio, candele, termostati, olio piede, anodi, ingrassaggio."""
     nc = int(numero_candele or 0)
     nt = int(numero_termostati or 0)
+    litri = float(litri_olio_motore or 0)
     return {
         "girante": round(t.costo_girante, 2) if girante_attivo else 0.0,
-        "olio_motore": round(t.costo_olio_motore, 2),
+        "olio_motore": round(litri * t.costo_olio_motore, 2),
         "filtro_olio": round(t.costo_filtro_olio, 2),
         "candele": round(nc * t.costo_candela, 2),
         "termostati": round(nt * t.costo_termostato, 2),
@@ -229,10 +232,11 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   potenza_motore: float = 0.0, numero_candele: int = 4,
                   numero_termostati: int = 1,
                   antivegetativa_attiva: bool = True,
-                  girante_attivo: bool = True) -> dict:
+                  girante_attivo: bool = True,
+                  litri_olio_motore: float = 3.0) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e motore."""
     manodopera = calcola_motore_labor(potenza_motore, t)
-    ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo)
+    ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore)
     ricambi_tot = round(sum(ricambi.values()), 2)
     motore_tot = round(manodopera + ricambi_tot, 2)
 
@@ -295,13 +299,14 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         numero_candele: int = 4,
                         numero_termostati: int = 1,
                         antivegetativa_attiva: bool = True,
-                        girante_attivo: bool = True):
+                        girante_attivo: bool = True,
+                        litri_olio_motore: float = 3.0):
     if tipo_sosta not in ("dentro", "fuori"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro' o 'fuori'")
     t = await get_tariffe_doc()
     return calcola_costi(lunghezza, tipo_sosta, t, potenza_motore,
                          numero_candele, numero_termostati,
-                         antivegetativa_attiva, girante_attivo)
+                         antivegetativa_attiva, girante_attivo, litri_olio_motore)
 
 
 # --- Clienti ---
@@ -338,6 +343,7 @@ async def create_cliente(payload: ClienteCreate):
         payload.numero_termostati or 1,
         bool(payload.antivegetativa_attiva if payload.antivegetativa_attiva is not None else True),
         bool(payload.girante_attivo if payload.girante_attivo is not None else True),
+        float(payload.litri_olio_motore if payload.litri_olio_motore is not None else 3.0),
     )
     # Rimuovi dettaglio non-modello prima di applicarlo
     ricambi_dettaglio = auto_costi.pop("ricambi_dettaglio", None)
@@ -380,6 +386,7 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         payload.numero_termostati or 1,
         bool(payload.antivegetativa_attiva if payload.antivegetativa_attiva is not None else True),
         bool(payload.girante_attivo if payload.girante_attivo is not None else True),
+        float(payload.litri_olio_motore if payload.litri_olio_motore is not None else 3.0),
     )
     auto_costi.pop("ricambi_dettaglio", None)
 
@@ -648,13 +655,14 @@ async def preventivo_pdf(cliente_id: str):
 
     elems.append(Paragraph("CLIENTE E IMBARCAZIONE", h2))
     potenza = doc.get('potenza_motore') or 0
+    litri_pdf = doc.get('litri_olio_motore') or 0
     info_tbl = Table([
         [Paragraph("Cliente", label), Paragraph("Contatti", label)],
         [Paragraph(f"<b>{doc.get('cognome','')} {doc.get('nome','')}</b>", val),
          Paragraph(f"{doc.get('telefono') or '—'}<br/>{doc.get('email') or '—'}", body)],
         [Spacer(1, 3*mm), Spacer(1, 3*mm)],
         [Paragraph("Imbarcazione", label), Paragraph("Sosta", label)],
-        [Paragraph(f"<b>{doc.get('tipo_barca','')}</b><br/><font color='#5B6478' size=9>Lunghezza: {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP</font>", body),
+        [Paragraph(f"<b>{doc.get('tipo_barca','')}</b><br/><font color='#5B6478' size=9>Lunghezza: {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP · Olio: {litri_pdf:g} L</font>", body),
          Paragraph(f"<b>{'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'A terra (fuori)'}</b><br/><font color='#5B6478' size=9>Posto barca: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
     ], colWidths=[87*mm, 87*mm])
     info_tbl.setStyle(TableStyle([
@@ -717,13 +725,14 @@ async def preventivo_pdf(cliente_id: str):
         nc = int(doc.get("numero_candele") or 0)
         nt = int(doc.get("numero_termostati") or 0)
         girante_attivo = bool(doc.get("girante_attivo", True))
+        litri = float(doc.get("litri_olio_motore") or 0)
         ric_rows = [
             ["Manodopera motore", "", _euro(manodopera)],
         ]
         if girante_attivo:
             ric_rows.append(["Girante", "1", _euro(t_current.costo_girante)])
         ric_rows.extend([
-            ["Olio motore", "1", _euro(t_current.costo_olio_motore)],
+            ["Olio motore", f"{litri:g} L", _euro(litri * t_current.costo_olio_motore)],
             ["Filtro olio", "1", _euro(t_current.costo_filtro_olio)],
             ["Candele", str(nc), _euro(nc * t_current.costo_candela)],
             ["Termostato", str(nt), _euro(nt * t_current.costo_termostato)],

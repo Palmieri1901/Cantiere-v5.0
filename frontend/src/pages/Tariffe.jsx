@@ -49,7 +49,7 @@ const GROUPS = [
     icon: Cog,
     fields: [
       { key: "costo_girante", label: "Girante", desc: "Costo unitario" },
-      { key: "costo_olio_motore", label: "Olio motore", desc: "Costo unitario" },
+      { key: "costo_olio_motore", label: "Olio motore", desc: "€ / litro (× litri motore cliente)" },
       { key: "costo_filtro_olio", label: "Filtro olio", desc: "Costo unitario" },
       { key: "costo_candela", label: "Candela", desc: "€ per candela (× numero candele)" },
       { key: "costo_termostato", label: "Termostato", desc: "€ per termostato (× numero termostati)" },
@@ -87,14 +87,14 @@ export default function Tariffe() {
 
   if (!t) return <div className="p-8 text-muted-foreground">Caricamento…</div>;
 
-  // Simulazione barca 8m, 120 HP, 4 candele, 1 termostato, sosta fuori
-  const L = 8, HP = 120, NC = 4, NT = 1;
+  // Simulazione barca 8m, 120 HP, 4L olio, 4 candele, 1 termostato, sosta fuori
+  const L = 8, HP = 120, LITRI = 4, NC = 4, NT = 1;
   const alaggio = L <= 5 ? t.alaggio_fino_5m : L * t.alaggio_oltre_5m_per_metro;
   const varo = L <= 5 ? t.varo_fino_5m : L * t.varo_oltre_5m_per_metro;
   const labor = HP <= 40 ? t.motore_labor_fino_40hp
     : HP <= 150 ? t.motore_labor_40_150hp
     : t.motore_labor_oltre_150hp;
-  const ricambi = Number(t.costo_girante) + Number(t.costo_olio_motore) + Number(t.costo_filtro_olio)
+  const ricambi = Number(t.costo_girante) + LITRI * Number(t.costo_olio_motore) + Number(t.costo_filtro_olio)
     + NC * Number(t.costo_candela) + NT * Number(t.costo_termostato) + Number(t.costo_olio_piede)
     + Number(t.costo_anodi_interni) + Number(t.costo_anodi_esterni) + Number(t.costo_ingrassaggio);
   const motore = Number(labor) + ricambi;
@@ -169,7 +169,7 @@ export default function Tariffe() {
         <Card className="p-6 h-fit sticky top-6 bg-secondary/40" data-testid="preview-tariffe">
           <div className="label-mini mb-3">Simulazione</div>
           <h3 className="font-display text-lg font-semibold mb-1">Barca 8m · 120 HP</h3>
-          <p className="text-xs text-muted-foreground mb-5">Sosta fuori, 4 candele, 1 termostato</p>
+          <p className="text-xs text-muted-foreground mb-5">Sosta fuori, 4L olio motore, 4 candele, 1 termostato</p>
 
           <div className="space-y-3 text-sm">
             <PreviewRow label="Sosta fuori" value={L * t.sosta_fuori_per_metro} />
