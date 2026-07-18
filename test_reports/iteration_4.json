@@ -1,0 +1,58 @@
+{
+  "summary": "Iteration 4 validates the new Portomare features: (a) 3 new ricambi fields costo_anodi_interni=40, costo_anodi_esterni=60, costo_ingrassaggio=30 in Tariffe (default + PUT persistence); (b) calcola-costi now returns 9-item ricambi_dettaglio with costo_ricambi_totale=356 and costo_manutenzione_motore=676 for the reference scenario (L=8, fuori, 120 HP, 4 candele, 1 termostato); (c) Two toggle switches antivegetativa_attiva & girante_attivo work as expected (default true, off = zero cost). Frontend ClienteForm shows both switches with data-testid switch-antivegetativa/switch-girante, ricambi-breakdown displays all 10 rows (Manodopera + 9 ricambi). Relabel 'Sosta al coperto' verified in Tariffe, select-tipo-sosta ('Al coperto (dentro)' / 'A terra (fuori)'), dashboard legend ('Al coperto') and PDF ('Al coperto'). Backend: 31/31 tests pass (14 iter4 + 17 regression). Frontend: all features working, no bugs.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "passed_tests_backend": [
+    "GET /api/tariffe returns costo_anodi_interni=40, costo_anodi_esterni=60, costo_ingrassaggio=30",
+    "PUT /api/tariffe with new fields (anodi_interni=50, ingrassaggio=35) persists; other new fields untouched",
+    "GET /api/calcola-costi L=8 fuori 120HP 4/1 -> ricambi_dettaglio has all 9 keys, costo_ricambi_totale=356, costo_manodopera_motore=320, costo_manutenzione_motore=676",
+    "GET /api/calcola-costi antivegetativa_attiva=false -> costo_antivegetativa=0; ricambi unchanged",
+    "GET /api/calcola-costi girante_attivo=false -> ricambi.girante=0, costo_ricambi_totale drops by 45 (356->311)",
+    "GET /api/calcola-costi both toggles off -> antivegetativa=0 and ricambi=311",
+    "POST /api/clienti with antivegetativa_attiva:false, girante_attivo:false persists both flags + computes costs correctly (0 and 311)",
+    "PUT /api/clienti toggles on/off and costs recompute (antivegetativa 0<->480, ricambi 311<->356)",
+    "GET /api/clienti/{id}/preventivo.pdf returns valid PDF (>3000 bytes) with new ricambi rows",
+    "GET PDF with girante_attivo=false still returns valid PDF",
+    "Regression: small boat (L=4) forfait alaggio/varo=90, low HP manodopera=180",
+    "Regression: big boat (L=10) alaggio=250, high HP=200 manodopera=550",
+    "Regression: 0 HP -> manodopera=0; motore_tot == ricambi_totale",
+    "Regression: 17 iteration-2/3 tests (Lavori CRUD, PDF, root/stats/clienti/posti-barca/export)"
+  ],
+  "passed_tests_frontend": [
+    "Tariffe page: Ricambi motore group contains 9 rows (Girante, Olio motore, Filtro olio, Candela, Termostato, Olio piede, Anodi interni, Anodi esterni, Ingrassaggio) - all editable with data-testid input-{key}",
+    "Tariffe page: 'Sosta al coperto' label rendered for sosta_dentro_per_metro (relabel verified)",
+    "Tariffe simulation card: Ricambi=356,00 €, Motore totale=676,00 €, Totale annuale=2876,00 € (matches backend math exactly)",
+    "Clienti page select-tipo-sosta options: ['Al coperto (dentro)', 'A terra (fuori)'] (relabel verified)",
+    "Table badges: 'Coperto' badge shown for tipo_sosta='dentro' (verified via screenshot)",
+    "Dashboard chart legend: 'Al coperto: 1, Sosta Fuori: 1' (relabel verified)",
+    "ClienteForm Motore section: switch-antivegetativa & switch-girante both present, default data-state='checked' (true)",
+    "ClienteForm auto-recalc: both ON L=8 120HP -> totale-costi=2876,00 €",
+    "ClienteForm toggle antivegetativa OFF -> totale-costi=2396,00 € (-480 antivegetativa)",
+    "ClienteForm toggle both OFF -> totale-costi=2351,00 € (additional -45 girante)",
+    "ricambi-breakdown block shows 10 rows including new Anodi interni, Anodi esterni, Ingrassaggio; Girante row shows 0,00 € when switch-girante OFF"
+  ],
+  "failed": [],
+  "test_report_links": [
+    "/app/backend/tests/test_tariffe_motore.py",
+    "/app/backend/tests/test_lavori_pdf.py",
+    "/app/test_reports/pytest/pytest_iter4.xml"
+  ],
+  "critical_code_review_comments": [
+    "server.py grew to 843 lines - well past the 700-line threshold. Recommend splitting into routers/tariffe.py, routers/clienti.py, routers/lavori.py, services/pdf_generator.py, services/calcoli.py, models/*.py to reduce maintenance risk.",
+    "calcola_ricambi still returns anodi/ingrassaggio even when potenza_motore=0 (backend gates only manodopera on HP). A 'no engine' cliente still gets 253€ of ricambi baked into costo_manutenzione_motore. Consider gating the entire ricambi block on potenza_motore>0 to match the frontend behavior (which hides the breakdown when HP=0).",
+    "girante_attivo toggles the ricambio girante to 0, but antivegetativa_attiva/girante_attivo have NO effect on cliente storage of override_costi=True workflow - override still writes user-entered values as-is. Documentation of the interaction between override_costi and toggles would help.",
+    "ClienteForm.jsx SheetFooter sticky bottom-0 still doesn't clamp to viewport in tall forms (LavoriSection present). Pre-existing issue from iter3, not regressed by iter4 changes.",
+    "PDF preventivo lists Anodi interni/esterni/Ingrassaggio always (regardless of engine HP) - matches backend but may print unnecessary rows for boats with no engine. Consider gating ric_tbl rows on potenza_motore>0.",
+    "Frontend Tariffe simulation math (line 97-99) duplicates the same calculation logic as backend calcola_ricambi. Would be cleaner to call /api/calcola-costi from Tariffe page too, so a single source of truth exists."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_tariffe_motore.py (updated with iteration-4 tests + new-field defaults)"
+  ],
+  "success_rate": {"backend": "100% (31/31)", "frontend": "100% functional"},
+  "test_credentials": "n/a (no auth in this app)",
+  "seed_data_creation": "During pytest: created and deleted TEST_Toggle/TEST_Off, TEST_Upd/TEST_Toggle, TEST_Pdf/TEST_Iter4, TEST_Pdf2/TEST_NoGirante clienti with lavori. All cleaned in finally blocks. UI test created no data (annulla before save).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run backend tests via `cd /app && python -m pytest backend/tests/ -v` (uses xdist loadscope). test_tariffe_motore.py DEFAULTS dict now includes costo_anodi_interni=40/costo_anodi_esterni=60/costo_ingrassaggio=30 - update these if defaults change again. All ricambi_totale expectations must include +130 (40+60+30) baseline. Frontend viewport 1920x1200. All new fields (costo_anodi_interni, costo_anodi_esterni, costo_ingrassaggio + antivegetativa_attiva/girante_attivo booleans on Cliente) are wired end-to-end: Tariffe -> calcola-costi -> Cliente -> PDF."
+}

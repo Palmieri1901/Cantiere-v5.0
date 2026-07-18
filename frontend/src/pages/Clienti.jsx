@@ -115,7 +115,7 @@ export default function Clienti() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tutti i tipi</SelectItem>
-              <SelectItem value="dentro">Sosta dentro</SelectItem>
+              <SelectItem value="dentro">Sosta al coperto</SelectItem>
               <SelectItem value="fuori">Sosta fuori</SelectItem>
             </SelectContent>
           </Select>
@@ -166,7 +166,7 @@ export default function Clienti() {
                         ? "border-primary/50 text-primary bg-primary/5"
                         : "border-chart-2/50"}
                     >
-                      {c.tipo_sosta === "dentro" ? "Dentro" : "Fuori"}
+                      {c.tipo_sosta === "dentro" ? "Coperto" : "Fuori"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(totale(c))}</TableCell>

@@ -25,7 +25,7 @@ export default function Dashboard() {
 
   const occupancyPct = Math.round((stats.posti_occupati / stats.posti_totali) * 100);
   const pieData = [
-    { name: "Sosta Dentro", value: stats.sosta_dentro },
+    { name: "Al coperto", value: stats.sosta_dentro },
     { name: "Sosta Fuori", value: stats.sosta_fuori },
     { name: "Liberi", value: stats.posti_liberi },
   ];

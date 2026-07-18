@@ -22,6 +22,7 @@ const empty = {
   tipo_sosta: "dentro", posto_barca: "",
   telefono: "", email: "",
   potenza_motore: 0, numero_candele: 4, numero_termostati: 1,
+  antivegetativa_attiva: true, girante_attivo: true,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
   costo_varo: 0, costo_antivegetativa: 0, costo_manutenzione_motore: 0,
@@ -61,6 +62,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         potenza_motore: f.potenza_motore || 0,
         numero_candele: f.numero_candele || 0,
         numero_termostati: f.numero_termostati || 0,
+        antivegetativa_attiva: f.antivegetativa_attiva ? "true" : "false",
+        girante_attivo: f.girante_attivo ? "true" : "false",
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -71,7 +74,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.numero_candele, f.numero_termostati, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -92,6 +95,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       potenza_motore: Number(f.potenza_motore) || 0,
       numero_candele: Number(f.numero_candele) || 0,
       numero_termostati: Number(f.numero_termostati) || 0,
+      antivegetativa_attiva: !!f.antivegetativa_attiva,
+      girante_attivo: !!f.girante_attivo,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -169,7 +174,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 <Select value={f.tipo_sosta} onValueChange={(v) => update("tipo_sosta", v)}>
                   <SelectTrigger data-testid="select-tipo-sosta"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dentro">In acqua (dentro)</SelectItem>
+                    <SelectItem value="dentro">Al coperto (dentro)</SelectItem>
                     <SelectItem value="fuori">A terra (fuori)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -198,6 +203,24 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
             </div>
             <div className="text-[11px] text-muted-foreground mt-2">
               Fasce manodopera: ≤40 HP · 40-150 HP · &gt;150 HP. I ricambi vengono moltiplicati per il numero indicato.
+            </div>
+
+            {/* Servizi opzionali */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <ToggleRow
+                label="Antivegetativa"
+                description="Applica il costo antivegetativa"
+                checked={!!f.antivegetativa_attiva}
+                onChange={(v) => update("antivegetativa_attiva", v)}
+                testId="switch-antivegetativa"
+              />
+              <ToggleRow
+                label="Sostituzione girante"
+                description="Includi ricambio girante"
+                checked={!!f.girante_attivo}
+                onChange={(v) => update("girante_attivo", v)}
+                testId="switch-girante"
+              />
             </div>
           </section>
 
@@ -239,6 +262,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                   <BreakdownRow label={`Candele (${f.numero_candele || 0})`} value={ricambiDettaglio.candele} />
                   <BreakdownRow label={`Termostati (${f.numero_termostati || 0})`} value={ricambiDettaglio.termostati} />
                   <BreakdownRow label="Olio piede" value={ricambiDettaglio.olio_piede} />
+                  <BreakdownRow label="Anodi interni" value={ricambiDettaglio.anodi_interni} />
+                  <BreakdownRow label="Anodi esterni" value={ricambiDettaglio.anodi_esterni} />
+                  <BreakdownRow label="Ingrassaggio" value={ricambiDettaglio.ingrassaggio} />
                 </div>
               </div>
             )}
@@ -337,4 +363,17 @@ function BreakdownRow({ label, value }) {
     </div>
   );
 }
+
+function ToggleRow({ label, description, checked, onChange, testId }) {
+  return (
+    <div className="flex items-center justify-between gap-2 p-3 rounded-md border border-border bg-muted/30">
+      <div className="min-w-0">
+        <Label className="text-sm font-medium">{label}</Label>
+        <p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} data-testid={testId} />
+    </div>
+  );
+}
+
 

@@ -55,6 +55,9 @@ class Tariffe(BaseModel):
     costo_candela: float = 12.0
     costo_termostato: float = 35.0
     costo_olio_piede: float = 25.0
+    costo_anodi_interni: float = 40.0
+    costo_anodi_esterni: float = 60.0
+    costo_ingrassaggio: float = 30.0
     # Sosta
     sosta_dentro_per_metro: float = 180.0
     sosta_fuori_per_metro: float = 120.0
@@ -77,6 +80,9 @@ class TariffeUpdate(BaseModel):
     costo_candela: Optional[float] = None
     costo_termostato: Optional[float] = None
     costo_olio_piede: Optional[float] = None
+    costo_anodi_interni: Optional[float] = None
+    costo_anodi_esterni: Optional[float] = None
+    costo_ingrassaggio: Optional[float] = None
     sosta_dentro_per_metro: Optional[float] = None
     sosta_fuori_per_metro: Optional[float] = None
 
@@ -96,6 +102,9 @@ class Cliente(BaseModel):
     potenza_motore: float = 0.0  # HP
     numero_candele: int = 4
     numero_termostati: int = 1
+    # Interruttori applicabilità
+    antivegetativa_attiva: bool = True
+    girante_attivo: bool = True
     # Costi (auto o manuali)
     costo_sosta: float = 0.0
     costo_copertura: float = 0.0
@@ -128,6 +137,8 @@ class ClienteCreate(BaseModel):
     potenza_motore: Optional[float] = 0.0
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
+    antivegetativa_attiva: Optional[bool] = True
+    girante_attivo: Optional[bool] = True
     costo_sosta: Optional[float] = None
     costo_copertura: Optional[float] = None
     costo_alaggio: Optional[float] = None
@@ -196,31 +207,39 @@ def calcola_motore_labor(potenza_hp: float, t: Tariffe) -> float:
     return round(t.motore_labor_oltre_150hp, 2)
 
 
-def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe) -> dict:
+def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,
+                    girante_attivo: bool = True) -> dict:
     """Costo ricambi motore: girante, olio motore, filtro olio, candele, termostati, olio piede."""
     nc = int(numero_candele or 0)
     nt = int(numero_termostati or 0)
     return {
-        "girante": round(t.costo_girante, 2),
+        "girante": round(t.costo_girante, 2) if girante_attivo else 0.0,
         "olio_motore": round(t.costo_olio_motore, 2),
         "filtro_olio": round(t.costo_filtro_olio, 2),
         "candele": round(nc * t.costo_candela, 2),
         "termostati": round(nt * t.costo_termostato, 2),
         "olio_piede": round(t.costo_olio_piede, 2),
+        "anodi_interni": round(t.costo_anodi_interni, 2),
+        "anodi_esterni": round(t.costo_anodi_esterni, 2),
+        "ingrassaggio": round(t.costo_ingrassaggio, 2),
     }
 
 
 def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   potenza_motore: float = 0.0, numero_candele: int = 4,
-                  numero_termostati: int = 1) -> dict:
+                  numero_termostati: int = 1,
+                  antivegetativa_attiva: bool = True,
+                  girante_attivo: bool = True) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e motore."""
     manodopera = calcola_motore_labor(potenza_motore, t)
-    ricambi = calcola_ricambi(numero_candele, numero_termostati, t)
+    ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo)
     ricambi_tot = round(sum(ricambi.values()), 2)
     motore_tot = round(manodopera + ricambi_tot, 2)
 
+    antiveg = round(lunghezza * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
+
     base = {
-        "costo_antivegetativa": round(lunghezza * t.antivegetativa_per_metro, 2),
+        "costo_antivegetativa": antiveg,
         "costo_manutenzione_motore": motore_tot,
         "costo_manodopera_motore": manodopera,
         "costo_ricambi_totale": ricambi_tot,
@@ -274,11 +293,15 @@ async def update_tariffe(payload: TariffeUpdate):
 async def preview_costi(lunghezza: float, tipo_sosta: str,
                         potenza_motore: float = 0.0,
                         numero_candele: int = 4,
-                        numero_termostati: int = 1):
+                        numero_termostati: int = 1,
+                        antivegetativa_attiva: bool = True,
+                        girante_attivo: bool = True):
     if tipo_sosta not in ("dentro", "fuori"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro' o 'fuori'")
     t = await get_tariffe_doc()
-    return calcola_costi(lunghezza, tipo_sosta, t, potenza_motore, numero_candele, numero_termostati)
+    return calcola_costi(lunghezza, tipo_sosta, t, potenza_motore,
+                         numero_candele, numero_termostati,
+                         antivegetativa_attiva, girante_attivo)
 
 
 # --- Clienti ---
@@ -313,6 +336,8 @@ async def create_cliente(payload: ClienteCreate):
         payload.potenza_motore or 0,
         payload.numero_candele or 4,
         payload.numero_termostati or 1,
+        bool(payload.antivegetativa_attiva if payload.antivegetativa_attiva is not None else True),
+        bool(payload.girante_attivo if payload.girante_attivo is not None else True),
     )
     # Rimuovi dettaglio non-modello prima di applicarlo
     ricambi_dettaglio = auto_costi.pop("ricambi_dettaglio", None)
@@ -353,6 +378,8 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         payload.potenza_motore or 0,
         payload.numero_candele or 4,
         payload.numero_termostati or 1,
+        bool(payload.antivegetativa_attiva if payload.antivegetativa_attiva is not None else True),
+        bool(payload.girante_attivo if payload.girante_attivo is not None else True),
     )
     auto_costi.pop("ricambi_dettaglio", None)
 
@@ -628,7 +655,7 @@ async def preventivo_pdf(cliente_id: str):
         [Spacer(1, 3*mm), Spacer(1, 3*mm)],
         [Paragraph("Imbarcazione", label), Paragraph("Sosta", label)],
         [Paragraph(f"<b>{doc.get('tipo_barca','')}</b><br/><font color='#5B6478' size=9>Lunghezza: {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP</font>", body),
-         Paragraph(f"<b>{'In acqua (dentro)' if doc.get('tipo_sosta')=='dentro' else 'A terra (fuori)'}</b><br/><font color='#5B6478' size=9>Posto barca: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
+         Paragraph(f"<b>{'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'A terra (fuori)'}</b><br/><font color='#5B6478' size=9>Posto barca: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
     ], colWidths=[87*mm, 87*mm])
     info_tbl.setStyle(TableStyle([
         ("VALIGN", (0,0), (-1,-1), "TOP"),
@@ -689,15 +716,22 @@ async def preventivo_pdf(cliente_id: str):
         t_current = await get_tariffe_doc()
         nc = int(doc.get("numero_candele") or 0)
         nt = int(doc.get("numero_termostati") or 0)
+        girante_attivo = bool(doc.get("girante_attivo", True))
         ric_rows = [
             ["Manodopera motore", "", _euro(manodopera)],
-            ["Girante", "1", _euro(t_current.costo_girante)],
+        ]
+        if girante_attivo:
+            ric_rows.append(["Girante", "1", _euro(t_current.costo_girante)])
+        ric_rows.extend([
             ["Olio motore", "1", _euro(t_current.costo_olio_motore)],
             ["Filtro olio", "1", _euro(t_current.costo_filtro_olio)],
             ["Candele", str(nc), _euro(nc * t_current.costo_candela)],
             ["Termostato", str(nt), _euro(nt * t_current.costo_termostato)],
             ["Olio piede", "1", _euro(t_current.costo_olio_piede)],
-        ]
+            ["Anodi interni", "1", _euro(t_current.costo_anodi_interni)],
+            ["Anodi esterni", "1", _euro(t_current.costo_anodi_esterni)],
+            ["Ingrassaggio", "1", _euro(t_current.costo_ingrassaggio)],
+        ])
         ric_data = [["VOCE", "Q.TÀ", "IMPORTO"]] + ric_rows
         ric_tbl = Table(ric_data, colWidths=[104*mm, 20*mm, 50*mm])
         ric_tbl.setStyle(TableStyle([

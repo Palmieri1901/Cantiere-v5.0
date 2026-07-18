@@ -13,7 +13,7 @@ const GROUPS = [
     title: "Sosta",
     icon: Anchor,
     fields: [
-      { key: "sosta_dentro_per_metro", label: "Sosta in acqua (dentro)", desc: "€ / metro / anno" },
+      { key: "sosta_dentro_per_metro", label: "Sosta al coperto", desc: "€ / metro / anno (posto coperto/dentro)" },
       { key: "sosta_fuori_per_metro", label: "Sosta a terra (fuori)", desc: "€ / metro / anno" },
     ],
   },
@@ -54,6 +54,9 @@ const GROUPS = [
       { key: "costo_candela", label: "Candela", desc: "€ per candela (× numero candele)" },
       { key: "costo_termostato", label: "Termostato", desc: "€ per termostato (× numero termostati)" },
       { key: "costo_olio_piede", label: "Olio piede", desc: "Costo unitario" },
+      { key: "costo_anodi_interni", label: "Anodi interni", desc: "Costo unitario" },
+      { key: "costo_anodi_esterni", label: "Anodi esterni", desc: "Costo unitario" },
+      { key: "costo_ingrassaggio", label: "Ingrassaggio", desc: "Costo unitario" },
     ],
   },
 ];
@@ -92,7 +95,8 @@ export default function Tariffe() {
     : HP <= 150 ? t.motore_labor_40_150hp
     : t.motore_labor_oltre_150hp;
   const ricambi = Number(t.costo_girante) + Number(t.costo_olio_motore) + Number(t.costo_filtro_olio)
-    + NC * Number(t.costo_candela) + NT * Number(t.costo_termostato) + Number(t.costo_olio_piede);
+    + NC * Number(t.costo_candela) + NT * Number(t.costo_termostato) + Number(t.costo_olio_piede)
+    + Number(t.costo_anodi_interni) + Number(t.costo_anodi_esterni) + Number(t.costo_ingrassaggio);
   const motore = Number(labor) + ricambi;
   const totale = L * Number(t.sosta_fuori_per_metro) + L * Number(t.copertura_per_metro)
     + alaggio + varo + L * Number(t.antivegetativa_per_metro) + motore;

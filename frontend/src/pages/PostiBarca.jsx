@@ -37,10 +37,10 @@ export default function PostiBarca() {
         <Stat label="Totali" value={200} />
         <Stat label="Occupati" value={occupati} className="text-primary" />
         <Stat label="Liberi" value={200 - occupati} />
-        <Stat label="In acqua" value={dentro} />
+        <Stat label="Al coperto" value={dentro} />
         <Stat label="A terra" value={fuori} />
         <div className="flex items-center gap-4 ml-auto text-xs">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-primary" />Dentro</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-primary" />Coperto</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-chart-2" />Fuori</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm border border-border bg-background" />Libero</span>
         </div>
@@ -79,7 +79,7 @@ export default function PostiBarca() {
                           variant="outline"
                         >
                           {p.tipo_sosta === "dentro" ? (
-                            <><Waves className="w-3 h-3 mr-1" /> Sosta in acqua</>
+                            <><Waves className="w-3 h-3 mr-1" /> Sosta al coperto</>
                           ) : (
                             <><Anchor className="w-3 h-3 mr-1" /> Sosta a terra</>
                           )}
