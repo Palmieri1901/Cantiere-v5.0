@@ -50,6 +50,15 @@ Sono circa 200 posti barca"
 - ✅ Bottone PDF in ogni riga della lista Clienti + nel form cliente
 - ✅ Testing: 17/17 backend, 11/11 frontend passati al 100%
 
+## Iteration 3 (2026-02-19)
+- ✅ **Tariffe a scaglioni**: alaggio/varo forfait ≤5m vs oltre 5m per metro
+- ✅ **Manodopera motore per potenza HP**: ≤40 HP · 40-150 HP · >150 HP
+- ✅ **Ricambi motore configurabili**: girante, olio motore, filtro olio, candela (× n° candele), termostato (× n° termostati), olio piede, anodi interni, anodi esterni, ingrassaggio
+- ✅ **Interruttori nella scheda cliente**: `antivegetativa_attiva` e `girante_attivo` (default ON), disattivabili per singolo cliente
+- ✅ **Rename UI "Sosta al coperto"**: label più chiaro per posto barca dentro (valore DB `dentro` conservato)
+- ✅ Testing iter4: 31/31 backend, 100% frontend
+
+
 ## Backlog (P0 → P2)
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)
