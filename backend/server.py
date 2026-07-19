@@ -1252,6 +1252,88 @@ async def _startup():
     await seed_admin()
 
 
+# ---------- REPORT INCASSI ----------
+
+@api_router.get("/report/incassi")
+async def report_incassi():
+    """Sommatorie per categoria su tutti i clienti."""
+    docs = await db.clienti.find({}, {"_id": 0}).to_list(10000)
+
+    def s(key):
+        return round(sum(float(d.get(key) or 0) for d in docs), 2)
+
+    incasso_sosta = s("costo_sosta")
+    incasso_movimentazione = s("costo_movimentazione")
+    incasso_taccaggio = s("costo_taccaggio")
+    incasso_alaggio = s("costo_alaggio")
+    incasso_varo = s("costo_varo")
+    incasso_coperture = s("costo_copertura")
+    incasso_antivegetativa = s("costo_antivegetativa")
+    incasso_scafo_sporco = s("costo_scafo_sporco")
+    incasso_lavaggio_inizio = s("costo_lavaggio_inizio")
+    incasso_lavaggio_fine = s("costo_lavaggio_fine")
+    incasso_motore = s("costo_manutenzione_motore")
+
+    # Suddivisione motore
+    incasso_manodopera = s("costo_manodopera_motore")
+    incasso_ricambi = s("costo_ricambi_totale")
+
+    totale = round(
+        incasso_sosta + incasso_movimentazione + incasso_taccaggio +
+        incasso_alaggio + incasso_varo + incasso_coperture +
+        incasso_antivegetativa + incasso_scafo_sporco +
+        incasso_lavaggio_inizio + incasso_lavaggio_fine +
+        incasso_motore, 2
+    )
+
+    # Ripartizione per tipo sosta
+    per_tipo_sosta = {"dentro": 0.0, "fuori": 0.0, "fuori_sede": 0.0}
+    for d in docs:
+        tipo = d.get("tipo_sosta")
+        if tipo in per_tipo_sosta:
+            client_tot = sum(float(d.get(k) or 0) for k in (
+                "costo_sosta","costo_movimentazione","costo_taccaggio",
+                "costo_alaggio","costo_varo","costo_copertura",
+                "costo_antivegetativa","costo_scafo_sporco",
+                "costo_lavaggio_inizio","costo_lavaggio_fine",
+                "costo_manutenzione_motore"
+            ))
+            per_tipo_sosta[tipo] = round(per_tipo_sosta[tipo] + client_tot, 2)
+
+    return {
+        "totale_clienti": len(docs),
+        "totale": totale,
+        "categorie": {
+            "sosta": incasso_sosta,
+            "movimentazione_taccaggio": round(incasso_movimentazione + incasso_taccaggio, 2),
+            "alaggio_varo": round(incasso_alaggio + incasso_varo, 2),
+            "coperture": incasso_coperture,
+            "antivegetativa": incasso_antivegetativa,
+            "scafo_sporco": incasso_scafo_sporco,
+            "lavaggi": round(incasso_lavaggio_inizio + incasso_lavaggio_fine, 2),
+            "manutenzione_motore": incasso_motore,
+        },
+        "motore_dettaglio": {
+            "manodopera": incasso_manodopera,
+            "ricambi": incasso_ricambi,
+        },
+        "sosta_dettaglio": {
+            "sosta": incasso_sosta,
+            "movimentazione": incasso_movimentazione,
+            "taccaggio": incasso_taccaggio,
+        },
+        "alaggio_varo_dettaglio": {
+            "alaggio": incasso_alaggio,
+            "varo": incasso_varo,
+        },
+        "lavaggi_dettaglio": {
+            "inizio_stagione": incasso_lavaggio_inizio,
+            "fine_stagione": incasso_lavaggio_fine,
+        },
+        "per_tipo_sosta": per_tipo_sosta,
+    }
+
+
 app.include_router(api_router)
 
 app.add_middleware(

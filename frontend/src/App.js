@@ -8,6 +8,7 @@ import Clienti from "@/pages/Clienti";
 import Tariffe from "@/pages/Tariffe";
 import PostiBarca from "@/pages/PostiBarca";
 import Impostazioni from "@/pages/Impostazioni";
+import Report from "@/pages/Report";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/posti-barca" element={<PostiBarca />} />
             <Route path="/tariffe" element={<Tariffe />} />
             <Route path="/impostazioni" element={<Impostazioni />} />
+            <Route path="/report" element={<Report />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
