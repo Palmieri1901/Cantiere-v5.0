@@ -67,6 +67,15 @@ Sono circa 200 posti barca"
 - ✅ **Maggiorazione scafo sporco**: applicata automaticamente quando antivegetativa disattivata (€/metro)
 - ✅ Testing iter5: 47/47 backend, 100% frontend
 
+## Iteration 8 (2026-02-19)
+- ✅ **Multi-anno**: ogni cliente e lavoro ora ha campo `anno` (default anno solare corrente)
+- ✅ **Endpoint `/api/anni`**: lista anni con conteggio clienti · POST `/api/anni/apri` per creare nuovo anno (con opzione `duplica_da` che copia clienti e ricalcola costi con tariffe correnti) · DELETE `/api/anni/{anno}` per cancellare completamente un anno
+- ✅ Tutti i GET filtrabili per anno: `/clienti`, `/stats`, `/posti-barca`, `/report/incassi` accettano `?anno=X`
+- ✅ **Vincolo posto barca** ora unico **per anno** (posto #42 nel 2026 e posto #42 nel 2027 sono validi)
+- ✅ **YearContext + YearSelector**: dropdown in sidebar con lista anni + conteggio clienti + azioni "Apri nuovo anno" (con conferma e opzione duplica) e "Elimina anno" (con warning). Selezione salvata in localStorage
+- ✅ Tutte le pagine (Clienti, Dashboard, Report, PostiBarca) ricaricano dati al cambio anno
+- ✅ Testing iter8: 21/21 backend + frontend flows verificati
+
 ## Iteration 7 (2026-02-19)
 - ✅ **Autenticazione rimossa** su richiesta utente
 - Backend `/api/*` routes ora pubbliche (rimosso `Depends(get_current_user)` da api_router). Router `/api/auth/*` e seed admin ancora presenti nel codice ma non utilizzati.

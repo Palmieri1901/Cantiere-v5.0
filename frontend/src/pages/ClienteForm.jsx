@@ -100,6 +100,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
     setSaving(true);
     const payload = {
       ...f,
+      anno: cliente?.anno || year,
       lunghezza: Number(f.lunghezza),
       potenza_motore: Number(f.potenza_motore) || 0,
       litri_olio_motore: Number(f.litri_olio_motore) || 0,
