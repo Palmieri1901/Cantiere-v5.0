@@ -123,6 +123,12 @@ Sono circa 200 posti barca"
 - ✅ Backend: 10/10 pytest cases in `/app/backend/tests/test_iter10_alpha_and_extra.py`
 - ✅ Frontend self-test: ordine alfabetico visibile (Bianchi→Catra→Figo→Rossi→Sandra→Verdi), sezione Lavorazioni extra funzionante (subtotale 730€, totale annuale 2427€), rimozione voce OK
 
+## Iter11 (2026-02-20) — Manodopera motore a 4 fasce
+- ✅ Tariffe: aggiunta nuova fascia **2-15 HP** (default 90 €) accanto alle esistenti 16-40 / 41-150 / oltre 150 HP.
+  - Backend: nuovo campo `motore_labor_2_15hp` in `Tariffe`/`TariffeUpdate`, logica `calcola_motore_labor` estesa a 4 scaglioni.
+  - Frontend: pagina Tariffe con nuova riga "Da 2 a 15 HP", label aggiornati "Da 16 a 40 HP" / "Da 41 a 150 HP" / "Oltre 150 HP". Simulazione preview aggiornata. Hint fasce in ClienteForm aggiornato.
+  - Verificato: HP=10 → €90 · HP=30 → €180 · HP=100 → €320 · HP=300 → €550. PUT del solo `motore_labor_2_15hp` non resetta le altre tariffe.
+
 ## Backlog (P0 → P2)
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)

@@ -286,7 +286,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               </Field>
             </div>
             <div className="text-[11px] text-muted-foreground mt-2">
-              Fasce manodopera: ≤40 HP · 40-150 HP · &gt;150 HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
+              Fasce manodopera: 2-15 HP · 16-40 HP · 41-150 HP · &gt;150 HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
             </div>
 
             {/* Servizi opzionali */}

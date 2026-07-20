@@ -100,6 +100,7 @@ class Tariffe(BaseModel):
     varo_oltre_5m_per_metro: float = 25.0
     antivegetativa_per_metro: float = 60.0
     # Manodopera motore a scaglioni di potenza HP
+    motore_labor_2_15hp: float = 90.0
     motore_labor_fino_40hp: float = 180.0
     motore_labor_40_150hp: float = 320.0
     motore_labor_oltre_150hp: float = 550.0
@@ -133,6 +134,7 @@ class TariffeUpdate(BaseModel):
     varo_fino_5m: Optional[float] = None
     varo_oltre_5m_per_metro: Optional[float] = None
     antivegetativa_per_metro: Optional[float] = None
+    motore_labor_2_15hp: Optional[float] = None
     motore_labor_fino_40hp: Optional[float] = None
     motore_labor_40_150hp: Optional[float] = None
     motore_labor_oltre_150hp: Optional[float] = None
@@ -341,9 +343,13 @@ def calcola_varo(lunghezza: float, t: Tariffe) -> float:
 
 
 def calcola_motore_labor(potenza_hp: float, t: Tariffe) -> float:
-    """Manodopera manutenzione motore in base a potenza HP."""
+    """Manodopera manutenzione motore in base a potenza HP.
+    Scaglioni: 2-15 HP · 16-40 HP · 41-150 HP · oltre 150 HP.
+    """
     if potenza_hp <= 0:
         return 0.0
+    if potenza_hp <= 15:
+        return round(t.motore_labor_2_15hp, 2)
     if potenza_hp <= 40:
         return round(t.motore_labor_fino_40hp, 2)
     if potenza_hp <= 150:
