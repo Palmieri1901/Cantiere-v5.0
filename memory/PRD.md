@@ -108,6 +108,21 @@ Sono circa 200 posti barca"
 - ✅ Backend: 8/8 pytest cases in `/app/backend/tests/test_iter9_pdf_and_secondo_motore.py` (report PDF, calcola-costi motore 2, POST/GET cliente, PUT regression pagato+girante_2_attivo preserved, preventivo PDF con motore 2)
 - ✅ Frontend self-test: Home backup buttons, Report filter+PDF href params, ClienteForm secondo motore + girante-2 toggle + entrambi i breakdown (subtotali 657€ + 657€ visibili)
 
+## Iter10 (2026-02-20) — Ordine alfabetico + Lavorazioni extra
+- ✅ **Ordinamento alfabetico case-insensitive per cognome** in tutti gli endpoint che restituiscono liste clienti: `GET /api/clienti`, `report_pagamenti`, `report_pagamenti.pdf`. Ordine: cognome asc, poi nome asc, ignorando maiuscole/spazi iniziali.
+- ✅ **Lavorazioni extra per cliente** (max 20):
+  - Nuovo campo `lavorazioni_extra: List[dict]` su `Cliente` (default []) e `Optional[List[dict]] = None` su `ClienteCreate` (per preservare in PUT parziale).
+  - Helper backend `_sanitize_lavorazioni_extra`: cap a 20 (→ 400 se superato), normalizza a `{descrizione: str, prezzo: float}`, filtra righe con desc vuota E prezzo 0.
+  - Helper `_totale_extra(doc)` riutilizzato in `/api/stats`, `/api/report/incassi` (nuova categoria "lavorazioni_extra"), `/api/report/pagamenti`, `/api/report/pagamenti.pdf`, PDF preventivo.
+  - PDF preventivo: nuova sezione **"LAVORAZIONI EXTRA"** con tabella descrizione + prezzo + riga totale, inclusa nel totale principale ("Lavorazioni extra" come voce aggregata).
+  - Frontend `ClienteForm.jsx`: sezione dedicata con `+ Aggiungi voce` (max 20), input descrizione + prezzo, pulsante X per rimozione, subtotale extra, contatore "X / 20 voci". Toast se limite raggiunto. Sommato nel "Totale annuale stimato".
+  - Frontend `Clienti.jsx`: funzione totale include lavorazioni_extra.
+  - Frontend `Report.jsx`: aggiunta categoria "Lavorazioni extra" con colore dedicato (#5A7A9A).
+
+## Iter10 Testing
+- ✅ Backend: 10/10 pytest cases in `/app/backend/tests/test_iter10_alpha_and_extra.py`
+- ✅ Frontend self-test: ordine alfabetico visibile (Bianchi→Catra→Figo→Rossi→Sandra→Verdi), sezione Lavorazioni extra funzionante (subtotale 730€, totale annuale 2427€), rimozione voce OK
+
 ## Backlog (P0 → P2)
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)
