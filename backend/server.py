@@ -226,7 +226,7 @@ class ClienteCreate(BaseModel):
     codice_fiscale: Optional[str] = ""
     indirizzo: Optional[str] = ""
     cellulare: Optional[str] = ""
-    pagato: Optional[bool] = False
+    pagato: Optional[bool] = None
     data_pagamento: Optional[str] = None
     potenza_motore: Optional[float] = 0.0
     litri_olio_motore: Optional[float] = 3.0
