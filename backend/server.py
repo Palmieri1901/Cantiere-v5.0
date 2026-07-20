@@ -734,6 +734,24 @@ async def posti_barca(anno: Optional[int] = None):
     return result
 
 
+@api_router.get("/posti-barca/next")
+async def next_posto_libero(anno: Optional[int] = None, escludi_cliente_id: Optional[str] = None):
+    """Ritorna il primo posto barca libero (1-200) per l'anno indicato.
+    Se `escludi_cliente_id` è passato, il posto attualmente occupato da quel cliente è considerato libero
+    (utile in fase di modifica per non "bloccare" il posto già assegnato al cliente stesso).
+    """
+    anno_target = anno if anno is not None else datetime.now().year
+    q = {"posto_barca": {"$ne": None}, "anno": anno_target}
+    if escludi_cliente_id:
+        q["id"] = {"$ne": escludi_cliente_id}
+    docs = await db.clienti.find(q, {"posto_barca": 1, "_id": 0}).to_list(2000)
+    occupati = {int(d["posto_barca"]) for d in docs if d.get("posto_barca")}
+    for i in range(1, TOTAL_POSTI + 1):
+        if i not in occupati:
+            return {"anno": anno_target, "posto": i, "posti_liberi": TOTAL_POSTI - len(occupati)}
+    return {"anno": anno_target, "posto": None, "posti_liberi": 0}
+
+
 # --- Export ---
 @api_router.get("/export/clienti.csv")
 async def export_csv():

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import LavoriSection from "@/pages/LavoriSection";
 import { API } from "@/lib/api";
 import { useYear } from "@/lib/year";
-import { FileText, Plus, X, Wrench } from "lucide-react";
+import { FileText, Plus, X, Wrench, Zap } from "lucide-react";
 
 const empty = {
   nome: "", cognome: "", tipo_barca: "", lunghezza: 8,
@@ -101,6 +101,23 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
   }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
+
+  const assegnaPostoAuto = async () => {
+    try {
+      const annoTarget = cliente?.anno || year;
+      const params = new URLSearchParams({ anno: annoTarget });
+      if (cliente?.id) params.set("escludi_cliente_id", cliente.id);
+      const r = await api.get(`/posti-barca/next?${params}`);
+      if (r.data?.posto) {
+        update("posto_barca", r.data.posto);
+        toast.success(`Posto #${String(r.data.posto).padStart(3, "0")} assegnato (${r.data.posti_liberi} posti liberi)`);
+      } else {
+        toast.error("Nessun posto libero disponibile per questo anno");
+      }
+    } catch {
+      toast.error("Errore durante l'assegnazione automatica");
+    }
+  };
 
   // --- Lavorazioni extra helpers ---
   const MAX_EXTRA = 20;
@@ -261,7 +278,20 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 </Select>
               </Field>
               <Field label="Posto barca (1-200)">
-                <Input type="number" min="1" max="200" placeholder="Assegna dopo…" value={f.posto_barca} onChange={(e) => update("posto_barca", e.target.value)} data-testid="input-posto-barca" />
+                <div className="flex gap-2">
+                  <Input type="number" min="1" max="200" placeholder="Assegna dopo…" value={f.posto_barca} onChange={(e) => update("posto_barca", e.target.value)} data-testid="input-posto-barca" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={assegnaPostoAuto}
+                    className="shrink-0"
+                    title="Assegna primo posto libero"
+                    data-testid="btn-posto-auto"
+                  >
+                    <Zap className="w-4 h-4" />
+                  </Button>
+                </div>
               </Field>
             </div>
           </section>

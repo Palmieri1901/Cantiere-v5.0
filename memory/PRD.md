@@ -129,6 +129,10 @@ Sono circa 200 posti barca"
   - Frontend: pagina Tariffe con nuova riga "Da 2 a 15 HP", label aggiornati "Da 16 a 40 HP" / "Da 41 a 150 HP" / "Oltre 150 HP". Simulazione preview aggiornata. Hint fasce in ClienteForm aggiornato.
   - Verificato: HP=10 → €90 · HP=30 → €180 · HP=100 → €320 · HP=300 → €550. PUT del solo `motore_labor_2_15hp` non resetta le altre tariffe.
 
+## Iter12 (2026-02-20) — Assegnazione posto barca automatica
+- ✅ Nuovo endpoint `GET /api/posti-barca/next?anno=X&escludi_cliente_id=Y` che ritorna il primo posto libero (1-200) per l'anno indicato, escludendo opzionalmente il posto occupato dallo stesso cliente (utile in modifica).
+- ✅ Frontend `ClienteForm.jsx`: pulsante ⚡ (Zap icon) accanto al campo "Posto barca" con `data-testid="btn-posto-auto"`. Click → chiama endpoint, riempie il campo e mostra toast con posto assegnato + posti liberi rimasti.
+
 ## Backlog (P0 → P2)
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)
