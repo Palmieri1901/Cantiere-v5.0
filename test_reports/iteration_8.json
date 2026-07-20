@@ -1,0 +1,76 @@
+{
+  "summary": "Iteration 8 tests all new features from the review request. Backend: 9/10 pytest cases pass. Frontend: 100% pass — every requested data-testid is present and behaves correctly (Anagrafica 3 new fields, secondo motore toggle, Report card-pagamenti with green/red pill button, toast confirmation, data_pagamento display). ONE HIGH-priority backend bug discovered: PUT /api/clienti/{id} silently overwrites `pagato` back to False when the payload does not include it, because ClienteCreate.pagato defaults to False and update_cliente() blindly merges False into the existing doc. Editing any client from Clienti page after marking it Pagato will clear the payment status.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "PUT /api/clienti/{id}",
+        "issue": "Overwrites `pagato` back to False after a client has been marked paid via PATCH. Root cause: ClienteCreate.pagato has default False; update_cliente does `merged.update({k: v for k,v in data.items() if v is not None ...})` — pagato=False is not None so it overrides existing True. Same risk for data_pagamento but that field is None-by-default so it's preserved. Fix: (a) change ClienteCreate.pagato and data_pagamento to Optional[bool]=None / Optional[str]=None and filter None (already done for data_pagamento), OR (b) exclude 'pagato' and 'data_pagamento' from the merged update in PUT so they only change through /pagato endpoint.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "General",
+        "issue": "server.py is now 1572 lines. Splitting into routers (auth, clienti, lavori, pdf, cantiere, report, anni) is overdue; each new iteration keeps growing this single file."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Report page - Stato pagamenti card",
+        "issues": ["Badge counts show '1 clienti' / '6 clienti' — should be '1 cliente' (singular) for count==1. Minor Italian grammar."]
+      }
+    ]
+  },
+  "passed_tests_backend": [
+    "POST /api/clienti persists codice_fiscale / indirizzo / cellulare and returns them via GET",
+    "Backwards compat: create without new fields returns empty strings and pagato=false, secondo_motore=false",
+    "GET /api/calcola-costi?secondo_motore=true doubles motor cost (669€ single vs ~1338€ double for 100HP/4c/1t/4L)",
+    "POST /api/clienti with secondo_motore=true persists all _2 fields and costo_manutenzione_motore reflects both motors",
+    "PATCH /api/clienti/{id}/pagato {pagato:true} sets pagato=true and data_pagamento=today (ISO)",
+    "PATCH /api/clienti/{id}/pagato {pagato:false} clears data_pagamento to None",
+    "PATCH /api/clienti/nonexistent/pagato -> 404",
+    "GET /api/report/pagamenti?anno=2026 returns {clienti, totale_pagato, totale_da_pagare, numero_pagati, numero_non_pagati} with correct sums",
+    "GET /api/report/pagamenti year isolation: 2026 and 2027 client IDs are disjoint"
+  ],
+  "failed_tests_backend": [
+    "test_put_cliente_preserves_pagato -> after PATCH pagato=true + PUT with unchanged pagato field, GET shows pagato=false (data_pagamento preserved because it's None-by-default in payload)"
+  ],
+  "passed_tests_frontend": [
+    "btn-nuovo-cliente opens ClienteForm sheet",
+    "Anagrafica shows: input-nome, input-cognome, input-codice-fiscale (maxlength=16, uppercase class, font-mono-num class, forces uppercase input), input-indirizzo, input-telefono, input-cellulare, input-email",
+    "switch-secondo-motore visible; enabling reveals input-potenza-motore-2, input-litri-olio-2, input-numero-candele-2, input-numero-termostati-2",
+    "totale-costi updates live: 2737€ single motor (100HP,8m,dentro) -> 3406€ with 2nd 100HP motor identical (delta 669€ = 1 motor cost)",
+    "Report page card-pagamenti visible, totale-pagato in emerald-700, totale-da-pagare in destructive/red",
+    "7 rows in payment table (year 2026), each with btn-pagato-{id}. Initial state: red 'Non pagato' with XCircle icon",
+    "Click btn-pagato toggles to green 'Pagato' with CheckCircle2, toast fires ('Segnato come pagato'), UI updates without reload",
+    "Toggle back to red 'Non pagato' works and toast shows 'Segnato come non pagato'"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_pagamenti_and_new_fields.py",
+    "/app/test_reports/pytest/iter8_pagamenti.xml"
+  ],
+  "critical_code_review_comments": [
+    "HIGH: server.py update_cliente() lines 528-577 must protect pagato/data_pagamento from silent reset. Recommended fix: after `merged.update(...)`, restore `merged['pagato'] = existing.get('pagato', False)` and `merged['data_pagamento'] = existing.get('data_pagamento')` UNLESS payload explicitly changed them (which the current API does not signal). Alternative: change ClienteCreate.pagato to Optional[bool]=None and rely on the existing None-filter.",
+    "The pay button styling (bg-emerald-500 / bg-destructive, 2px border, px-4 py-1.5 rounded-full, CheckCircle2/XCircle icons from lucide-react) is implemented exactly per spec in Report.jsx lines 240-254 — good match.",
+    "Minor: Report.jsx line 204/211 show '{numero_pagati} clienti' — pluralize with a helper: `${n} ${n===1?'cliente':'clienti'}`.",
+    "Iteration-7 auth regression FLAGGED PREVIOUSLY IS NOW RESOLVED: /api/auth/login works and cookie set. However api_router still has no Depends(get_current_user) — endpoints remain accessible unauthenticated. This is UNCHANGED from iter7 (still a security concern, but was not in scope of iter8 review).",
+    "server.py 1572 lines — split into routers overdue."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pagamenti_and_new_fields.py (new, 10 tests, 9 pass)"
+  ],
+  "success_rate": {
+    "backend": "90% (9/10 new tests) — 1 real bug in PUT preserve pagato",
+    "frontend": "100% (all 8 new-feature flows pass end-to-end)"
+  },
+  "test_credentials": "admin@portomare.it / portomare2026 (login still works via /api/auth/login; note API endpoints are still open without auth as flagged in iter7)",
+  "seed_data_creation": "Tests transiently create ~10 TEST_-prefixed clients in year 2026 and delete them in module-scoped fixture teardown. The single failing test leaves its client behind (module fixture still cleans it up).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run: `python -m pytest backend/tests/test_pagamenti_and_new_fields.py -v -o addopts=`. After main agent fixes PUT preserve-pagato, re-run this test and confirm test_put_cliente_preserves_pagato passes. Frontend has been fully verified — no further UI work needed for iter8 features.",
+  "rca_of_issue": "PUT /api/clienti/{id} bug — server.py:527-577 update_cliente(). The Pydantic model ClienteCreate declares `pagato: Optional[bool] = False` (not None). When frontend saves a client edit through ClienteForm, it POSTs the client's current in-memory state which does NOT include pagato (ClienteForm state at line 22-35 has no pagato key, so form initializes it as undefined → JSON.stringify drops it → backend Pydantic defaults it to False). Since False is not None, the None-filter at line 572 keeps it, and merged['pagato'] becomes False, wiping the previous PATCH result. Repro: 1) Mark any client paid via Report page toggle. 2) Open Clienti page, click that client, click Save without changes. 3) Return to Report — button is red again. Fix in one line: change ClienteCreate.pagato default to None (or explicitly exclude pagato/data_pagamento from PUT merge)."
+}

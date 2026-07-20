@@ -166,11 +166,23 @@ class Cliente(BaseModel):
     posto_barca: Optional[int] = None  # 1-200
     telefono: Optional[str] = ""
     email: Optional[str] = ""
+    codice_fiscale: Optional[str] = ""
+    indirizzo: Optional[str] = ""
+    cellulare: Optional[str] = ""
+    # Pagamento
+    pagato: bool = False
+    data_pagamento: Optional[str] = None  # ISO date string
     # Motore
     potenza_motore: float = 0.0  # HP (cavalli)
-    litri_olio_motore: float = 3.0  # capacità olio motore in litri
+    litri_olio_motore: float = 3.0
     numero_candele: int = 4
     numero_termostati: int = 1
+    # Secondo motore (opzionale)
+    secondo_motore: bool = False
+    potenza_motore_2: float = 0.0
+    litri_olio_motore_2: float = 3.0
+    numero_candele_2: int = 4
+    numero_termostati_2: int = 1
     # Interruttori applicabilità
     antivegetativa_attiva: bool = True
     girante_attivo: bool = True
@@ -211,10 +223,20 @@ class ClienteCreate(BaseModel):
     posto_barca: Optional[int] = None
     telefono: Optional[str] = ""
     email: Optional[str] = ""
+    codice_fiscale: Optional[str] = ""
+    indirizzo: Optional[str] = ""
+    cellulare: Optional[str] = ""
+    pagato: Optional[bool] = False
+    data_pagamento: Optional[str] = None
     potenza_motore: Optional[float] = 0.0
     litri_olio_motore: Optional[float] = 3.0
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
+    secondo_motore: Optional[bool] = False
+    potenza_motore_2: Optional[float] = 0.0
+    litri_olio_motore_2: Optional[float] = 3.0
+    numero_candele_2: Optional[int] = 4
+    numero_termostati_2: Optional[int] = 1
     antivegetativa_attiva: Optional[bool] = True
     girante_attivo: Optional[bool] = True
     lavaggio_inizio_attivo: Optional[bool] = True
@@ -318,12 +340,26 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   girante_attivo: bool = True,
                   litri_olio_motore: float = 3.0,
                   lavaggio_inizio_attivo: bool = True,
-                  lavaggio_fine_attivo: bool = True) -> dict:
-    """Calcola costi automatici in base a lunghezza, tipo sosta e motore."""
+                  lavaggio_fine_attivo: bool = True,
+                  secondo_motore: bool = False,
+                  potenza_motore_2: float = 0.0,
+                  litri_olio_motore_2: float = 3.0,
+                  numero_candele_2: int = 4,
+                  numero_termostati_2: int = 1) -> dict:
+    """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     manodopera = calcola_motore_labor(potenza_motore, t)
     ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore)
     ricambi_tot = round(sum(ricambi.values()), 2)
-    motore_tot = round(manodopera + ricambi_tot, 2)
+
+    # Secondo motore (se presente)
+    manodopera_2 = 0.0
+    ricambi_2_tot = 0.0
+    if secondo_motore:
+        manodopera_2 = calcola_motore_labor(potenza_motore_2, t)
+        ricambi_2 = calcola_ricambi(numero_candele_2, numero_termostati_2, t, girante_attivo, litri_olio_motore_2)
+        ricambi_2_tot = round(sum(ricambi_2.values()), 2)
+
+    motore_tot = round(manodopera + ricambi_tot + manodopera_2 + ricambi_2_tot, 2)
 
     antiveg = round(lunghezza * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
     scafo_sporco = round(lunghezza * t.maggiorazione_scafo_sporco_per_metro, 2) if not antivegetativa_attiva else 0.0
@@ -407,14 +443,21 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         girante_attivo: bool = True,
                         litri_olio_motore: float = 3.0,
                         lavaggio_inizio_attivo: bool = True,
-                        lavaggio_fine_attivo: bool = True):
+                        lavaggio_fine_attivo: bool = True,
+                        secondo_motore: bool = False,
+                        potenza_motore_2: float = 0.0,
+                        litri_olio_motore_2: float = 3.0,
+                        numero_candele_2: int = 4,
+                        numero_termostati_2: int = 1):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
     t = await get_tariffe_doc()
     return calcola_costi(lunghezza, tipo_sosta, t, potenza_motore,
                          numero_candele, numero_termostati,
                          antivegetativa_attiva, girante_attivo, litri_olio_motore,
-                         lavaggio_inizio_attivo, lavaggio_fine_attivo)
+                         lavaggio_inizio_attivo, lavaggio_fine_attivo,
+                         secondo_motore, potenza_motore_2, litri_olio_motore_2,
+                         numero_candele_2, numero_termostati_2)
 
 
 # --- Clienti ---
@@ -458,6 +501,11 @@ async def create_cliente(payload: ClienteCreate):
         float(payload.litri_olio_motore if payload.litri_olio_motore is not None else 3.0),
         bool(payload.lavaggio_inizio_attivo if payload.lavaggio_inizio_attivo is not None else True),
         bool(payload.lavaggio_fine_attivo if payload.lavaggio_fine_attivo is not None else True),
+        bool(payload.secondo_motore if payload.secondo_motore is not None else False),
+        float(payload.potenza_motore_2 or 0),
+        float(payload.litri_olio_motore_2 if payload.litri_olio_motore_2 is not None else 3.0),
+        int(payload.numero_candele_2 or 4),
+        int(payload.numero_termostati_2 or 1),
     )
     # Rimuovi dettaglio non-modello prima di applicarlo
     ricambi_dettaglio = auto_costi.pop("ricambi_dettaglio", None)
@@ -504,6 +552,11 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         float(payload.litri_olio_motore if payload.litri_olio_motore is not None else 3.0),
         bool(payload.lavaggio_inizio_attivo if payload.lavaggio_inizio_attivo is not None else True),
         bool(payload.lavaggio_fine_attivo if payload.lavaggio_fine_attivo is not None else True),
+        bool(payload.secondo_motore if payload.secondo_motore is not None else False),
+        float(payload.potenza_motore_2 or 0),
+        float(payload.litri_olio_motore_2 if payload.litri_olio_motore_2 is not None else 3.0),
+        int(payload.numero_candele_2 or 4),
+        int(payload.numero_termostati_2 or 1),
     )
     auto_costi.pop("ricambi_dettaglio", None)
 
@@ -1353,6 +1406,65 @@ async def report_incassi(anno: Optional[int] = None):
 
 
 # ---------- GESTIONE ANNI ----------
+
+class PagatoUpdate(BaseModel):
+    pagato: bool
+
+
+@api_router.patch("/clienti/{cliente_id}/pagato")
+async def toggle_pagato(cliente_id: str, payload: PagatoUpdate):
+    """Aggiorna lo stato di pagamento del cliente."""
+    existing = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(404, "Cliente non trovato")
+    update = {
+        "pagato": bool(payload.pagato),
+        "data_pagamento": datetime.now(timezone.utc).date().isoformat() if payload.pagato else None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.clienti.update_one({"id": cliente_id}, {"$set": update})
+    return {"ok": True, "cliente_id": cliente_id, **update}
+
+
+@api_router.get("/report/pagamenti")
+async def report_pagamenti(anno: Optional[int] = None):
+    """Elenco clienti con stato pagamento e totale dovuto (per anno)."""
+    q = {}
+    if anno is not None:
+        q["anno"] = anno
+    docs = await db.clienti.find(q, {"_id": 0}).sort("cognome", 1).to_list(10000)
+
+    result = []
+    for d in docs:
+        totale = sum(float(d.get(k) or 0) for k in (
+            "costo_sosta","costo_movimentazione","costo_taccaggio",
+            "costo_copertura","costo_alaggio","costo_varo",
+            "costo_antivegetativa","costo_scafo_sporco",
+            "costo_lavaggio_inizio","costo_lavaggio_fine",
+            "costo_manutenzione_motore"
+        ))
+        result.append({
+            "id": d["id"],
+            "nome": d.get("nome",""),
+            "cognome": d.get("cognome",""),
+            "tipo_barca": d.get("tipo_barca",""),
+            "posto_barca": d.get("posto_barca"),
+            "tipo_sosta": d.get("tipo_sosta"),
+            "totale": round(totale, 2),
+            "pagato": bool(d.get("pagato", False)),
+            "data_pagamento": d.get("data_pagamento"),
+        })
+
+    totale_pagato = sum(c["totale"] for c in result if c["pagato"])
+    totale_da_pagare = sum(c["totale"] for c in result if not c["pagato"])
+    return {
+        "clienti": result,
+        "totale_pagato": round(totale_pagato, 2),
+        "totale_da_pagare": round(totale_da_pagare, 2),
+        "numero_pagati": sum(1 for c in result if c["pagato"]),
+        "numero_non_pagati": sum(1 for c in result if not c["pagato"]),
+    }
+
 
 @api_router.get("/anni")
 async def list_anni():

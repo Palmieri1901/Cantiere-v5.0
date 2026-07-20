@@ -4,9 +4,13 @@ import { useYear } from "@/lib/year";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
 import {
   Anchor, Waves, Wrench, Sparkles, TrendingUp, FileBarChart,
-  Container, Cog, Droplets, ShieldAlert
+  Container, Cog, Droplets, ShieldAlert, CheckCircle2, XCircle
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from "recharts";
 
@@ -25,11 +29,25 @@ const CATEGORIES = [
 
 export default function Report() {
   const [r, setR] = useState(null);
+  const [pagamenti, setPagamenti] = useState(null);
   const { year } = useYear();
 
-  useEffect(() => {
+  const loadAll = () => {
     api.get(`/report/incassi?anno=${year}`).then((res) => setR(res.data));
-  }, [year]);
+    api.get(`/report/pagamenti?anno=${year}`).then((res) => setPagamenti(res.data));
+  };
+
+  useEffect(() => { loadAll(); }, [year]);
+
+  const togglePagato = async (id, nuovoStato) => {
+    try {
+      await api.patch(`/clienti/${id}/pagato`, { pagato: nuovoStato });
+      toast.success(nuovoStato ? "Segnato come pagato" : "Segnato come non pagato");
+      loadAll();
+    } catch {
+      toast.error("Errore aggiornamento");
+    }
+  };
 
   if (!r) {
     return <div className="p-8 text-muted-foreground" data-testid="report-loading">Caricamento report…</div>;
@@ -165,6 +183,90 @@ export default function Report() {
           ]}
         />
       </div>
+
+      {/* Tabella pagamenti */}
+      {pagamenti && (
+        <Card className="p-6 mt-6" data-testid="card-pagamenti">
+          <div className="flex items-start justify-between flex-wrap gap-4 mb-4">
+            <div>
+              <div className="label-mini mb-1">Stato pagamenti</div>
+              <h3 className="font-display text-xl font-semibold">Chi ha pagato · Chi deve ancora</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Clicca sul pulsante per cambiare lo stato di pagamento del cliente.
+              </p>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <div className="text-right">
+                <div className="label-mini text-emerald-700">Pagato</div>
+                <div className="font-mono-num text-xl font-bold text-emerald-700" data-testid="totale-pagato">
+                  {fmtEuro(pagamenti.totale_pagato)}
+                </div>
+                <div className="text-[11px] text-muted-foreground">{pagamenti.numero_pagati} clienti</div>
+              </div>
+              <div className="text-right">
+                <div className="label-mini text-destructive">Da incassare</div>
+                <div className="font-mono-num text-xl font-bold text-destructive" data-testid="totale-da-pagare">
+                  {fmtEuro(pagamenti.totale_da_pagare)}
+                </div>
+                <div className="text-[11px] text-muted-foreground">{pagamenti.numero_non_pagati} clienti</div>
+              </div>
+            </div>
+          </div>
+
+          {pagamenti.clienti.length === 0 ? (
+            <div className="text-muted-foreground text-sm py-8 text-center">Nessun cliente per questo anno.</div>
+          ) : (
+            <div className="border border-border rounded-md overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40">
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Barca</TableHead>
+                    <TableHead>Sosta</TableHead>
+                    <TableHead className="text-right">Totale</TableHead>
+                    <TableHead className="w-40 text-center">Stato pagamento</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagamenti.clienti.map((c) => (
+                    <TableRow key={c.id} data-testid={`row-pag-${c.id}`}>
+                      <TableCell className="font-medium">{c.cognome} {c.nome}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{c.tipo_barca}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Fuori"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(c.totale)}</TableCell>
+                      <TableCell className="text-center">
+                        <button
+                          onClick={() => togglePagato(c.id, !c.pagato)}
+                          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-medium text-sm border-2 transition-all ${
+                            c.pagato
+                              ? "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600"
+                              : "bg-destructive hover:bg-destructive/90 text-white border-destructive/70"
+                          }`}
+                          data-testid={`btn-pagato-${c.id}`}
+                          title="Clicca per cambiare stato"
+                        >
+                          {c.pagato ? (
+                            <><CheckCircle2 className="w-4 h-4" /> Pagato</>
+                          ) : (
+                            <><XCircle className="w-4 h-4" /> Non pagato</>
+                          )}
+                        </button>
+                        {c.pagato && c.data_pagamento && (
+                          <div className="text-[10px] text-muted-foreground mt-1 font-mono-num">
+                            {c.data_pagamento}
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

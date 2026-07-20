@@ -22,7 +22,11 @@ const empty = {
   nome: "", cognome: "", tipo_barca: "", lunghezza: 8,
   tipo_sosta: "dentro", posto_barca: "",
   telefono: "", email: "",
+  codice_fiscale: "", indirizzo: "", cellulare: "",
+  pagato: false,
   potenza_motore: 0, litri_olio_motore: 3, numero_candele: 4, numero_termostati: 1,
+  secondo_motore: false,
+  potenza_motore_2: 0, litri_olio_motore_2: 3, numero_candele_2: 4, numero_termostati_2: 1,
   antivegetativa_attiva: true, girante_attivo: true,
   lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
@@ -71,6 +75,11 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         girante_attivo: f.girante_attivo ? "true" : "false",
         lavaggio_inizio_attivo: f.lavaggio_inizio_attivo ? "true" : "false",
         lavaggio_fine_attivo: f.lavaggio_fine_attivo ? "true" : "false",
+        secondo_motore: f.secondo_motore ? "true" : "false",
+        potenza_motore_2: f.potenza_motore_2 || 0,
+        litri_olio_motore_2: f.litri_olio_motore_2 || 0,
+        numero_candele_2: f.numero_candele_2 || 0,
+        numero_termostati_2: f.numero_termostati_2 || 0,
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -81,7 +90,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -110,6 +119,11 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       girante_attivo: !!f.girante_attivo,
       lavaggio_inizio_attivo: !!f.lavaggio_inizio_attivo,
       lavaggio_fine_attivo: !!f.lavaggio_fine_attivo,
+      secondo_motore: !!f.secondo_motore,
+      potenza_motore_2: Number(f.potenza_motore_2) || 0,
+      litri_olio_motore_2: Number(f.litri_olio_motore_2) || 0,
+      numero_candele_2: Number(f.numero_candele_2) || 0,
+      numero_termostati_2: Number(f.numero_termostati_2) || 0,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -166,12 +180,23 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               <Field label="Cognome *">
                 <Input value={f.cognome} onChange={(e) => update("cognome", e.target.value)} data-testid="input-cognome" />
               </Field>
+              <Field label="Codice fiscale">
+                <Input value={f.codice_fiscale} onChange={(e) => update("codice_fiscale", e.target.value.toUpperCase())} maxLength={16} className="uppercase font-mono-num" data-testid="input-codice-fiscale" />
+              </Field>
+              <Field label="Indirizzo">
+                <Input value={f.indirizzo} onChange={(e) => update("indirizzo", e.target.value)} placeholder="Via, città, CAP" data-testid="input-indirizzo" />
+              </Field>
               <Field label="Telefono">
                 <Input value={f.telefono} onChange={(e) => update("telefono", e.target.value)} data-testid="input-telefono" />
               </Field>
-              <Field label="Email">
-                <Input type="email" value={f.email} onChange={(e) => update("email", e.target.value)} data-testid="input-email" />
+              <Field label="Cellulare">
+                <Input value={f.cellulare} onChange={(e) => update("cellulare", e.target.value)} data-testid="input-cellulare" />
               </Field>
+              <div className="col-span-2">
+                <Field label="Email">
+                  <Input type="email" value={f.email} onChange={(e) => update("email", e.target.value)} data-testid="input-email" />
+                </Field>
+              </div>
             </div>
           </section>
 
@@ -262,6 +287,35 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 Antivegetativa disattivata → viene applicata la maggiorazione scafo sporco (€ / metro).
               </div>
             )}
+
+            {/* Secondo motore */}
+            <div className="mt-4 p-4 rounded-md border border-border bg-muted/20">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <Label className="text-sm font-medium">Secondo motore</Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Attiva se la barca ha un secondo motore per raddoppiare i costi motore
+                  </p>
+                </div>
+                <Switch checked={!!f.secondo_motore} onCheckedChange={(v) => update("secondo_motore", v)} data-testid="switch-secondo-motore" />
+              </div>
+              {f.secondo_motore && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-border/60">
+                  <Field label="Cavalli 2° motore">
+                    <Input type="number" min="0" step="1" value={f.potenza_motore_2} onChange={(e) => update("potenza_motore_2", e.target.value)} data-testid="input-potenza-motore-2" />
+                  </Field>
+                  <Field label="Litri olio 2°">
+                    <Input type="number" min="0" step="0.1" value={f.litri_olio_motore_2} onChange={(e) => update("litri_olio_motore_2", e.target.value)} data-testid="input-litri-olio-2" />
+                  </Field>
+                  <Field label="N° candele 2°">
+                    <Input type="number" min="0" step="1" value={f.numero_candele_2} onChange={(e) => update("numero_candele_2", e.target.value)} data-testid="input-numero-candele-2" />
+                  </Field>
+                  <Field label="N° termostati 2°">
+                    <Input type="number" min="0" step="1" value={f.numero_termostati_2} onChange={(e) => update("numero_termostati_2", e.target.value)} data-testid="input-numero-termostati-2" />
+                  </Field>
+                </div>
+              )}
+            </div>
           </section>
 
           <Separator />
