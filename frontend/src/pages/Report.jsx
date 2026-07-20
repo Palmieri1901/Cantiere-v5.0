@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
-import { api, fmtEuro } from "@/lib/api";
+import { api, fmtEuro, API } from "@/lib/api";
 import { useYear } from "@/lib/year";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import {
   Anchor, Waves, Wrench, Sparkles, TrendingUp, FileBarChart,
-  Container, Cog, Droplets, ShieldAlert, CheckCircle2, XCircle
+  Container, Cog, Droplets, ShieldAlert, CheckCircle2, XCircle, FileDown
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from "recharts";
 
@@ -30,6 +33,7 @@ const CATEGORIES = [
 export default function Report() {
   const [r, setR] = useState(null);
   const [pagamenti, setPagamenti] = useState(null);
+  const [filtroStato, setFiltroStato] = useState("tutti"); // tutti | pagati | non_pagati
   const { year } = useYear();
 
   const loadAll = () => {
@@ -213,6 +217,38 @@ export default function Report() {
             </div>
           </div>
 
+          {/* Toolbar filtro + PDF */}
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="label-mini">Mostra:</span>
+              <Select value={filtroStato} onValueChange={setFiltroStato}>
+                <SelectTrigger className="w-48" data-testid="select-filtro-stato">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tutti" data-testid="opt-tutti">Tutti i clienti</SelectItem>
+                  <SelectItem value="pagati" data-testid="opt-pagati">Solo pagati</SelectItem>
+                  <SelectItem value="non_pagati" data-testid="opt-non-pagati">Solo non pagati</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">
+                {(() => {
+                  const filtrati = pagamenti.clienti.filter((c) =>
+                    filtroStato === "tutti" ? true :
+                    filtroStato === "pagati" ? c.pagato : !c.pagato
+                  );
+                  return `${filtrati.length} cliente${filtrati.length === 1 ? "" : "i"}`;
+                })()}
+              </span>
+            </div>
+            <Button asChild variant="outline" size="sm" data-testid="btn-scarica-pdf-pagamenti">
+              <a href={`${API}/report/pagamenti.pdf?anno=${year}&stato=${filtroStato}`} target="_blank" rel="noreferrer">
+                <FileDown className="w-4 h-4 mr-2" />
+                Scarica report PDF
+              </a>
+            </Button>
+          </div>
+
           {pagamenti.clienti.length === 0 ? (
             <div className="text-muted-foreground text-sm py-8 text-center">Nessun cliente per questo anno.</div>
           ) : (
@@ -228,7 +264,9 @@ export default function Report() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagamenti.clienti.map((c) => (
+                  {pagamenti.clienti
+                    .filter((c) => filtroStato === "tutti" ? true : filtroStato === "pagati" ? c.pagato : !c.pagato)
+                    .map((c) => (
                     <TableRow key={c.id} data-testid={`row-pag-${c.id}`}>
                       <TableCell className="font-medium">{c.cognome} {c.nome}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{c.tipo_barca}</TableCell>

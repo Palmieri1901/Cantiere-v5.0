@@ -93,7 +93,20 @@ Sono circa 200 posti barca"
   - Admin default: `admin@portomare.it` / `portomare2026` (aggiorna in Impostazioni consigliato)
 - ✅ Testing iter6: 73/73 backend, 7/7 frontend flows
 
+## Iter9 (2026-02-20) — 4 richieste utente
+- ✅ **PDF Report pagamenti stampabile** — nuovo endpoint `GET /api/report/pagamenti.pdf?anno=YYYY&stato=tutti|pagati|non_pagati`. Tabella con Posto, Cliente, Barca, Totale, Stato (verde/rosso), data pagamento. Header con logo/nome cantiere, riepilogo (totali pagati/non pagati), totale finale filtrato. Ordina per cognome.
+- ✅ **Filtro Report per stato pagamento** — dropdown in `/report` (data-testid `select-filtro-stato`) con opzioni Tutti/Pagati/Non pagati. Filtra la tabella client-side e passa `stato` al link PDF. Contatore clienti filtrati accanto al dropdown.
+- ✅ **Ricambi motore separati 1°/2° motore**:
+  - Nuovo campo `girante_2_attivo` in `Cliente`/`ClienteCreate` (Optional[bool]=None per evitare bug reset).
+  - Nuovi campi `costo_manodopera_motore_2` e `costo_ricambi_motore_2_totale` esposti dal calcolo.
+  - `calcola_costi` restituisce `ricambi_dettaglio` e `ricambi_2_dettaglio` distinti.
+  - PDF preventivo con **due tabelle motore separate** ("1° Motore — X HP" e "2° Motore — X HP"), ognuna con proprio subtotale header.
+  - Form cliente mostra **due breakdown separati** in UI + toggle "Girante 2° motore" (data-testid `switch-girante-2`).
+- ✅ **Backup accessibile in Home** — nuova card in `/` con bottoni "Salva backup" (data-testid `btn-home-backup-download`) e "Recupera backup" (data-testid `btn-home-restore-open`) + dialog di conferma ripristino. Bottoni Impostazioni conservati.
 
+## Iter9 Testing
+- ✅ Backend: 8/8 pytest cases in `/app/backend/tests/test_iter9_pdf_and_secondo_motore.py` (report PDF, calcola-costi motore 2, POST/GET cliente, PUT regression pagato+girante_2_attivo preserved, preventivo PDF con motore 2)
+- ✅ Frontend self-test: Home backup buttons, Report filter+PDF href params, ClienteForm secondo motore + girante-2 toggle + entrambi i breakdown (subtotali 657€ + 657€ visibili)
 
 ## Backlog (P0 → P2)
 ### P1 — enhancements

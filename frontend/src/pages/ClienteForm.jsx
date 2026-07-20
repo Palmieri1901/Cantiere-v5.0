@@ -27,12 +27,14 @@ const empty = {
   potenza_motore: 0, litri_olio_motore: 3, numero_candele: 4, numero_termostati: 1,
   secondo_motore: false,
   potenza_motore_2: 0, litri_olio_motore_2: 3, numero_candele_2: 4, numero_termostati_2: 1,
+  girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
   lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
   costo_varo: 0, costo_antivegetativa: 0, costo_manutenzione_motore: 0,
   costo_ricambi_totale: 0, costo_manodopera_motore: 0,
+  costo_ricambi_motore_2_totale: 0, costo_manodopera_motore_2: 0,
   costo_lavaggio_inizio: 0, costo_lavaggio_fine: 0, costo_scafo_sporco: 0,
   note_lavori: "",
   scadenza_antivegetativa: "", scadenza_manutenzione: "",
@@ -42,6 +44,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
   const [f, setF] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [ricambiDettaglio, setRicambiDettaglio] = useState(null);
+  const [ricambi2Dettaglio, setRicambi2Dettaglio] = useState(null);
   const { year } = useYear();
 
   useEffect(() => {
@@ -57,6 +60,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       setF(empty);
     }
     setRicambiDettaglio(null);
+    setRicambi2Dettaglio(null);
   }, [cliente, open]);
 
   // Ricalcolo automatico costi
@@ -80,17 +84,19 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         litri_olio_motore_2: f.litri_olio_motore_2 || 0,
         numero_candele_2: f.numero_candele_2 || 0,
         numero_termostati_2: f.numero_termostati_2 || 0,
+        girante_2_attivo: f.girante_2_attivo ? "true" : "false",
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
-          const { ricambi_dettaglio, ...rest } = r.data;
+          const { ricambi_dettaglio, ricambi_2_dettaglio, ...rest } = r.data;
           setRicambiDettaglio(ricambi_dettaglio || null);
+          setRicambi2Dettaglio(ricambi_2_dettaglio || null);
           setF((prev) => ({ ...prev, ...rest }));
         })
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -124,6 +130,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       litri_olio_motore_2: Number(f.litri_olio_motore_2) || 0,
       numero_candele_2: Number(f.numero_candele_2) || 0,
       numero_termostati_2: Number(f.numero_termostati_2) || 0,
+      girante_2_attivo: !!f.girante_2_attivo,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -232,7 +239,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
 
           {/* Motore */}
           <section>
-            <div className="label-mini mb-3">Motore</div>
+            <div className="label-mini mb-3">{f.secondo_motore ? "1° Motore" : "Motore"}</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Field label="Cavalli (HP)">
                 <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
@@ -261,7 +268,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 testId="switch-antivegetativa"
               />
               <ToggleRow
-                label="Sostituzione girante"
+                label={f.secondo_motore ? "Girante 1° motore" : "Sostituzione girante"}
                 description="Includi ricambio girante"
                 checked={!!f.girante_attivo}
                 onChange={(v) => update("girante_attivo", v)}
@@ -294,25 +301,35 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 <div>
                   <Label className="text-sm font-medium">Secondo motore</Label>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Attiva se la barca ha un secondo motore per raddoppiare i costi motore
+                    Attiva se la barca ha un secondo motore. I ricambi vengono calcolati separatamente.
                   </p>
                 </div>
                 <Switch checked={!!f.secondo_motore} onCheckedChange={(v) => update("secondo_motore", v)} data-testid="switch-secondo-motore" />
               </div>
               {f.secondo_motore && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-border/60">
-                  <Field label="Cavalli 2° motore">
-                    <Input type="number" min="0" step="1" value={f.potenza_motore_2} onChange={(e) => update("potenza_motore_2", e.target.value)} data-testid="input-potenza-motore-2" />
-                  </Field>
-                  <Field label="Litri olio 2°">
-                    <Input type="number" min="0" step="0.1" value={f.litri_olio_motore_2} onChange={(e) => update("litri_olio_motore_2", e.target.value)} data-testid="input-litri-olio-2" />
-                  </Field>
-                  <Field label="N° candele 2°">
-                    <Input type="number" min="0" step="1" value={f.numero_candele_2} onChange={(e) => update("numero_candele_2", e.target.value)} data-testid="input-numero-candele-2" />
-                  </Field>
-                  <Field label="N° termostati 2°">
-                    <Input type="number" min="0" step="1" value={f.numero_termostati_2} onChange={(e) => update("numero_termostati_2", e.target.value)} data-testid="input-numero-termostati-2" />
-                  </Field>
+                <div className="pt-3 border-t border-border/60 space-y-3">
+                  <div className="label-mini">2° Motore</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Field label="Cavalli 2° motore">
+                      <Input type="number" min="0" step="1" value={f.potenza_motore_2} onChange={(e) => update("potenza_motore_2", e.target.value)} data-testid="input-potenza-motore-2" />
+                    </Field>
+                    <Field label="Litri olio 2°">
+                      <Input type="number" min="0" step="0.1" value={f.litri_olio_motore_2} onChange={(e) => update("litri_olio_motore_2", e.target.value)} data-testid="input-litri-olio-2" />
+                    </Field>
+                    <Field label="N° candele 2°">
+                      <Input type="number" min="0" step="1" value={f.numero_candele_2} onChange={(e) => update("numero_candele_2", e.target.value)} data-testid="input-numero-candele-2" />
+                    </Field>
+                    <Field label="N° termostati 2°">
+                      <Input type="number" min="0" step="1" value={f.numero_termostati_2} onChange={(e) => update("numero_termostati_2", e.target.value)} data-testid="input-numero-termostati-2" />
+                    </Field>
+                  </div>
+                  <ToggleRow
+                    label="Girante 2° motore"
+                    description="Includi ricambio girante per il 2° motore"
+                    checked={!!f.girante_2_attivo}
+                    onChange={(v) => update("girante_2_attivo", v)}
+                    testId="switch-girante-2"
+                  />
                 </div>
               )}
             </div>
@@ -360,7 +377,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
             {/* Dettaglio motore breakdown */}
             {!f.override_costi && ricambiDettaglio && Number(f.potenza_motore) > 0 && (
               <div className="mt-4 p-3 bg-muted/40 border border-border rounded-md" data-testid="ricambi-breakdown">
-                <div className="label-mini mb-2">Dettaglio motore</div>
+                <div className="label-mini mb-2">{f.secondo_motore ? "Dettaglio 1° motore" : "Dettaglio motore"}</div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                   <BreakdownRow label="Manodopera" value={f.costo_manodopera_motore} />
                   <BreakdownRow label="Girante" value={ricambiDettaglio.girante} />
@@ -372,6 +389,37 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                   <BreakdownRow label="Anodi interni" value={ricambiDettaglio.anodi_interni} />
                   <BreakdownRow label="Anodi esterni" value={ricambiDettaglio.anodi_esterni} />
                   <BreakdownRow label="Ingrassaggio" value={ricambiDettaglio.ingrassaggio} />
+                </div>
+                <div className="flex justify-between mt-2 pt-2 border-t border-border/60 text-xs">
+                  <span className="font-semibold">Subtotale 1° motore</span>
+                  <span className="font-mono-num font-semibold text-primary">
+                    {fmtEuro((Number(f.costo_manodopera_motore) || 0) + (Number(f.costo_ricambi_totale) || 0))}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Dettaglio 2° motore */}
+            {!f.override_costi && f.secondo_motore && ricambi2Dettaglio && Number(f.potenza_motore_2) > 0 && (
+              <div className="mt-3 p-3 bg-muted/40 border border-border rounded-md" data-testid="ricambi-breakdown-2">
+                <div className="label-mini mb-2">Dettaglio 2° motore</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <BreakdownRow label="Manodopera" value={f.costo_manodopera_motore_2} />
+                  <BreakdownRow label="Girante" value={ricambi2Dettaglio.girante} />
+                  <BreakdownRow label={`Olio motore (${f.litri_olio_motore_2 || 0}L)`} value={ricambi2Dettaglio.olio_motore} />
+                  <BreakdownRow label="Filtro olio" value={ricambi2Dettaglio.filtro_olio} />
+                  <BreakdownRow label={`Candele (${f.numero_candele_2 || 0})`} value={ricambi2Dettaglio.candele} />
+                  <BreakdownRow label={`Termostati (${f.numero_termostati_2 || 0})`} value={ricambi2Dettaglio.termostati} />
+                  <BreakdownRow label="Olio piede" value={ricambi2Dettaglio.olio_piede} />
+                  <BreakdownRow label="Anodi interni" value={ricambi2Dettaglio.anodi_interni} />
+                  <BreakdownRow label="Anodi esterni" value={ricambi2Dettaglio.anodi_esterni} />
+                  <BreakdownRow label="Ingrassaggio" value={ricambi2Dettaglio.ingrassaggio} />
+                </div>
+                <div className="flex justify-between mt-2 pt-2 border-t border-border/60 text-xs">
+                  <span className="font-semibold">Subtotale 2° motore</span>
+                  <span className="font-mono-num font-semibold text-primary">
+                    {fmtEuro((Number(f.costo_manodopera_motore_2) || 0) + (Number(f.costo_ricambi_motore_2_totale) || 0))}
+                  </span>
                 </div>
               </div>
             )}
