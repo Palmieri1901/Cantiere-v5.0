@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import LavoriSection from "@/pages/LavoriSection";
 import { API } from "@/lib/api";
 import { useYear } from "@/lib/year";
-import { FileText } from "lucide-react";
+import { FileText, Plus, X, Wrench } from "lucide-react";
 
 const empty = {
   nome: "", cognome: "", tipo_barca: "", lunghezza: 8,
@@ -36,6 +36,7 @@ const empty = {
   costo_ricambi_totale: 0, costo_manodopera_motore: 0,
   costo_ricambi_motore_2_totale: 0, costo_manodopera_motore_2: 0,
   costo_lavaggio_inizio: 0, costo_lavaggio_fine: 0, costo_scafo_sporco: 0,
+  lavorazioni_extra: [],
   note_lavori: "",
   scadenza_antivegetativa: "", scadenza_manutenzione: "",
 };
@@ -55,6 +56,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         posto_barca: cliente.posto_barca ?? "",
         scadenza_antivegetativa: cliente.scadenza_antivegetativa ?? "",
         scadenza_manutenzione: cliente.scadenza_manutenzione ?? "",
+        lavorazioni_extra: Array.isArray(cliente.lavorazioni_extra) ? cliente.lavorazioni_extra : [],
       });
     } else {
       setF(empty);
@@ -100,12 +102,35 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
+  // --- Lavorazioni extra helpers ---
+  const MAX_EXTRA = 20;
+  const totaleExtra = (Array.isArray(f.lavorazioni_extra) ? f.lavorazioni_extra : [])
+    .reduce((s, it) => s + (Number(it?.prezzo) || 0), 0);
+
+  const addExtra = () => {
+    if ((f.lavorazioni_extra || []).length >= MAX_EXTRA) {
+      toast.error(`Massimo ${MAX_EXTRA} lavorazioni extra`);
+      return;
+    }
+    update("lavorazioni_extra", [...(f.lavorazioni_extra || []), { descrizione: "", prezzo: 0 }]);
+  };
+  const removeExtra = (idx) => {
+    const list = [...(f.lavorazioni_extra || [])];
+    list.splice(idx, 1);
+    update("lavorazioni_extra", list);
+  };
+  const updateExtra = (idx, key, value) => {
+    const list = [...(f.lavorazioni_extra || [])];
+    list[idx] = { ...list[idx], [key]: key === "prezzo" ? value : String(value ?? "") };
+    update("lavorazioni_extra", list);
+  };
+
   const totale =
     (Number(f.costo_sosta) || 0) + (Number(f.costo_copertura) || 0) +
     (Number(f.costo_alaggio) || 0) + (Number(f.costo_varo) || 0) +
     (Number(f.costo_antivegetativa) || 0) + (Number(f.costo_manutenzione_motore) || 0) +
     (Number(f.costo_lavaggio_inizio) || 0) + (Number(f.costo_lavaggio_fine) || 0) +
-    (Number(f.costo_scafo_sporco) || 0);
+    (Number(f.costo_scafo_sporco) || 0) + totaleExtra;
 
   const save = async () => {
     if (!f.nome || !f.cognome || !f.tipo_barca || !f.lunghezza) {
@@ -141,6 +166,12 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       costo_lavaggio_inizio: Number(f.costo_lavaggio_inizio) || 0,
       costo_lavaggio_fine: Number(f.costo_lavaggio_fine) || 0,
       costo_scafo_sporco: Number(f.costo_scafo_sporco) || 0,
+      lavorazioni_extra: (Array.isArray(f.lavorazioni_extra) ? f.lavorazioni_extra : [])
+        .map((it) => ({
+          descrizione: String(it?.descrizione ?? "").trim(),
+          prezzo: Number(it?.prezzo) || 0,
+        }))
+        .filter((it) => it.descrizione || it.prezzo > 0),
       scadenza_antivegetativa: f.scadenza_antivegetativa || null,
       scadenza_manutenzione: f.scadenza_manutenzione || null,
     };
@@ -428,6 +459,85 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               <div className="label-mini">Totale annuale stimato</div>
               <div className="font-display text-2xl font-semibold text-primary font-mono-num" data-testid="totale-costi">{fmtEuro(totale)}</div>
             </div>
+          </section>
+
+          <Separator />
+
+          {/* Lavorazioni extra */}
+          <section data-testid="section-lavorazioni-extra">
+            <div className="flex items-start justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 label-mini mb-0.5">
+                  <Wrench className="w-3 h-3" /> Lavorazioni extra
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Aggiungi lavorazioni personalizzate con prezzo (max {MAX_EXTRA}). Sono incluse nel totale e nel PDF preventivo.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addExtra}
+                disabled={(f.lavorazioni_extra || []).length >= MAX_EXTRA}
+                data-testid="btn-add-extra"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Aggiungi voce
+              </Button>
+            </div>
+
+            {(f.lavorazioni_extra || []).length === 0 ? (
+              <div className="text-xs text-muted-foreground bg-muted/40 rounded-md p-3 border border-dashed border-border text-center" data-testid="extra-empty">
+                Nessuna lavorazione extra. Clicca su "Aggiungi voce" per crearne una.
+              </div>
+            ) : (
+              <div className="space-y-2" data-testid="extra-list">
+                {(f.lavorazioni_extra || []).map((it, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center" data-testid={`extra-row-${idx}`}>
+                    <div className="col-span-7">
+                      <Input
+                        placeholder="Descrizione (es. Riparazione elica)"
+                        value={it?.descrizione ?? ""}
+                        onChange={(e) => updateExtra(idx, "descrizione", e.target.value)}
+                        data-testid={`extra-desc-${idx}`}
+                      />
+                    </div>
+                    <div className="col-span-4 relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                      <Input
+                        type="number" step="0.01" min="0"
+                        placeholder="0,00"
+                        value={it?.prezzo ?? ""}
+                        onChange={(e) => updateExtra(idx, "prezzo", e.target.value)}
+                        className="pl-10 font-mono-num"
+                        data-testid={`extra-prezzo-${idx}`}
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-end">
+                      <Button
+                        type="button" size="icon" variant="ghost"
+                        onClick={() => removeExtra(idx)}
+                        data-testid={`extra-remove-${idx}`}
+                        title="Rimuovi voce"
+                      >
+                        <X className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(f.lavorazioni_extra || []).length > 0 && (
+              <div className="mt-3 flex items-center justify-between text-sm bg-muted/40 border border-border rounded-md px-3 py-2">
+                <span className="text-muted-foreground">
+                  {(f.lavorazioni_extra || []).length} / {MAX_EXTRA} voci
+                </span>
+                <span className="font-semibold" data-testid="extra-totale">
+                  Subtotale extra: <span className="font-mono-num text-primary">{fmtEuro(totaleExtra)}</span>
+                </span>
+              </div>
+            )}
           </section>
 
           <Separator />

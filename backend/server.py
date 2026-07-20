@@ -206,6 +206,8 @@ class Cliente(BaseModel):
     costo_manodopera_motore: float = 0.0
     costo_ricambi_motore_2_totale: float = 0.0
     costo_manodopera_motore_2: float = 0.0
+    # Lavorazioni extra (max 20): [{descrizione: str, prezzo: float}]
+    lavorazioni_extra: List[dict] = Field(default_factory=list)
     # Override flags: se true, valore non ricalcolato automaticamente
     override_costi: bool = False
     # Lavori
@@ -256,6 +258,7 @@ class ClienteCreate(BaseModel):
     costo_scafo_sporco: Optional[float] = None
     costo_movimentazione: Optional[float] = None
     costo_taccaggio: Optional[float] = None
+    lavorazioni_extra: Optional[List[dict]] = None
     override_costi: bool = False
     note_lavori: str = ""
     scadenza_antivegetativa: Optional[str] = None
@@ -283,6 +286,36 @@ def deserialize_cliente(doc: dict) -> dict:
             except Exception:
                 pass
     return doc
+
+
+def _sanitize_lavorazioni_extra(lst) -> List[dict]:
+    """Valida e normalizza la lista lavorazioni extra: max 20 voci, ciascuna {descrizione, prezzo}."""
+    if not lst:
+        return []
+    if not isinstance(lst, list):
+        raise HTTPException(400, "lavorazioni_extra deve essere una lista")
+    if len(lst) > 20:
+        raise HTTPException(400, "Massimo 20 lavorazioni extra per cliente")
+    out = []
+    for item in lst:
+        if not isinstance(item, dict):
+            continue
+        desc = str(item.get("descrizione") or "").strip()
+        try:
+            prezzo = round(float(item.get("prezzo") or 0), 2)
+        except (TypeError, ValueError):
+            prezzo = 0.0
+        if not desc and prezzo == 0:
+            continue
+        out.append({"descrizione": desc, "prezzo": prezzo})
+    return out
+
+
+def _totale_extra(doc: dict) -> float:
+    lst = doc.get("lavorazioni_extra") or []
+    if not isinstance(lst, list):
+        return 0.0
+    return round(sum(float((it or {}).get("prezzo") or 0) for it in lst), 2)
 
 
 async def get_tariffe_doc() -> Tariffe:
@@ -477,6 +510,8 @@ async def list_clienti(anno: Optional[int] = None):
     if anno is not None:
         q["anno"] = anno
     docs = await db.clienti.find(q, {"_id": 0}).to_list(1000)
+    # Ordina alfabeticamente per cognome (case-insensitive), poi nome
+    docs.sort(key=lambda d: ((d.get("cognome") or "").strip().lower(), (d.get("nome") or "").strip().lower()))
     return [Cliente(**deserialize_cliente(d)) for d in docs]
 
 
@@ -523,6 +558,9 @@ async def create_cliente(payload: ClienteCreate):
     ricambi_2_dettaglio = auto_costi.pop("ricambi_2_dettaglio", None)
 
     data = payload.model_dump()
+    # Sanitize lavorazioni_extra (max 20, normalize)
+    if data.get("lavorazioni_extra") is not None:
+        data["lavorazioni_extra"] = _sanitize_lavorazioni_extra(data["lavorazioni_extra"])
     # Se override non attivo → usa costi calcolati; altrimenti usa quelli inseriti (fallback 0 se None)
     for k in auto_costi:
         val = data.get(k)
@@ -575,6 +613,9 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
     auto_costi.pop("ricambi_2_dettaglio", None)
 
     data = payload.model_dump()
+    # Sanitize lavorazioni_extra (max 20, normalize)
+    if data.get("lavorazioni_extra") is not None:
+        data["lavorazioni_extra"] = _sanitize_lavorazioni_extra(data["lavorazioni_extra"])
     for k in auto_costi:
         val = data.get(k)
         if not payload.override_costi or val is None:
@@ -627,6 +668,7 @@ async def stats(anno: Optional[int] = None):
             d.get("costo_lavaggio_fine", 0) or 0,
             d.get("costo_scafo_sporco", 0) or 0,
         ])
+        entrate_totali += _totale_extra(d)
 
     # Scadenze prossime (entro 30 giorni)
     from datetime import timedelta
@@ -948,7 +990,12 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     add("Lavaggio inizio stagione", "costo_lavaggio_inizio")
     add("Lavaggio fine stagione", "costo_lavaggio_fine")
     add("Manutenzione motore", "costo_manutenzione_motore")
-    totale = sum(float(doc.get(k) or 0) for k in ("costo_sosta","costo_movimentazione","costo_taccaggio","costo_copertura","costo_alaggio","costo_varo","costo_antivegetativa","costo_scafo_sporco","costo_lavaggio_inizio","costo_lavaggio_fine","costo_manutenzione_motore"))
+    # Lavorazioni extra: mostrate come voce aggregata nella tabella principale
+    lav_extra = doc.get("lavorazioni_extra") or []
+    tot_extra = round(sum(float((it or {}).get("prezzo") or 0) for it in lav_extra), 2)
+    if tot_extra > 0:
+        voci.append(["Lavorazioni extra", _euro(tot_extra)])
+    totale = sum(float(doc.get(k) or 0) for k in ("costo_sosta","costo_movimentazione","costo_taccaggio","costo_copertura","costo_alaggio","costo_varo","costo_antivegetativa","costo_scafo_sporco","costo_lavaggio_inizio","costo_lavaggio_fine","costo_manutenzione_motore")) + tot_extra
 
     if not voci:
         voci = [["Nessun costo configurato", "—"]]
@@ -1053,6 +1100,40 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
             litri2 = float(doc.get("litri_olio_motore_2") or 0)
             potenza_2 = float(doc.get("potenza_motore_2") or 0)
             elems.append(_build_motore_table("2° Motore", potenza_2, litri2, nc2, nt2, girante_2, manodopera_2, ricambi_2_tot))
+
+    # Lavorazioni extra dettaglio
+    if lav_extra and tot_extra > 0:
+        elems.append(Paragraph("LAVORAZIONI EXTRA", h2))
+        rows_extra = [["DESCRIZIONE", "IMPORTO"]]
+        for it in lav_extra:
+            desc = (it.get("descrizione") or "").strip() or "—"
+            prezzo = float(it.get("prezzo") or 0)
+            if prezzo > 0 or desc != "—":
+                rows_extra.append([desc[:80], _euro(prezzo)])
+        rows_extra.append(["TOTALE EXTRA", _euro(tot_extra)])
+        ex_tbl = Table(rows_extra, colWidths=[124*mm, 50*mm])
+        n_ex = len(rows_extra) - 2
+        ex_tbl.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), NAVY),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,0), 8),
+            ("ALIGN", (1,0), (1,-1), "RIGHT"),
+            ("FONTNAME", (0,1), (-1,n_ex), "Helvetica"),
+            ("FONTSIZE", (0,1), (-1,n_ex), 10),
+            ("TEXTCOLOR", (0,1), (-1,n_ex), NAVY),
+            ("ROWBACKGROUNDS", (0,1), (-1,n_ex), [colors.white, SAND]),
+            ("LINEBELOW", (0,1), (-1,n_ex), 0.3, colors.HexColor("#D9D9D9")),
+            ("BACKGROUND", (0,-1), (-1,-1), TEAK),
+            ("TEXTCOLOR", (0,-1), (-1,-1), colors.white),
+            ("FONTNAME", (0,-1), (-1,-1), "Helvetica-Bold"),
+            ("FONTSIZE", (0,-1), (-1,-1), 11),
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("LEFTPADDING", (0,0), (-1,-1), 10),
+            ("RIGHTPADDING", (0,0), (-1,-1), 10),
+        ]))
+        elems.append(ex_tbl)
 
     # Scadenze
     if doc.get("scadenza_antivegetativa") or doc.get("scadenza_manutenzione"):
@@ -1388,6 +1469,7 @@ async def report_incassi(anno: Optional[int] = None):
     incasso_lavaggio_inizio = s("costo_lavaggio_inizio")
     incasso_lavaggio_fine = s("costo_lavaggio_fine")
     incasso_motore = s("costo_manutenzione_motore")
+    incasso_lavorazioni_extra = round(sum(_totale_extra(d) for d in docs), 2)
 
     # Suddivisione motore
     incasso_manodopera = s("costo_manodopera_motore")
@@ -1398,7 +1480,7 @@ async def report_incassi(anno: Optional[int] = None):
         incasso_alaggio + incasso_varo + incasso_coperture +
         incasso_antivegetativa + incasso_scafo_sporco +
         incasso_lavaggio_inizio + incasso_lavaggio_fine +
-        incasso_motore, 2
+        incasso_motore + incasso_lavorazioni_extra, 2
     )
 
     # Ripartizione per tipo sosta
@@ -1412,7 +1494,7 @@ async def report_incassi(anno: Optional[int] = None):
                 "costo_antivegetativa","costo_scafo_sporco",
                 "costo_lavaggio_inizio","costo_lavaggio_fine",
                 "costo_manutenzione_motore"
-            ))
+            )) + _totale_extra(d)
             per_tipo_sosta[tipo] = round(per_tipo_sosta[tipo] + client_tot, 2)
 
     return {
@@ -1427,6 +1509,7 @@ async def report_incassi(anno: Optional[int] = None):
             "scafo_sporco": incasso_scafo_sporco,
             "lavaggi": round(incasso_lavaggio_inizio + incasso_lavaggio_fine, 2),
             "manutenzione_motore": incasso_motore,
+            "lavorazioni_extra": incasso_lavorazioni_extra,
         },
         "motore_dettaglio": {
             "manodopera": incasso_manodopera,
@@ -1476,7 +1559,8 @@ async def report_pagamenti(anno: Optional[int] = None):
     q = {}
     if anno is not None:
         q["anno"] = anno
-    docs = await db.clienti.find(q, {"_id": 0}).sort("cognome", 1).to_list(10000)
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(10000)
+    docs.sort(key=lambda d: ((d.get("cognome") or "").strip().lower(), (d.get("nome") or "").strip().lower()))
 
     result = []
     for d in docs:
@@ -1486,7 +1570,7 @@ async def report_pagamenti(anno: Optional[int] = None):
             "costo_antivegetativa","costo_scafo_sporco",
             "costo_lavaggio_inizio","costo_lavaggio_fine",
             "costo_manutenzione_motore"
-        ))
+        )) + _totale_extra(d)
         result.append({
             "id": d["id"],
             "nome": d.get("nome",""),
@@ -1519,7 +1603,8 @@ async def report_pagamenti_pdf(anno: Optional[int] = None, stato: str = "tutti")
     q = {}
     if anno is not None:
         q["anno"] = anno
-    docs = await db.clienti.find(q, {"_id": 0}).sort("cognome", 1).to_list(10000)
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(10000)
+    docs.sort(key=lambda d: ((d.get("cognome") or "").strip().lower(), (d.get("nome") or "").strip().lower()))
     cantiere_doc = await db.cantiere.find_one({"id": "default"}, {"_id": 0}) or {}
 
     rows_all = []
@@ -1530,7 +1615,7 @@ async def report_pagamenti_pdf(anno: Optional[int] = None, stato: str = "tutti")
             "costo_antivegetativa","costo_scafo_sporco",
             "costo_lavaggio_inizio","costo_lavaggio_fine",
             "costo_manutenzione_motore"
-        ))
+        )) + _totale_extra(d)
         rows_all.append({
             "cognome": d.get("cognome", ""),
             "nome": d.get("nome", ""),

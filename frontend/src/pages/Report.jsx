@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from "recharts";
 
-const CAT_COLORS = ["#B0562E", "#0F1B3D", "#D9A05B", "#4A6FA5", "#6B8E4E", "#8E6B4E", "#3E5C7E", "#7A4A3E"];
+const CAT_COLORS = ["#B0562E", "#0F1B3D", "#D9A05B", "#4A6FA5", "#6B8E4E", "#8E6B4E", "#3E5C7E", "#7A4A3E", "#5A7A9A"];
 
 const CATEGORIES = [
   { key: "sosta",                 label: "Incasso sosta",                icon: Anchor,       color: CAT_COLORS[0] },
@@ -28,6 +28,7 @@ const CATEGORIES = [
   { key: "scafo_sporco",          label: "Magg. scafo sporco",           icon: ShieldAlert,  color: CAT_COLORS[5] },
   { key: "lavaggi",               label: "Incasso lavaggi stagionali",   icon: Droplets,     color: CAT_COLORS[6] },
   { key: "manutenzione_motore",   label: "Incasso manutenzione motori",  icon: Wrench,       color: CAT_COLORS[7] },
+  { key: "lavorazioni_extra",     label: "Lavorazioni extra",            icon: Wrench,       color: CAT_COLORS[8] },
 ];
 
 export default function Report() {

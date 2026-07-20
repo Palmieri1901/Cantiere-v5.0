@@ -55,10 +55,15 @@ export default function Clienti() {
     });
   }, [clienti, q, tipoSostaFilter]);
 
-  const totale = (c) =>
-    (c.costo_sosta || 0) + (c.costo_copertura || 0) + (c.costo_alaggio || 0) +
-    (c.costo_varo || 0) + (c.costo_antivegetativa || 0) + (c.costo_manutenzione_motore || 0) +
-    (c.costo_lavaggio_inizio || 0) + (c.costo_lavaggio_fine || 0) + (c.costo_scafo_sporco || 0);
+  const totale = (c) => {
+    const base = (c.costo_sosta || 0) + (c.costo_copertura || 0) + (c.costo_alaggio || 0) +
+      (c.costo_varo || 0) + (c.costo_antivegetativa || 0) + (c.costo_manutenzione_motore || 0) +
+      (c.costo_lavaggio_inizio || 0) + (c.costo_lavaggio_fine || 0) + (c.costo_scafo_sporco || 0) +
+      (c.costo_movimentazione || 0) + (c.costo_taccaggio || 0);
+    const extra = (Array.isArray(c.lavorazioni_extra) ? c.lavorazioni_extra : [])
+      .reduce((s, it) => s + (Number(it?.prezzo) || 0), 0);
+    return base + extra;
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

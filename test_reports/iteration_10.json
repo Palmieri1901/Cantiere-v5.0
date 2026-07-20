@@ -1,0 +1,32 @@
+{
+  "summary": "Iter10 backend testing: ordinamento alfabetico case-insensitive per cognome + lavorazioni_extra (max 20) integrate in PDF preventivo, report pagamenti (JSON+PDF), report incassi e stats. 10/10 test PASS.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter10_alpha_and_extra.py",
+    "/app/test_reports/pytest/iter10_all.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py sta diventando molto lungo (~1873 righe) — considerare splitting in moduli (routers/clienti.py, routers/report.py, pdf/preventivo.py, models.py) per manutenibilità.",
+    "In list_clienti (line 512) e altre query si usa .to_list(1000) fissi: se il DB cresce oltre 1000 clienti, i risultati verranno silenziosamente troncati. Suggerire limite più alto o paginazione.",
+    "_sanitize_lavorazioni_extra usa 'if not lst: return []' che copre correttamente None e []; se ricevi un dict o stringa dai [] senza HTTPException (isinstance list check è dopo). Ok ma occhio: se lst=='' non è lista→ ritorna [] silenziosamente.",
+    "Ripetizione della lista di chiavi costo_* per calcolare totale cliente in almeno 4 posti (stats, report_incassi, report_pagamenti, report_pagamenti_pdf). Estrarre in helper _totale_cliente(doc) come già fatto per _totale_extra."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter10_alpha_and_extra.py (nuovo)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not tested (skipped as per request)"},
+  "seed_data_creation": "Nessuna seed persistente. Tutti i test hanno usato prefisso 'TEST_iter10_' e sono stati puliti automaticamente dalla fixture created_ids (verificato: 0 leftover in DB).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Feature iter10 completamente verificata a livello API: (1) ordinamento cognome case-insensitive corretto sia con che senza filtro anno; (2) lavorazioni_extra: normalizzate a {descrizione(str stripped), prezzo(float)}, righe con desc vuota E prezzo 0 filtrate, cap a 20 con 400 se >20; (3) PUT senza campo lavorazioni_extra preserva il valore esistente (Optional[List[dict]]=None gestito correttamente); (4) PDF preventivo include sezione 'LAVORAZIONI EXTRA' (verificato via pypdf, testo estratto contiene la sezione e le descrizioni); (5) /api/report/pagamenti restituisce totale che include somma extra; (6) /api/report/pagamenti.pdf genera PDF valido >3KB; (7) /api/report/incassi ha nuova categoria 'lavorazioni_extra' e il totale generale include la categoria; (8) /api/stats entrate_totali include extra. Test file: /app/backend/tests/test_iter10_alpha_and_extra.py (usa REACT_APP_BACKEND_URL con fallback che legge da /app/frontend/.env).",
+  "rca of the issue": "N/A - nessun bug trovato"
+}
