@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, fmtEuro } from "@/lib/api";
+import { useYear } from "@/lib/year";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +11,11 @@ const COLORS = ["hsl(15 55% 45%)", "hsl(225 60% 25%)", "hsl(40 60% 55%)"];
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const { year } = useYear();
 
   useEffect(() => {
-    api.get("/stats").then((r) => setStats(r.data));
-  }, []);
+    api.get(`/stats?anno=${year}`).then((r) => setStats(r.data));
+  }, [year]);
 
   if (!stats) {
     return (

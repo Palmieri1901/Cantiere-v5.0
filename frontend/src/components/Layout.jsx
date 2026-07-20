@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, Link } from "react-router-dom";
 import { LayoutDashboard, Users, Grid3x3, Settings2, Sailboat, Building2, Home as HomeIcon, FileBarChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import YearSelector from "@/components/YearSelector";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
@@ -43,6 +44,8 @@ export default function Layout() {
           </div>
         </Link>
         <nav className="flex-1 p-3 space-y-1">
+          <YearSelector />
+          <div className="pt-2" />
           <NavLink to="/" end data-testid="nav-home" className={({ isActive }) => cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
             isActive ? "bg-primary/10 text-primary font-semibold" : "text-foreground/70 hover:bg-muted hover:text-foreground"

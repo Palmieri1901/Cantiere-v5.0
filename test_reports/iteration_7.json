@@ -1,0 +1,103 @@
+{
+  "summary": "Iteration 7 validates multi-year (anno) isolation across backend + frontend. Added 21 new pytest tests — all pass sequentially (21/21). Frontend year selector, popover, apri/elimina anno flows and per-year API calls all work. Discovered 2 issues: (CRITICAL) auth protection has been completely removed from the app during this iteration's refactor — all /api/* endpoints respond 200 unauthenticated and App.js no longer wraps routes with AuthProvider/ProtectedRoute; (HIGH) ClienteForm does not pass the selected `year` in the POST payload, so a new client created while viewing a non-current year is silently saved with anno=datetime.now().year (2026), not the selected year.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "ALL /api/* (except /api/auth/*)",
+        "issue": "Authentication protection REMOVED. GET /api/clienti, /api/stats, /api/tariffe, /api/cantiere, /api/posti-barca, /api/export/preventivi.zip, /api/anni all return 200 without any auth (cookie or Bearer). 8 pre-existing iteration-6 auth tests now fail (were passing). Regression introduced along with the anno feature.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "server.py",
+        "issue": "server.py grew to 1459 lines. Auth routes are now defined BEFORE api_router, but api_router itself has no Depends(get_current_user) — likely the previous protection lived in a middleware or router-level dependency that was dropped during refactor."
+      },
+      {
+        "endpoint": "DELETE /api/anni/{anno}",
+        "issue": "No 400/409 on deleting the current year; silently deletes. UX warning only exists on the frontend AlertDialog. Consider adding a backend guard or extra confirmation flag."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ClienteForm",
+        "issue": "Payload sent on POST /api/clienti does NOT include `anno`. Because `ClienteCreate.anno` is Optional[None], backend applies the model default (datetime.now().year = 2026). Result: user selects 2027 in YearSelector, creates a new client, but client is stored with anno=2026 and disappears from the current view. Verified via curl. Fix: add `anno: cliente?.anno ?? year` to the payload object at ClienteForm.jsx line ~124.",
+        "selector": "[data-testid=btn-salva-cliente]",
+        "priority": "HIGH"
+      },
+      {
+        "component": "App.js",
+        "issue": "No AuthProvider, no ProtectedRoute, no /login route. `useAuth` context appears removed. Users can now access every page without logging in. Coupled with the backend auth regression, the entire login/logout system from iteration 6 is broken.",
+        "selector": "n/a",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Sidebar YearSelector",
+        "issues": ["btn-year-menu text concatenates year and clienti count without a separator when read as textContent (e.g. '20276 clienti'). Visually fine because of two <div>s but breaks screen-readers/text scraping. Consider a space or aria-label."]
+      }
+    ]
+  },
+  "passed_tests_backend": [
+    "GET /api/anni returns {anno_corrente: 2026, anni:[{anno:2027,clienti:6},{anno:2026,clienti:6}]}",
+    "GET /api/clienti?anno=2026 -> 6 clients, all anno==2026",
+    "GET /api/clienti?anno=2027 -> 6 clients, all anno==2027",
+    "GET /api/clienti (no filter) -> >=12 clients",
+    "GET /api/stats?anno=2026 -> totale_clienti=6; anno=2027 same",
+    "GET /api/posti-barca?anno=2026 -> only 2026 client IDs occupy posti; 2027 disjoint set",
+    "GET /api/report/incassi?anno=2026 -> totale_clienti=6; year-isolation verified",
+    "POST /api/anni/apri {anno:2028} -> ok, duplicati=0, no clients in 2028",
+    "POST /api/anni/apri {anno:2029, duplica_da:2026} -> duplicati=6, new IDs disjoint from 2026",
+    "POST /api/anni/apri twice on 2029 -> duplicati=0, gia_esistenti=6",
+    "POST /api/anni/apri anno=1999 or 2101 -> 400",
+    "DELETE /api/anni/2028 (empty) -> clienti_eliminati=0",
+    "DELETE /api/anni/2029 -> clienti_eliminati=6; 2029 gone; 2026 untouched",
+    "POST /api/clienti same posto in same year (2026) -> 400 conflict; same posto in different year (2028) -> 200 ok",
+    "PUT /api/clienti/{id} without anno in payload preserves existing anno (2027 stays 2027)"
+  ],
+  "failed_tests_backend": [
+    "test_auth_and_bulk_pdf.py TestUnauthenticated::* (6 tests) -> expected 401, got 200 — auth regression",
+    "test_auth_and_bulk_pdf.py TestAuthMe::test_invalid_bearer_token_returns_401 -> expected 401, got 200 for /api/clienti with garbage bearer",
+    "test_auth_and_bulk_pdf.py TestLogout::test_logout_clears_cookie_and_subsequent_request_401 -> after logout, /api/clienti still 200"
+  ],
+  "passed_tests_frontend": [
+    "YearSelector visible with data-testid=year-selector; btn-year-menu shows '2026' + '6 clienti'",
+    "Click btn-year-menu opens popover, year-item-2026 and year-item-2027 both present",
+    "Click year-item-2027 -> localStorage 'portomare_selected_year'='2027'; btn-year-menu updates to '2027 · 6 clienti'",
+    "btn-apri-anno opens dialog-nuovo-anno; setting input-nuovo-anno=2030 + btn-conferma-nuovo-anno creates and selects 2030 (empty)",
+    "btn-elimina-anno opens dialog-elimina-anno alert; btn-conferma-elimina-anno removes 2030 and falls back to 2027 automatically",
+    "After selecting 2026, navigating to /clienti fires GET /api/clienti?anno=2026 (verified via network capture)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_anni_multi_year.py",
+    "/app/test_reports/pytest/iter7_anni.xml",
+    "/app/test_reports/pytest/iter7_all.xml"
+  ],
+  "critical_code_review_comments": [
+    "AUTH REGRESSION: iteration 6 delivered cookie+Bearer JWT auth on all /api/* except /api/auth/*. In iteration 7 (anno feature) the protection has been removed — api_router carries no Depends(get_current_user), and App.js no longer contains AuthProvider/ProtectedRoute/Login. This is a security-critical rollback and must be restored before any deploy.",
+    "ClienteForm.jsx imports useYear() and destructures `year` (line 41) but never uses it in the save() payload (lines 100-124). Add `anno: cliente?.anno ?? year` so newly created clients land in the year the user is currently viewing.",
+    "server.py: DELETE /api/anni/{anno} silently deletes the current-year data with no additional confirmation. Consider requiring `?confirm=1` or a body flag when anno == datetime.now().year.",
+    "The parallel pytest run (xdist) exposes a race in test_get_anni_contains_2026_and_2027 vs test_apri_anno_duplica_2026_to_2029: not a product bug, but tests should be marked as needing serial execution or the assertion should be tolerant (>=6).",
+    "server.py is 1459 lines — still growing. Splitting into routers (anni, clienti, lavori, pdf, cantiere, auth) is overdue.",
+    "year.jsx refresh() has stale-closure risk: useEffect uses [] deps so `year` inside refresh always reads the initial value on first call. Currently fine because the fallback logic runs again on subsequent explicit refresh() calls, but consider `useEffect(() => { refresh(); }, [refresh])` after wrapping refresh with useCallback that already has `year` in deps (already the case — good).",
+    "YearSelector's `confermaElimina` uses `anni.anni.filter(...)` from the pre-delete state to pick fallback year; if the just-deleted year is the only entry, it falls to `new Date().getFullYear()` which may not exist yet in DB — user then sees 0 counts. Minor UX polish."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_anni_multi_year.py (new, 21 tests, all pass sequentially)"
+  ],
+  "success_rate": {
+    "backend": "91.5% (86/94) — 21/21 new anno tests pass; 8/8 iter-6 auth tests fail due to auth regression",
+    "frontend": "100% (6/6 year-selector flows) — but ClienteForm anno wiring bug is separate and confirmed"
+  },
+  "test_credentials": "admin@portomare.it / portomare2026 — LOGIN still functional (POST /api/auth/login returns 200 with cookie+token), but the session is NO LONGER REQUIRED for accessing protected endpoints.",
+  "seed_data_creation": "Tests transiently create/delete years 2028 and 2029 via /api/anni/apri and /api/anni/{anno}. Also creates one TEST_2028/TEST_SamePosto client in 2028, deleted by cascade in the same test. No permanent seed data added.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run `python -m pytest backend/tests/ -v -n0 -o addopts=` for stable results (xdist has a race in one anni test only). Two regressions to verify are fixed: (1) restore api_router auth guard (or middleware) and (2) restore App.js auth wrappers. Then re-run test_auth_and_bulk_pdf.py to confirm 401s come back. Also verify ClienteForm posts `anno` — repro: log in on frontend, switch YearSelector to 2027, create a new client, GET /api/clienti?anno=2027 must show the new client.",
+  "rca_of_issue": "Auth regression: api_router in server.py lines 87+ is declared with no dependencies=[Depends(get_current_user)] and there is no auth middleware, so JWT-required paths are silently open. In iteration 6 this protection was likely applied at the app.include_router level or through a dependency that got dropped when the anno endpoints were merged in. ClienteForm bug: useYear() is imported and year variable is available but the payload dict at ClienteForm.jsx line 101 only spreads `...f`, and `f` (state initialized from `empty` — line 22-35) has no `anno` key. Fix is a one-line addition to the payload."
+}

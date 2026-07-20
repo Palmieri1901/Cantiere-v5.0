@@ -161,7 +161,8 @@ class Cliente(BaseModel):
     cognome: str
     tipo_barca: str
     lunghezza: float  # metri
-    tipo_sosta: str  # "dentro" | "fuori"
+    tipo_sosta: str  # "dentro" | "fuori" | "fuori_sede"
+    anno: int = Field(default_factory=lambda: datetime.now().year)
     posto_barca: Optional[int] = None  # 1-200
     telefono: Optional[str] = ""
     email: Optional[str] = ""
@@ -206,6 +207,7 @@ class ClienteCreate(BaseModel):
     tipo_barca: str
     lunghezza: float
     tipo_sosta: str
+    anno: Optional[int] = None
     posto_barca: Optional[int] = None
     telefono: Optional[str] = ""
     email: Optional[str] = ""
@@ -417,8 +419,11 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
 
 # --- Clienti ---
 @api_router.get("/clienti", response_model=List[Cliente])
-async def list_clienti():
-    docs = await db.clienti.find({}, {"_id": 0}).to_list(1000)
+async def list_clienti(anno: Optional[int] = None):
+    q = {}
+    if anno is not None:
+        q["anno"] = anno
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(1000)
     return [Cliente(**deserialize_cliente(d)) for d in docs]
 
 
@@ -437,9 +442,10 @@ async def create_cliente(payload: ClienteCreate):
     if payload.posto_barca is not None:
         if payload.posto_barca < 1 or payload.posto_barca > TOTAL_POSTI:
             raise HTTPException(400, f"Posto barca deve essere tra 1 e {TOTAL_POSTI}")
-        existing = await db.clienti.find_one({"posto_barca": payload.posto_barca})
+        anno_check = payload.anno or datetime.now().year
+        existing = await db.clienti.find_one({"posto_barca": payload.posto_barca, "anno": anno_check})
         if existing:
-            raise HTTPException(400, f"Posto barca {payload.posto_barca} già occupato")
+            raise HTTPException(400, f"Posto barca {payload.posto_barca} già occupato per l'anno {anno_check}")
 
     t = await get_tariffe_doc()
     auto_costi = calcola_costi(
@@ -482,9 +488,10 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
     if payload.posto_barca is not None:
         if payload.posto_barca < 1 or payload.posto_barca > TOTAL_POSTI:
             raise HTTPException(400, f"Posto barca deve essere tra 1 e {TOTAL_POSTI}")
-        conflict = await db.clienti.find_one({"posto_barca": payload.posto_barca, "id": {"$ne": cliente_id}})
+        anno_check = payload.anno or existing.get("anno") or datetime.now().year
+        conflict = await db.clienti.find_one({"posto_barca": payload.posto_barca, "anno": anno_check, "id": {"$ne": cliente_id}})
         if conflict:
-            raise HTTPException(400, f"Posto barca {payload.posto_barca} già occupato")
+            raise HTTPException(400, f"Posto barca {payload.posto_barca} già occupato per l'anno {anno_check}")
 
     t = await get_tariffe_doc()
     auto_costi = calcola_costi(
@@ -527,8 +534,11 @@ async def delete_cliente(cliente_id: str):
 
 # --- Stats ---
 @api_router.get("/stats")
-async def stats():
-    docs = await db.clienti.find({}, {"_id": 0}).to_list(1000)
+async def stats(anno: Optional[int] = None):
+    q = {}
+    if anno is not None:
+        q["anno"] = anno
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(1000)
     dentro = sum(1 for d in docs if d.get("tipo_sosta") == "dentro")
     fuori = sum(1 for d in docs if d.get("tipo_sosta") == "fuori")
     fuori_sede = sum(1 for d in docs if d.get("tipo_sosta") == "fuori_sede")
@@ -589,8 +599,11 @@ async def stats():
 
 # --- Posti barca ---
 @api_router.get("/posti-barca")
-async def posti_barca():
-    docs = await db.clienti.find({"posto_barca": {"$ne": None}}, {"_id": 0}).to_list(1000)
+async def posti_barca(anno: Optional[int] = None):
+    q = {"posto_barca": {"$ne": None}}
+    if anno is not None:
+        q["anno"] = anno
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(1000)
     occupati_map = {d["posto_barca"]: d for d in docs if d.get("posto_barca")}
     result = []
     for i in range(1, TOTAL_POSTI + 1):
@@ -658,6 +671,7 @@ class Lavoro(BaseModel):
     costo: float = 0.0
     materiali: str = ""
     stato: str = "completato"  # pianificato | in_corso | completato
+    anno: int = Field(default_factory=lambda: datetime.now().year)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -669,6 +683,7 @@ class LavoroCreate(BaseModel):
     costo: Optional[float] = 0.0
     materiali: Optional[str] = ""
     stato: Optional[str] = "completato"
+    anno: Optional[int] = None
 
 
 @api_router.get("/clienti/{cliente_id}/lavori", response_model=List[Lavoro])
@@ -1255,9 +1270,12 @@ async def _startup():
 # ---------- REPORT INCASSI ----------
 
 @api_router.get("/report/incassi")
-async def report_incassi():
-    """Sommatorie per categoria su tutti i clienti."""
-    docs = await db.clienti.find({}, {"_id": 0}).to_list(10000)
+async def report_incassi(anno: Optional[int] = None):
+    """Sommatorie per categoria su tutti i clienti (filtrabili per anno)."""
+    q = {}
+    if anno is not None:
+        q["anno"] = anno
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(10000)
 
     def s(key):
         return round(sum(float(d.get(key) or 0) for d in docs), 2)
@@ -1331,6 +1349,93 @@ async def report_incassi():
             "fine_stagione": incasso_lavaggio_fine,
         },
         "per_tipo_sosta": per_tipo_sosta,
+    }
+
+
+# ---------- GESTIONE ANNI ----------
+
+@api_router.get("/anni")
+async def list_anni():
+    """Ritorna la lista degli anni con conteggio clienti per anno."""
+    now_year = datetime.now().year
+    docs = await db.clienti.find({}, {"anno": 1, "_id": 0}).to_list(20000)
+    counts = {}
+    for d in docs:
+        y = d.get("anno") or now_year
+        counts[y] = counts.get(y, 0) + 1
+    if now_year not in counts:
+        counts[now_year] = counts.get(now_year, 0)
+
+    anni_sorted = sorted(counts.keys(), reverse=True)
+    return {
+        "anno_corrente": now_year,
+        "anni": [{"anno": y, "clienti": counts[y]} for y in anni_sorted],
+    }
+
+
+class ApriAnnoRequest(BaseModel):
+    anno: int
+    duplica_da: Optional[int] = None  # anno da cui duplicare i clienti
+
+
+@api_router.post("/anni/apri")
+async def apri_anno(payload: ApriAnnoRequest):
+    """Apre un nuovo anno. Se duplica_da è specificato, copia i clienti da quell'anno (ricalcolando i costi con le tariffe correnti)."""
+    if payload.anno < 2000 or payload.anno > 2100:
+        raise HTTPException(400, "Anno non valido")
+
+    # Verifica se ci sono già clienti per quest'anno
+    existing_count = await db.clienti.count_documents({"anno": payload.anno})
+
+    duplicati = 0
+    if payload.duplica_da is not None and existing_count == 0:
+        origine = await db.clienti.find({"anno": payload.duplica_da}, {"_id": 0}).to_list(10000)
+        t = await get_tariffe_doc()
+        for c in origine:
+            # Nuovo ID e anno, ricalcola costi
+            new_id = str(uuid.uuid4())
+            auto_costi = calcola_costi(
+                c.get("lunghezza", 0), c.get("tipo_sosta", "dentro"), t,
+                c.get("potenza_motore", 0) or 0,
+                c.get("numero_candele", 4) or 4,
+                c.get("numero_termostati", 1) or 1,
+                bool(c.get("antivegetativa_attiva", True)),
+                bool(c.get("girante_attivo", True)),
+                float(c.get("litri_olio_motore", 3.0) or 3.0),
+                bool(c.get("lavaggio_inizio_attivo", True)),
+                bool(c.get("lavaggio_fine_attivo", True)),
+            )
+            auto_costi.pop("ricambi_dettaglio", None)
+
+            data = {**c, **auto_costi, "id": new_id, "anno": payload.anno,
+                    "created_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc),
+                    # Reset note e scadenze del nuovo anno
+                    "note_lavori": "", "scadenza_antivegetativa": None, "scadenza_manutenzione": None}
+            try:
+                cli = Cliente(**{k: v for k, v in data.items() if k in Cliente.model_fields or k in ("posto_barca", "scadenza_antivegetativa", "scadenza_manutenzione")})
+                await db.clienti.insert_one(serialize(cli))
+                duplicati += 1
+            except Exception as e:
+                logger.warning(f"Errore duplicazione cliente: {e}")
+
+    return {"ok": True, "anno": payload.anno, "duplicati": duplicati, "gia_esistenti": existing_count}
+
+
+@api_router.delete("/anni/{anno}")
+async def elimina_anno(anno: int):
+    """Elimina tutti i clienti e lavori di un anno specifico."""
+    if anno == datetime.now().year:
+        # Permettiamo di svuotare anche l'anno corrente ma con conteggio
+        pass
+    res_clienti = await db.clienti.delete_many({"anno": anno})
+    # Recupera ID clienti eliminati per pulire lavori? Meglio filtrare per anno lavoro
+    res_lavori = await db.lavori.delete_many({"anno": anno})
+    return {
+        "ok": True,
+        "anno": anno,
+        "clienti_eliminati": res_clienti.deleted_count,
+        "lavori_eliminati": res_lavori.deleted_count,
     }
 
 

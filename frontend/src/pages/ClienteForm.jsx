@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import LavoriSection from "@/pages/LavoriSection";
 import { API } from "@/lib/api";
+import { useYear } from "@/lib/year";
 import { FileText } from "lucide-react";
 
 const empty = {
@@ -37,6 +38,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
   const [f, setF] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [ricambiDettaglio, setRicambiDettaglio] = useState(null);
+  const { year } = useYear();
 
   useEffect(() => {
     if (cliente) {

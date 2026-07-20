@@ -18,6 +18,8 @@ import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText } fro
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
 import { API } from "@/lib/api";
+import { useYear } from "@/lib/year";
+
 
 export default function Clienti() {
   const [clienti, setClienti] = useState([]);
@@ -27,16 +29,17 @@ export default function Clienti() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const { year } = useYear();
 
   const load = () => {
     setLoading(true);
-    api.get("/clienti").then((r) => {
+    api.get(`/clienti?anno=${year}`).then((r) => {
       setClienti(r.data);
       setLoading(false);
     });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [year]);
 
   const filtered = useMemo(() => {
     return clienti.filter((c) => {

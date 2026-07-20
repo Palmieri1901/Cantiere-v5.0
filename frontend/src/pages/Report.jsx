@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, fmtEuro } from "@/lib/api";
+import { useYear } from "@/lib/year";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -24,10 +25,11 @@ const CATEGORIES = [
 
 export default function Report() {
   const [r, setR] = useState(null);
+  const { year } = useYear();
 
   useEffect(() => {
-    api.get("/report/incassi").then((res) => setR(res.data));
-  }, []);
+    api.get(`/report/incassi?anno=${year}`).then((res) => setR(res.data));
+  }, [year]);
 
   if (!r) {
     return <div className="p-8 text-muted-foreground" data-testid="report-loading">Caricamento report…</div>;

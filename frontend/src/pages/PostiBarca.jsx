@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useYear } from "@/lib/year";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,13 +11,15 @@ import { Anchor, Waves } from "lucide-react";
 export default function PostiBarca() {
   const [posti, setPosti] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { year } = useYear();
 
   useEffect(() => {
-    api.get("/posti-barca").then((r) => {
+    setLoading(true);
+    api.get(`/posti-barca?anno=${year}`).then((r) => {
       setPosti(r.data);
       setLoading(false);
     });
-  }, []);
+  }, [year]);
 
   const occupati = posti.filter((p) => p.occupato).length;
   const dentro = posti.filter((p) => p.tipo_sosta === "dentro").length;
