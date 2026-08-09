@@ -19,7 +19,7 @@ import { useYear } from "@/lib/year";
 import { FileText, Plus, X, Wrench, Zap } from "lucide-react";
 
 const empty = {
-  nome: "", cognome: "", tipo_barca: "", lunghezza: 8,
+  nome: "", cognome: "", tipo_barca: "", lunghezza: "",
   tipo_sosta: "dentro", posto_barca: "",
   telefono: "", email: "",
   codice_fiscale: "", indirizzo: "", cellulare: "",
