@@ -951,7 +951,7 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     buf = io.BytesIO()
     pdf = SimpleDocTemplate(
         buf, pagesize=A4,
-        leftMargin=18*mm, rightMargin=18*mm, topMargin=18*mm, bottomMargin=18*mm,
+        leftMargin=12*mm, rightMargin=12*mm, topMargin=10*mm, bottomMargin=8*mm,
         title=f"Preventivo {doc.get('cognome','')} {doc.get('nome','')}"
     )
     styles = getSampleStyleSheet()
@@ -960,12 +960,12 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     SAND = colors.HexColor("#F3EFE7")
     MUTED = colors.HexColor("#5B6478")
 
-    h1 = ParagraphStyle("h1", parent=styles["Heading1"], fontName="Helvetica-Bold", fontSize=24, textColor=NAVY, spaceAfter=4, leading=28)
-    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=11, textColor=TEAK, spaceBefore=14, spaceAfter=6, leading=13, letterSpace=2)
-    label = ParagraphStyle("label", parent=styles["Normal"], fontName="Helvetica", fontSize=8, textColor=MUTED, leading=10)
-    val = ParagraphStyle("val", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=11, textColor=NAVY, leading=14)
-    body = ParagraphStyle("body", parent=styles["Normal"], fontName="Helvetica", fontSize=10, textColor=NAVY, leading=14)
-    tiny = ParagraphStyle("tiny", parent=styles["Normal"], fontName="Helvetica", fontSize=8, textColor=MUTED, leading=10)
+    h1 = ParagraphStyle("h1", parent=styles["Heading1"], fontName="Helvetica-Bold", fontSize=20, textColor=NAVY, spaceAfter=2, leading=22)
+    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=9, textColor=TEAK, spaceBefore=6, spaceAfter=2, leading=11, letterSpace=1.5)
+    label = ParagraphStyle("label", parent=styles["Normal"], fontName="Helvetica", fontSize=7, textColor=MUTED, leading=9)
+    val = ParagraphStyle("val", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=10, textColor=NAVY, leading=12)
+    body = ParagraphStyle("body", parent=styles["Normal"], fontName="Helvetica", fontSize=9, textColor=NAVY, leading=11)
+    tiny = ParagraphStyle("tiny", parent=styles["Normal"], fontName="Helvetica", fontSize=7, textColor=MUTED, leading=9)
 
     elems = []
 
@@ -995,14 +995,14 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     ]))
     elems.append(header_tbl)
     if contatti_txt:
-        elems.append(Spacer(1, 2*mm))
-        elems.append(Paragraph(f"<font color='#5B6478' size=8>{contatti_txt}</font>", body))
-    elems.append(Spacer(1, 4*mm))
+        elems.append(Spacer(1, 1*mm))
+        elems.append(Paragraph(f"<font color='#5B6478' size=7>{contatti_txt}</font>", body))
+    elems.append(Spacer(1, 2*mm))
     # separator
-    sep = Table([[""]], colWidths=[174*mm], rowHeights=[2])
+    sep = Table([[""]], colWidths=[186*mm], rowHeights=[1.5])
     sep.setStyle(TableStyle([("BACKGROUND", (0,0), (-1,-1), TEAK)]))
     elems.append(sep)
-    elems.append(Spacer(1, 6*mm))
+    elems.append(Spacer(1, 2*mm))
 
     elems.append(Paragraph("CLIENTE E IMBARCAZIONE", h2))
     potenza = doc.get('potenza_motore') or 0
@@ -1011,15 +1011,15 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     info_tbl = Table([
         [Paragraph("Cliente", label), Paragraph("Contatti", label)],
         [Paragraph(f"<b>{doc.get('cognome','')} {doc.get('nome','')}</b>", val),
-         Paragraph(f"{doc.get('telefono') or '—'}<br/>{doc.get('email') or '—'}", body)],
-        [Spacer(1, 3*mm), Spacer(1, 3*mm)],
+         Paragraph(f"{doc.get('telefono') or '—'} · {doc.get('email') or '—'}", body)],
         [Paragraph("Imbarcazione", label), Paragraph("Sosta", label)],
-        [Paragraph(f"<b>{doc.get('tipo_barca','')}</b><br/><font color='#5B6478' size=9>Lunghezza: {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP · Olio: {litri_pdf:g} L</font>", body),
-         Paragraph(f"<b>{sosta_label}</b><br/><font color='#5B6478' size=9>Posto barca: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
-    ], colWidths=[87*mm, 87*mm])
+        [Paragraph(f"<b>{doc.get('tipo_barca','')}</b> · <font color='#5B6478' size=8>L. {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP · Olio: {litri_pdf:g} L</font>", body),
+         Paragraph(f"<b>{sosta_label}</b> · <font color='#5B6478' size=8>Posto: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
+    ], colWidths=[93*mm, 93*mm])
     info_tbl.setStyle(TableStyle([
         ("VALIGN", (0,0), (-1,-1), "TOP"),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
     ]))
     elems.append(info_tbl)
 
@@ -1052,16 +1052,16 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
         voci = [["Nessun costo configurato", "—"]]
 
     costi_data = [["VOCE", "IMPORTO"]] + voci + [["TOTALE", _euro(totale)]]
-    costi_tbl = Table(costi_data, colWidths=[124*mm, 50*mm])
+    costi_tbl = Table(costi_data, colWidths=[136*mm, 50*mm])
     n = len(voci)
     costi_tbl.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), NAVY),
         ("TEXTCOLOR", (0,0), (-1,0), colors.white),
         ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE", (0,0), (-1,0), 8),
+        ("FONTSIZE", (0,0), (-1,0), 7),
         ("ALIGN", (1,0), (1,-1), "RIGHT"),
         ("FONTNAME", (0,1), (-1,n), "Helvetica"),
-        ("FONTSIZE", (0,1), (-1,n), 10),
+        ("FONTSIZE", (0,1), (-1,n), 9),
         ("TEXTCOLOR", (0,1), (-1,n), NAVY),
         ("ROWBACKGROUNDS", (0,1), (-1,n), [colors.white, SAND]),
         ("LINEBELOW", (0,1), (-1,n), 0.3, colors.HexColor("#D9D9D9")),
@@ -1069,11 +1069,11 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
         ("BACKGROUND", (0,-1), (-1,-1), TEAK),
         ("TEXTCOLOR", (0,-1), (-1,-1), colors.white),
         ("FONTNAME", (0,-1), (-1,-1), "Helvetica-Bold"),
-        ("FONTSIZE", (0,-1), (-1,-1), 12),
-        ("TOPPADDING", (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
-        ("LEFTPADDING", (0,0), (-1,-1), 10),
-        ("RIGHTPADDING", (0,0), (-1,-1), 10),
+        ("FONTSIZE", (0,-1), (-1,-1), 11),
+        ("TOPPADDING", (0,0), (-1,-1), 3),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
     ]))
     elems.append(costi_tbl)
 
@@ -1103,31 +1103,31 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
         subtotale = manod + ric_tot
         header_row = [f"{title_txt} — {int(potenza) if potenza else 0} HP", "", _euro(subtotale)]
         data = [header_row, ["VOCE", "Q.TÀ", "IMPORTO"]] + rows
-        tbl = Table(data, colWidths=[104*mm, 20*mm, 50*mm])
+        tbl = Table(data, colWidths=[116*mm, 20*mm, 50*mm])
         tbl.setStyle(TableStyle([
             # Titolo motore
             ("SPAN", (0,0), (1,0)),
             ("BACKGROUND", (0,0), (-1,0), TEAK),
             ("TEXTCOLOR", (0,0), (-1,0), colors.white),
             ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-            ("FONTSIZE", (0,0), (-1,0), 10),
+            ("FONTSIZE", (0,0), (-1,0), 9),
             ("ALIGN", (2,0), (2,0), "RIGHT"),
             # Intestazione tabella
             ("BACKGROUND", (0,1), (-1,1), NAVY),
             ("TEXTCOLOR", (0,1), (-1,1), colors.white),
             ("FONTNAME", (0,1), (-1,1), "Helvetica-Bold"),
-            ("FONTSIZE", (0,1), (-1,1), 8),
+            ("FONTSIZE", (0,1), (-1,1), 7),
             ("ALIGN", (1,1), (2,-1), "RIGHT"),
             # Righe
             ("FONTNAME", (0,2), (-1,-1), "Helvetica"),
-            ("FONTSIZE", (0,2), (-1,-1), 9),
+            ("FONTSIZE", (0,2), (-1,-1), 8),
             ("TEXTCOLOR", (0,2), (-1,-1), NAVY),
             ("ROWBACKGROUNDS", (0,2), (-1,-1), [colors.white, SAND]),
             ("LINEBELOW", (0,2), (-1,-1), 0.3, colors.HexColor("#D9D9D9")),
-            ("TOPPADDING", (0,0), (-1,-1), 6),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-            ("LEFTPADDING", (0,0), (-1,-1), 8),
-            ("RIGHTPADDING", (0,0), (-1,-1), 8),
+            ("TOPPADDING", (0,0), (-1,-1), 1),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+            ("LEFTPADDING", (0,0), (-1,-1), 6),
+            ("RIGHTPADDING", (0,0), (-1,-1), 6),
         ]))
         return tbl
 
@@ -1145,7 +1145,7 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
 
         # 2° motore
         if has_motore_2:
-            elems.append(Spacer(1, 4*mm))
+            elems.append(Spacer(1, 1*mm))
             nc2 = int(doc.get("numero_candele_2") or 0)
             nt2 = int(doc.get("numero_termostati_2") or 0)
             girante_2 = bool(doc.get("girante_2_attivo", True))
@@ -1164,27 +1164,27 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
             if prezzo > 0 or desc != "—":
                 rows_extra.append([desc[:80], _euro(prezzo)])
         rows_extra.append(["TOTALE EXTRA", _euro(tot_extra)])
-        ex_tbl = Table(rows_extra, colWidths=[124*mm, 50*mm])
+        ex_tbl = Table(rows_extra, colWidths=[136*mm, 50*mm])
         n_ex = len(rows_extra) - 2
         ex_tbl.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,0), NAVY),
             ("TEXTCOLOR", (0,0), (-1,0), colors.white),
             ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-            ("FONTSIZE", (0,0), (-1,0), 8),
+            ("FONTSIZE", (0,0), (-1,0), 7),
             ("ALIGN", (1,0), (1,-1), "RIGHT"),
             ("FONTNAME", (0,1), (-1,n_ex), "Helvetica"),
-            ("FONTSIZE", (0,1), (-1,n_ex), 10),
+            ("FONTSIZE", (0,1), (-1,n_ex), 9),
             ("TEXTCOLOR", (0,1), (-1,n_ex), NAVY),
             ("ROWBACKGROUNDS", (0,1), (-1,n_ex), [colors.white, SAND]),
             ("LINEBELOW", (0,1), (-1,n_ex), 0.3, colors.HexColor("#D9D9D9")),
             ("BACKGROUND", (0,-1), (-1,-1), TEAK),
             ("TEXTCOLOR", (0,-1), (-1,-1), colors.white),
             ("FONTNAME", (0,-1), (-1,-1), "Helvetica-Bold"),
-            ("FONTSIZE", (0,-1), (-1,-1), 11),
-            ("TOPPADDING", (0,0), (-1,-1), 6),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-            ("LEFTPADDING", (0,0), (-1,-1), 10),
-            ("RIGHTPADDING", (0,0), (-1,-1), 10),
+            ("FONTSIZE", (0,-1), (-1,-1), 10),
+            ("TOPPADDING", (0,0), (-1,-1), 3),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+            ("LEFTPADDING", (0,0), (-1,-1), 8),
+            ("RIGHTPADDING", (0,0), (-1,-1), 8),
         ]))
         elems.append(ex_tbl)
 
@@ -1196,44 +1196,44 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
             rows.append(["Antivegetativa", doc["scadenza_antivegetativa"]])
         if doc.get("scadenza_manutenzione"):
             rows.append(["Manutenzione motore", doc["scadenza_manutenzione"]])
-        sc_tbl = Table(rows, colWidths=[124*mm, 50*mm])
+        sc_tbl = Table(rows, colWidths=[136*mm, 50*mm])
         sc_tbl.setStyle(TableStyle([
             ("FONTNAME", (0,0), (-1,-1), "Helvetica"),
-            ("FONTSIZE", (0,0), (-1,-1), 10),
+            ("FONTSIZE", (0,0), (-1,-1), 8),
             ("TEXTCOLOR", (0,0), (-1,-1), NAVY),
             ("ALIGN", (1,0), (1,-1), "RIGHT"),
             ("LINEBELOW", (0,0), (-1,-1), 0.3, colors.HexColor("#D9D9D9")),
-            ("TOPPADDING", (0,0), (-1,-1), 6),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("TOPPADDING", (0,0), (-1,-1), 2),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
         ]))
         elems.append(sc_tbl)
 
-    # Storico lavori strutturato
+    # Storico lavori strutturato (limitato a 5 righe per garantire 1 pagina)
     if lavori_docs:
         elems.append(Paragraph("STORICO LAVORI ESEGUITI", h2))
         headers = ["Data", "Tipo", "Descrizione", "Costo"]
         rows = [headers]
-        for l in lavori_docs[:20]:
+        for l in lavori_docs[:5]:
             rows.append([
                 l.get("data",""),
                 l.get("tipo",""),
                 (l.get("descrizione","") or "")[:60],
                 _euro(float(l.get("costo") or 0)),
             ])
-        lav_tbl = Table(rows, colWidths=[24*mm, 40*mm, 78*mm, 32*mm])
+        lav_tbl = Table(rows, colWidths=[22*mm, 38*mm, 94*mm, 32*mm])
         lav_tbl.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,0), NAVY),
             ("TEXTCOLOR", (0,0), (-1,0), colors.white),
             ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-            ("FONTSIZE", (0,0), (-1,0), 8),
-            ("FONTSIZE", (0,1), (-1,-1), 9),
+            ("FONTSIZE", (0,0), (-1,0), 7),
+            ("FONTSIZE", (0,1), (-1,-1), 8),
             ("TEXTCOLOR", (0,1), (-1,-1), NAVY),
             ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, SAND]),
             ("ALIGN", (3,0), (3,-1), "RIGHT"),
             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-            ("TOPPADDING", (0,0), (-1,-1), 6),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-            ("LEFTPADDING", (0,0), (-1,-1), 8),
+            ("TOPPADDING", (0,0), (-1,-1), 2),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+            ("LEFTPADDING", (0,0), (-1,-1), 6),
         ]))
         elems.append(lav_tbl)
 
@@ -1242,11 +1242,11 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
         elems.append(Paragraph("NOTE", h2))
         elems.append(Paragraph(doc["note_lavori"].replace("\n", "<br/>"), body))
 
-    elems.append(Spacer(1, 10*mm))
+    elems.append(Spacer(1, 3*mm))
     footer_name = cantiere_doc.get("nome") or "Portomare"
     elems.append(Paragraph(
         f"Documento generato automaticamente da {footer_name} — Gestione Cantiere Nautico. "
-        f"Il presente preventivo ha validità 30 giorni dalla data di emissione ({date.today().strftime('%d/%m/%Y')}).",
+        f"Validità 30 giorni dalla data di emissione ({date.today().strftime('%d/%m/%Y')}).",
         tiny
     ))
 
