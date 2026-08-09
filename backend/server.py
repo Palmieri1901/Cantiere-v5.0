@@ -189,6 +189,7 @@ class Cliente(BaseModel):
     # Interruttori applicabilità
     antivegetativa_attiva: bool = True
     scafo_sporco_attivo: bool = False
+    copertura_attiva: bool = False
     girante_attivo: bool = True
     lavaggio_inizio_attivo: bool = True
     lavaggio_fine_attivo: bool = True
@@ -248,6 +249,7 @@ class ClienteCreate(BaseModel):
     girante_2_attivo: Optional[bool] = None
     antivegetativa_attiva: Optional[bool] = True
     scafo_sporco_attivo: Optional[bool] = None
+    copertura_attiva: Optional[bool] = None
     girante_attivo: Optional[bool] = True
     lavaggio_inizio_attivo: Optional[bool] = True
     lavaggio_fine_attivo: Optional[bool] = True
@@ -392,7 +394,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   numero_candele_2: int = 4,
                   numero_termostati_2: int = 1,
                   girante_2_attivo: bool = True,
-                  scafo_sporco_attivo: bool = False) -> dict:
+                  scafo_sporco_attivo: bool = False,
+                  copertura_attiva: bool = False) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     manodopera = calcola_motore_labor(potenza_motore, t)
     ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore)
@@ -434,25 +437,28 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     base["costo_movimentazione"] = movimentazione
     base["costo_taccaggio"] = taccaggio
 
+    # Copertura: ora è spunta indipendente, non più automatica per sosta fuori
+    copertura = round(lunghezza * t.copertura_per_metro, 2) if copertura_attiva else 0.0
+
     if tipo_sosta == "fuori":
         base.update({
             "costo_sosta": round(lunghezza * t.sosta_fuori_per_metro, 2),
-            "costo_copertura": round(lunghezza * t.copertura_per_metro, 2),
+            "costo_copertura": copertura,
             "costo_alaggio": calcola_alaggio(lunghezza, t),
             "costo_varo": calcola_varo(lunghezza, t),
         })
     elif tipo_sosta == "fuori_sede":
-        # Nessun costo sosta/copertura/alaggio/varo: la barca è custodita dal cliente
+        # Nessun costo sosta/alaggio/varo: la barca è custodita dal cliente. Copertura opzionale.
         base.update({
             "costo_sosta": 0.0,
-            "costo_copertura": 0.0,
+            "costo_copertura": copertura,
             "costo_alaggio": 0.0,
             "costo_varo": 0.0,
         })
     else:
         base.update({
             "costo_sosta": round(lunghezza * t.sosta_dentro_per_metro, 2),
-            "costo_copertura": 0.0,
+            "costo_copertura": copertura,
             "costo_alaggio": 0.0,
             "costo_varo": 0.0,
         })
@@ -501,7 +507,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         numero_candele_2: int = 4,
                         numero_termostati_2: int = 1,
                         girante_2_attivo: bool = True,
-                        scafo_sporco_attivo: bool = False):
+                        scafo_sporco_attivo: bool = False,
+                        copertura_attiva: bool = False):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
     t = await get_tariffe_doc()
@@ -511,7 +518,7 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          lavaggio_inizio_attivo, lavaggio_fine_attivo,
                          secondo_motore, potenza_motore_2, litri_olio_motore_2,
                          numero_candele_2, numero_termostati_2, girante_2_attivo,
-                         scafo_sporco_attivo)
+                         scafo_sporco_attivo, copertura_attiva)
 
 
 # --- Clienti ---
@@ -620,6 +627,7 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         int(payload.numero_termostati_2 or 1),
         bool(payload.girante_2_attivo if payload.girante_2_attivo is not None else True),
         bool(payload.scafo_sporco_attivo if payload.scafo_sporco_attivo is not None else False),
+        bool(payload.copertura_attiva if payload.copertura_attiva is not None else False),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -1486,6 +1494,18 @@ async def _startup():
         )
     except Exception as e:
         logger.warning(f"Migration iter13 scafo_sporco_attivo skipped: {e}")
+    # Migrazione iter14: chi aveva costo_copertura > 0 → copertura_attiva=True
+    try:
+        await db.clienti.update_many(
+            {"copertura_attiva": {"$exists": False}, "costo_copertura": {"$gt": 0}},
+            {"$set": {"copertura_attiva": True}},
+        )
+        await db.clienti.update_many(
+            {"copertura_attiva": {"$exists": False}},
+            {"$set": {"copertura_attiva": False}},
+        )
+    except Exception as e:
+        logger.warning(f"Migration iter14 copertura_attiva skipped: {e}")
 
 
 # ---------- REPORT INCASSI ----------
@@ -1860,6 +1880,7 @@ async def apri_anno(payload: ApriAnnoRequest):
                 int(c.get("numero_termostati_2", 1) or 1),
                 bool(c.get("girante_2_attivo", True)),
                 bool(c.get("scafo_sporco_attivo", False)),
+                bool(c.get("copertura_attiva", False)),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)

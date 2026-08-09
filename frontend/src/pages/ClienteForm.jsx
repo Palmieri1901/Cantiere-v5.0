@@ -30,6 +30,7 @@ const empty = {
   girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
   scafo_sporco_attivo: false,
+  copertura_attiva: false,
   lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
@@ -89,6 +90,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         numero_termostati_2: f.numero_termostati_2 || 0,
         girante_2_attivo: f.girante_2_attivo ? "true" : "false",
         scafo_sporco_attivo: f.scafo_sporco_attivo ? "true" : "false",
+        copertura_attiva: f.copertura_attiva ? "true" : "false",
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -100,7 +102,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -336,6 +338,13 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 checked={!!f.scafo_sporco_attivo}
                 onChange={(v) => update("scafo_sporco_attivo", v)}
                 testId="switch-scafo-sporco"
+              />
+              <ToggleRow
+                label="Copertura"
+                description="Applica il costo copertura (€ / metro)"
+                checked={!!f.copertura_attiva}
+                onChange={(v) => update("copertura_attiva", v)}
+                testId="switch-copertura"
               />
               <ToggleRow
                 label={f.secondo_motore ? "Girante 1° motore" : "Sostituzione girante"}

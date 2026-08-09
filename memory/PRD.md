@@ -145,6 +145,14 @@ Sono circa 200 posti barca"
   - OFF/ON → antivegetativa=0, scafo=120
 - ✅ Migrazione verificata: Bianchi (scafo 90€) e Semp (scafo 75€) preservati con scafo=True; altri 8 clienti con antivegetativa attiva → scafo=False.
 
+## Iter14 (2026-02-20) — Copertura come spunta indipendente
+- ✅ Prima: `costo_copertura` era applicato automaticamente per `tipo_sosta="fuori"`. Ora è **una spunta indipendente** (`copertura_attiva`) applicabile su qualsiasi tipo di sosta.
+- ✅ Backend: nuovo campo `copertura_attiva: bool = False` (`Optional[bool]=None` in Update). Signature `calcola_costi` 18° parametro. Preview/POST/PUT/duplicazione anno aggiornati.
+- ✅ **Migrazione iter14 all'avvio**: clienti con `costo_copertura > 0` ricevono `copertura_attiva=True` (rtr e Verdi preservati con costo 270€ e 360€), altri `False`. Idempotente.
+- ✅ Frontend `ClienteForm.jsx`: nuovo toggle "Copertura" (data-testid `switch-copertura`) accanto ad Antivegetativa e Scafo sporco.
+- ✅ **Bug fix** collaterale iter13: aggiunti `f.scafo_sporco_attivo` e `f.copertura_attiva` al vettore delle deps di `useEffect` per il ricalcolo preview (mancavano — il toggle non triggerava la refetch).
+- ✅ Test 4 casi backend + frontend: dentro+COP-ON=2407€ / dentro+COP-OFF=2207€ (diff 200€), aggiungendo scafo=+120€ → 2527€. API network capture conferma le call.
+
 ## Backlog (P0 → P2)
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)
