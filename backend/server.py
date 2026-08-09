@@ -177,12 +177,14 @@ class Cliente(BaseModel):
     # Motore
     potenza_motore: float = 0.0  # HP (cavalli)
     litri_olio_motore: float = 3.0
+    litri_olio_piede: float = 1.0
     numero_candele: int = 4
     numero_termostati: int = 1
     # Secondo motore (opzionale)
     secondo_motore: bool = False
     potenza_motore_2: float = 0.0
     litri_olio_motore_2: float = 3.0
+    litri_olio_piede_2: float = 1.0
     numero_candele_2: int = 4
     numero_termostati_2: int = 1
     girante_2_attivo: bool = True
@@ -239,11 +241,13 @@ class ClienteCreate(BaseModel):
     data_pagamento: Optional[str] = None
     potenza_motore: Optional[float] = 0.0
     litri_olio_motore: Optional[float] = 3.0
+    litri_olio_piede: Optional[float] = None
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
     secondo_motore: Optional[bool] = False
     potenza_motore_2: Optional[float] = 0.0
     litri_olio_motore_2: Optional[float] = 3.0
+    litri_olio_piede_2: Optional[float] = None
     numero_candele_2: Optional[int] = 4
     numero_termostati_2: Optional[int] = 1
     girante_2_attivo: Optional[bool] = None
@@ -362,18 +366,20 @@ def calcola_motore_labor(potenza_hp: float, t: Tariffe) -> float:
 
 
 def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,
-                    girante_attivo: bool = True, litri_olio_motore: float = 3.0) -> dict:
-    """Costo ricambi motore: girante, olio motore (× litri), filtro olio, candele, termostati, olio piede, anodi, ingrassaggio."""
+                    girante_attivo: bool = True, litri_olio_motore: float = 3.0,
+                    litri_olio_piede: float = 1.0) -> dict:
+    """Costo ricambi motore: girante, olio motore (× litri), filtro olio, candele, termostati, olio piede (× litri), anodi, ingrassaggio."""
     nc = int(numero_candele or 0)
     nt = int(numero_termostati or 0)
     litri = float(litri_olio_motore or 0)
+    litri_piede = float(litri_olio_piede or 0)
     return {
         "girante": round(t.costo_girante, 2) if girante_attivo else 0.0,
         "olio_motore": round(litri * t.costo_olio_motore, 2),
         "filtro_olio": round(t.costo_filtro_olio, 2),
         "candele": round(nc * t.costo_candela, 2),
         "termostati": round(nt * t.costo_termostato, 2),
-        "olio_piede": round(t.costo_olio_piede, 2),
+        "olio_piede": round(litri_piede * t.costo_olio_piede, 2),
         "anodi_interni": round(t.costo_anodi_interni, 2),
         "anodi_esterni": round(t.costo_anodi_esterni, 2),
         "ingrassaggio": round(t.costo_ingrassaggio, 2),
@@ -395,10 +401,12 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   numero_termostati_2: int = 1,
                   girante_2_attivo: bool = True,
                   scafo_sporco_attivo: bool = False,
-                  copertura_attiva: bool = False) -> dict:
+                  copertura_attiva: bool = False,
+                  litri_olio_piede: float = 1.0,
+                  litri_olio_piede_2: float = 1.0) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     manodopera = calcola_motore_labor(potenza_motore, t)
-    ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore)
+    ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
     ricambi_tot = round(sum(ricambi.values()), 2)
 
     # Secondo motore (se presente)
@@ -407,7 +415,7 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     ricambi_2 = {}
     if secondo_motore:
         manodopera_2 = calcola_motore_labor(potenza_motore_2, t)
-        ricambi_2 = calcola_ricambi(numero_candele_2, numero_termostati_2, t, girante_2_attivo, litri_olio_motore_2)
+        ricambi_2 = calcola_ricambi(numero_candele_2, numero_termostati_2, t, girante_2_attivo, litri_olio_motore_2, litri_olio_piede_2)
         ricambi_2_tot = round(sum(ricambi_2.values()), 2)
 
     motore_tot = round(manodopera + ricambi_tot + manodopera_2 + ricambi_2_tot, 2)
@@ -508,7 +516,9 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         numero_termostati_2: int = 1,
                         girante_2_attivo: bool = True,
                         scafo_sporco_attivo: bool = False,
-                        copertura_attiva: bool = False):
+                        copertura_attiva: bool = False,
+                        litri_olio_piede: float = 1.0,
+                        litri_olio_piede_2: float = 1.0):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
     t = await get_tariffe_doc()
@@ -518,7 +528,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          lavaggio_inizio_attivo, lavaggio_fine_attivo,
                          secondo_motore, potenza_motore_2, litri_olio_motore_2,
                          numero_candele_2, numero_termostati_2, girante_2_attivo,
-                         scafo_sporco_attivo, copertura_attiva)
+                         scafo_sporco_attivo, copertura_attiva,
+                         litri_olio_piede, litri_olio_piede_2)
 
 
 # --- Clienti ---
@@ -628,6 +639,8 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         bool(payload.girante_2_attivo if payload.girante_2_attivo is not None else True),
         bool(payload.scafo_sporco_attivo if payload.scafo_sporco_attivo is not None else False),
         bool(payload.copertura_attiva if payload.copertura_attiva is not None else False),
+        float(payload.litri_olio_piede if payload.litri_olio_piede is not None else 1.0),
+        float(payload.litri_olio_piede_2 if payload.litri_olio_piede_2 is not None else 1.0),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -1071,7 +1084,7 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     manodopera_2 = float(doc.get("costo_manodopera_motore_2") or 0)
     ricambi_2_tot = float(doc.get("costo_ricambi_motore_2_totale") or 0)
 
-    def _build_motore_table(title_txt, potenza, litri, nc, nt, girante_on, manod, ric_tot):
+    def _build_motore_table(title_txt, potenza, litri, litri_piede, nc, nt, girante_on, manod, ric_tot):
         rows = [
             ["Manodopera motore", "", _euro(manod)],
         ]
@@ -1082,7 +1095,7 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
             ["Filtro olio", "1", _euro(t_current.costo_filtro_olio)],
             ["Candele", str(nc), _euro(nc * t_current.costo_candela)],
             ["Termostato", str(nt), _euro(nt * t_current.costo_termostato)],
-            ["Olio piede", "1", _euro(t_current.costo_olio_piede)],
+            ["Olio piede", f"{litri_piede:g} L", _euro(litri_piede * t_current.costo_olio_piede)],
             ["Anodi interni", "1", _euro(t_current.costo_anodi_interni)],
             ["Anodi esterni", "1", _euro(t_current.costo_anodi_esterni)],
             ["Ingrassaggio", "1", _euro(t_current.costo_ingrassaggio)],
@@ -1127,7 +1140,8 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
         litri = float(doc.get("litri_olio_motore") or 0)
         potenza_1 = float(doc.get("potenza_motore") or 0)
         motore_1_label = "1° Motore" if has_motore_2 else "Motore"
-        elems.append(_build_motore_table(motore_1_label, potenza_1, litri, nc, nt, girante_attivo, manodopera, ricambi_tot))
+        litri_piede_1 = float(doc.get("litri_olio_piede") or 1.0)
+        elems.append(_build_motore_table(motore_1_label, potenza_1, litri, litri_piede_1, nc, nt, girante_attivo, manodopera, ricambi_tot))
 
         # 2° motore
         if has_motore_2:
@@ -1136,8 +1150,9 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
             nt2 = int(doc.get("numero_termostati_2") or 0)
             girante_2 = bool(doc.get("girante_2_attivo", True))
             litri2 = float(doc.get("litri_olio_motore_2") or 0)
+            litri_piede_2 = float(doc.get("litri_olio_piede_2") or 1.0)
             potenza_2 = float(doc.get("potenza_motore_2") or 0)
-            elems.append(_build_motore_table("2° Motore", potenza_2, litri2, nc2, nt2, girante_2, manodopera_2, ricambi_2_tot))
+            elems.append(_build_motore_table("2° Motore", potenza_2, litri2, litri_piede_2, nc2, nt2, girante_2, manodopera_2, ricambi_2_tot))
 
     # Lavorazioni extra dettaglio
     if lav_extra and tot_extra > 0:
@@ -1881,6 +1896,8 @@ async def apri_anno(payload: ApriAnnoRequest):
                 bool(c.get("girante_2_attivo", True)),
                 bool(c.get("scafo_sporco_attivo", False)),
                 bool(c.get("copertura_attiva", False)),
+                float(c.get("litri_olio_piede", 1.0) or 1.0),
+                float(c.get("litri_olio_piede_2", 1.0) or 1.0),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)

@@ -24,9 +24,9 @@ const empty = {
   telefono: "", email: "",
   codice_fiscale: "", indirizzo: "", cellulare: "",
   pagato: false,
-  potenza_motore: 0, litri_olio_motore: 3, numero_candele: 4, numero_termostati: 1,
+  potenza_motore: 0, litri_olio_motore: 3, litri_olio_piede: 1, numero_candele: 4, numero_termostati: 1,
   secondo_motore: false,
-  potenza_motore_2: 0, litri_olio_motore_2: 3, numero_candele_2: 4, numero_termostati_2: 1,
+  potenza_motore_2: 0, litri_olio_motore_2: 3, litri_olio_piede_2: 1, numero_candele_2: 4, numero_termostati_2: 1,
   girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
   scafo_sporco_attivo: false,
@@ -91,6 +91,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         girante_2_attivo: f.girante_2_attivo ? "true" : "false",
         scafo_sporco_attivo: f.scafo_sporco_attivo ? "true" : "false",
         copertura_attiva: f.copertura_attiva ? "true" : "false",
+        litri_olio_piede: f.litri_olio_piede || 0,
+        litri_olio_piede_2: f.litri_olio_piede_2 || 0,
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -102,7 +104,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -305,12 +307,15 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
           {/* Motore */}
           <section>
             <div className="label-mini mb-3">{f.secondo_motore ? "1° Motore" : "Motore"}</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <Field label="Cavalli (HP)">
                 <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
               </Field>
               <Field label="Litri olio motore">
                 <Input type="number" min="0" step="0.1" value={f.litri_olio_motore} onChange={(e) => update("litri_olio_motore", e.target.value)} data-testid="input-litri-olio" />
+              </Field>
+              <Field label="Litri olio piede">
+                <Input type="number" min="0" step="0.1" value={f.litri_olio_piede} onChange={(e) => update("litri_olio_piede", e.target.value)} data-testid="input-litri-olio-piede" />
               </Field>
               <Field label="N° candele">
                 <Input type="number" min="0" step="1" value={f.numero_candele} onChange={(e) => update("numero_candele", e.target.value)} data-testid="input-numero-candele" />
@@ -388,12 +393,15 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               {f.secondo_motore && (
                 <div className="pt-3 border-t border-border/60 space-y-3">
                   <div className="label-mini">2° Motore</div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     <Field label="Cavalli 2° motore">
                       <Input type="number" min="0" step="1" value={f.potenza_motore_2} onChange={(e) => update("potenza_motore_2", e.target.value)} data-testid="input-potenza-motore-2" />
                     </Field>
                     <Field label="Litri olio 2°">
                       <Input type="number" min="0" step="0.1" value={f.litri_olio_motore_2} onChange={(e) => update("litri_olio_motore_2", e.target.value)} data-testid="input-litri-olio-2" />
+                    </Field>
+                    <Field label="Lt olio piede 2°">
+                      <Input type="number" min="0" step="0.1" value={f.litri_olio_piede_2} onChange={(e) => update("litri_olio_piede_2", e.target.value)} data-testid="input-litri-olio-piede-2" />
                     </Field>
                     <Field label="N° candele 2°">
                       <Input type="number" min="0" step="1" value={f.numero_candele_2} onChange={(e) => update("numero_candele_2", e.target.value)} data-testid="input-numero-candele-2" />
@@ -464,7 +472,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                   <BreakdownRow label="Filtro olio" value={ricambiDettaglio.filtro_olio} />
                   <BreakdownRow label={`Candele (${f.numero_candele || 0})`} value={ricambiDettaglio.candele} />
                   <BreakdownRow label={`Termostati (${f.numero_termostati || 0})`} value={ricambiDettaglio.termostati} />
-                  <BreakdownRow label="Olio piede" value={ricambiDettaglio.olio_piede} />
+                  <BreakdownRow label={`Olio piede (${f.litri_olio_piede || 0}L)`} value={ricambiDettaglio.olio_piede} />
                   <BreakdownRow label="Anodi interni" value={ricambiDettaglio.anodi_interni} />
                   <BreakdownRow label="Anodi esterni" value={ricambiDettaglio.anodi_esterni} />
                   <BreakdownRow label="Ingrassaggio" value={ricambiDettaglio.ingrassaggio} />
@@ -489,7 +497,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                   <BreakdownRow label="Filtro olio" value={ricambi2Dettaglio.filtro_olio} />
                   <BreakdownRow label={`Candele (${f.numero_candele_2 || 0})`} value={ricambi2Dettaglio.candele} />
                   <BreakdownRow label={`Termostati (${f.numero_termostati_2 || 0})`} value={ricambi2Dettaglio.termostati} />
-                  <BreakdownRow label="Olio piede" value={ricambi2Dettaglio.olio_piede} />
+                  <BreakdownRow label={`Olio piede (${f.litri_olio_piede_2 || 0}L)`} value={ricambi2Dettaglio.olio_piede} />
                   <BreakdownRow label="Anodi interni" value={ricambi2Dettaglio.anodi_interni} />
                   <BreakdownRow label="Anodi esterni" value={ricambi2Dettaglio.anodi_esterni} />
                   <BreakdownRow label="Ingrassaggio" value={ricambi2Dettaglio.ingrassaggio} />

@@ -153,7 +153,13 @@ Sono circa 200 posti barca"
 - ✅ **Bug fix** collaterale iter13: aggiunti `f.scafo_sporco_attivo` e `f.copertura_attiva` al vettore delle deps di `useEffect` per il ricalcolo preview (mancavano — il toggle non triggerava la refetch).
 - ✅ Test 4 casi backend + frontend: dentro+COP-ON=2407€ / dentro+COP-OFF=2207€ (diff 200€), aggiungendo scafo=+120€ → 2527€. API network capture conferma le call.
 
-## Backlog (P0 → P2)
+## Iter15 (2026-02-20) — Olio piede a litri (come olio motore)
+- ✅ Prima `costo_olio_piede` era un costo fisso (25 €). Ora la tariffa è **per litro** e il costo è moltiplicato per la quantità.
+- ✅ Backend: nuovi campi `litri_olio_piede: float = 1.0` (default 1L per compat) e `litri_olio_piede_2: float = 1.0` su `Cliente`, `Optional[float]=None` su `ClienteCreate`. Signature `calcola_ricambi` e `calcola_costi` aggiornate. Preview/POST/PUT/duplicazione anno passano i nuovi parametri.
+- ✅ PDF preventivo: righe "Olio piede" ora mostrano "X L" e importo = X × tariffa.
+- ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
+- ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
+- ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)
 - [ ] PDF export bello (fattura preventivo per cliente)

@@ -65,7 +65,7 @@ const GROUPS = [
       { key: "costo_filtro_olio", label: "Filtro olio", desc: "Costo unitario" },
       { key: "costo_candela", label: "Candela", desc: "€ per candela (× numero candele)" },
       { key: "costo_termostato", label: "Termostato", desc: "€ per termostato (× numero termostati)" },
-      { key: "costo_olio_piede", label: "Olio piede", desc: "Costo unitario" },
+      { key: "costo_olio_piede", label: "Olio piede", desc: "Costo per litro" },
       { key: "costo_anodi_interni", label: "Anodi interni", desc: "Costo unitario" },
       { key: "costo_anodi_esterni", label: "Anodi esterni", desc: "Costo unitario" },
       { key: "costo_ingrassaggio", label: "Ingrassaggio", desc: "Costo unitario" },
