@@ -41,7 +41,7 @@ export default function PostiBarca() {
         <Stat label="Occupati" value={occupati} className="text-primary" />
         <Stat label="Liberi" value={200 - occupati} />
         <Stat label="Al coperto" value={dentro} />
-        <Stat label="A terra" value={fuori} />
+        <Stat label="Su piazzale" value={fuori} />
         <div className="flex items-center gap-4 ml-auto text-xs">
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-primary" />Coperto</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-chart-2" />Fuori</span>

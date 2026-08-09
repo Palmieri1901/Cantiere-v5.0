@@ -64,7 +64,7 @@ export default function Report() {
 
   const tipoSostaBar = [
     { label: "Coperto", value: r.per_tipo_sosta.dentro || 0 },
-    { label: "A terra", value: r.per_tipo_sosta.fuori || 0 },
+    { label: "Su piazzale", value: r.per_tipo_sosta.fuori || 0 },
     { label: "Fuori sede", value: r.per_tipo_sosta.fuori_sede || 0 },
   ];
 
@@ -146,7 +146,7 @@ export default function Report() {
 
         <Card className="p-6" data-testid="chart-tipo-sosta">
           <div className="label-mini mb-1">Entrate per tipo sosta</div>
-          <div className="font-display text-xl font-semibold mb-4">Coperto · A terra · Fuori sede</div>
+          <div className="font-display text-xl font-semibold mb-4">Coperto · Su piazzale · Fuori sede</div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tipoSostaBar}>
@@ -272,7 +272,7 @@ export default function Report() {
                       <TableCell className="font-medium">{c.cognome} {c.nome}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{c.tipo_barca}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Fuori"}
+                        {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Su piazzale"}
                       </TableCell>
                       <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(c.totale)}</TableCell>
                       <TableCell className="text-center">

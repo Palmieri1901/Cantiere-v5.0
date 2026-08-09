@@ -1007,7 +1007,7 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     elems.append(Paragraph("CLIENTE E IMBARCAZIONE", h2))
     potenza = doc.get('potenza_motore') or 0
     litri_pdf = doc.get('litri_olio_motore') or 0
-    sosta_label = 'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'Fuori sede' if doc.get('tipo_sosta')=='fuori_sede' else 'A terra (fuori)'
+    sosta_label = 'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'Fuori sede' if doc.get('tipo_sosta')=='fuori_sede' else 'Su piazzale (fuori)'
     info_tbl = Table([
         [Paragraph("Cliente", label), Paragraph("Contatti", label)],
         [Paragraph(f"<b>{doc.get('cognome','')} {doc.get('nome','')}</b>", val),

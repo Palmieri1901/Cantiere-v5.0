@@ -278,7 +278,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                   <SelectTrigger data-testid="select-tipo-sosta"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="dentro">Al coperto (dentro)</SelectItem>
-                    <SelectItem value="fuori">A terra (fuori)</SelectItem>
+                    <SelectItem value="fuori">Su piazzale (fuori)</SelectItem>
                     <SelectItem value="fuori_sede">Fuori sede</SelectItem>
                   </SelectContent>
                 </Select>

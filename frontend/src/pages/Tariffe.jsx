@@ -182,10 +182,10 @@ export default function Tariffe() {
         <Card className="p-6 h-fit sticky top-6 bg-secondary/40" data-testid="preview-tariffe">
           <div className="label-mini mb-3">Simulazione</div>
           <h3 className="font-display text-lg font-semibold mb-1">Barca 8m · 120 HP</h3>
-          <p className="text-xs text-muted-foreground mb-5">Sosta fuori, 4L olio motore, 4 candele, 1 termostato</p>
+          <p className="text-xs text-muted-foreground mb-5">Sosta su piazzale (fuori), 4L olio motore, 4 candele, 1 termostato</p>
 
           <div className="space-y-3 text-sm">
-            <PreviewRow label="Sosta fuori" value={L * t.sosta_fuori_per_metro} />
+            <PreviewRow label="Sosta su piazzale" value={L * t.sosta_fuori_per_metro} />
             <PreviewRow label="Copertura" value={L * t.copertura_per_metro} />
             <PreviewRow label="Alaggio (>5m)" value={alaggio} />
             <PreviewRow label="Varo (>5m)" value={varo} />

@@ -125,7 +125,7 @@ export default function Clienti() {
             <SelectContent>
               <SelectItem value="all">Tutti i tipi</SelectItem>
               <SelectItem value="dentro">Sosta al coperto</SelectItem>
-              <SelectItem value="fuori">Sosta fuori</SelectItem>
+              <SelectItem value="fuori">Su piazzale</SelectItem>
               <SelectItem value="fuori_sede">Fuori sede</SelectItem>
             </SelectContent>
           </Select>
@@ -178,7 +178,7 @@ export default function Clienti() {
                         ? "border-chart-3/50 text-chart-3 bg-chart-3/5"
                         : "border-chart-2/50"}
                     >
-                      {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Fuori"}
+                      {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Su piazzale"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(totale(c))}</TableCell>
