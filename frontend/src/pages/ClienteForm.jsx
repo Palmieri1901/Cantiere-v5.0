@@ -346,10 +346,11 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
               />
               <ToggleRow
                 label="Copertura"
-                description="Applica il costo copertura (€ / metro)"
+                description={f.tipo_sosta === "dentro" ? "Non applicabile con sosta al coperto" : "Applica il costo copertura (€ / metro)"}
                 checked={!!f.copertura_attiva}
                 onChange={(v) => update("copertura_attiva", v)}
                 testId="switch-copertura"
+                disabled={f.tipo_sosta === "dentro"}
               />
               <ToggleRow
                 label={f.secondo_motore ? "Girante 1° motore" : "Sostituzione girante"}
@@ -685,14 +686,14 @@ function BreakdownRow({ label, value }) {
   );
 }
 
-function ToggleRow({ label, description, checked, onChange, testId }) {
+function ToggleRow({ label, description, checked, onChange, testId, disabled }) {
   return (
-    <div className="flex items-center justify-between gap-2 p-3 rounded-md border border-border bg-muted/30">
+    <div className={`flex items-center justify-between gap-2 p-3 rounded-md border border-border bg-muted/30 ${disabled ? "opacity-50" : ""}`}>
       <div className="min-w-0">
         <Label className="text-sm font-medium">{label}</Label>
         <p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} data-testid={testId} />
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} data-testid={testId} />
     </div>
   );
 }

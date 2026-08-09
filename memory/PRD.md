@@ -153,6 +153,11 @@ Sono circa 200 posti barca"
 - ✅ **Bug fix** collaterale iter13: aggiunti `f.scafo_sporco_attivo` e `f.copertura_attiva` al vettore delle deps di `useEffect` per il ricalcolo preview (mancavano — il toggle non triggerava la refetch).
 - ✅ Test 4 casi backend + frontend: dentro+COP-ON=2407€ / dentro+COP-OFF=2207€ (diff 200€), aggiungendo scafo=+120€ → 2527€. API network capture conferma le call.
 
+## Iter16 (2026-02-20) — Copertura bloccata su sosta al coperto
+- ✅ Frontend `ClienteForm.jsx`: quando `tipo_sosta === "dentro"` la spunta **Copertura** è disabilitata (opacità 50%, descrizione dinamica "Non applicabile con sosta al coperto") e forzata a `false` tramite `useEffect`.
+- ✅ Component `ToggleRow` esteso con prop `disabled`.
+- ✅ Test frontend: default (dentro) → disabled=True. Passa a "A terra (fuori)" → abilitato, click ON → totale 3.512€. Ritorno "Al coperto" → disabled=True, totale torna a 2.392€ (copertura esclusa).
+
 ## Iter15 (2026-02-20) — Olio piede a litri (come olio motore)
 - ✅ Prima `costo_olio_piede` era un costo fisso (25 €). Ora la tariffa è **per litro** e il costo è moltiplicato per la quantità.
 - ✅ Backend: nuovi campi `litri_olio_piede: float = 1.0` (default 1L per compat) e `litri_olio_piede_2: float = 1.0` su `Cliente`, `Optional[float]=None` su `ClienteCreate`. Signature `calcola_ricambi` e `calcola_costi` aggiornate. Preview/POST/PUT/duplicazione anno passano i nuovi parametri.
