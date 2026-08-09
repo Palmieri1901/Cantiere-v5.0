@@ -29,6 +29,7 @@ const empty = {
   potenza_motore_2: 0, litri_olio_motore_2: 3, numero_candele_2: 4, numero_termostati_2: 1,
   girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
+  scafo_sporco_attivo: false,
   lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
@@ -87,6 +88,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         numero_candele_2: f.numero_candele_2 || 0,
         numero_termostati_2: f.numero_termostati_2 || 0,
         girante_2_attivo: f.girante_2_attivo ? "true" : "false",
+        scafo_sporco_attivo: f.scafo_sporco_attivo ? "true" : "false",
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -329,6 +331,13 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 testId="switch-antivegetativa"
               />
               <ToggleRow
+                label="Scafo sporco"
+                description="Applica la maggiorazione scafo sporco"
+                checked={!!f.scafo_sporco_attivo}
+                onChange={(v) => update("scafo_sporco_attivo", v)}
+                testId="switch-scafo-sporco"
+              />
+              <ToggleRow
                 label={f.secondo_motore ? "Girante 1° motore" : "Sostituzione girante"}
                 description="Includi ricambio girante"
                 checked={!!f.girante_attivo}
@@ -350,9 +359,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                 testId="switch-lavaggio-fine"
               />
             </div>
-            {!f.antivegetativa_attiva && (
-              <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2" data-testid="info-scafo-sporco">
-                Antivegetativa disattivata → viene applicata la maggiorazione scafo sporco (€ / metro).
+            {!f.antivegetativa_attiva && !f.scafo_sporco_attivo && (
+              <div className="mt-2 text-[11px] text-muted-foreground bg-muted/40 border border-border rounded-md p-2" data-testid="info-no-antiveg">
+                Antivegetativa disattivata. Attiva "Scafo sporco" se serve applicare la maggiorazione.
               </div>
             )}
 

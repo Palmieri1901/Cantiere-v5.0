@@ -133,6 +133,18 @@ Sono circa 200 posti barca"
 - ✅ Nuovo endpoint `GET /api/posti-barca/next?anno=X&escludi_cliente_id=Y` che ritorna il primo posto libero (1-200) per l'anno indicato, escludendo opzionalmente il posto occupato dallo stesso cliente (utile in modifica).
 - ✅ Frontend `ClienteForm.jsx`: pulsante ⚡ (Zap icon) accanto al campo "Posto barca" con `data-testid="btn-posto-auto"`. Click → chiama endpoint, riempie il campo e mostra toast con posto assegnato + posti liberi rimasti.
 
+## Iter13 (2026-02-20) — Antivegetativa e Scafo sporco spunte indipendenti
+- ✅ Prima: `antivegetativa_attiva=false` implicava automaticamente maggiorazione scafo sporco. Ora sono 2 spunte separate e indipendenti (4 combinazioni possibili).
+- ✅ Backend: nuovo campo `scafo_sporco_attivo: bool = False` su `Cliente`, `Optional[bool] = None` su `ClienteCreate`. Signatura `calcola_costi` aggiornata (17° parametro). Endpoint preview `/api/calcola-costi`, POST/PUT `/api/clienti`, duplicazione anno tutti aggiornati.
+- ✅ **Migrazione automatica** all'avvio: clienti esistenti con `costo_scafo_sporco > 0` ricevono `scafo_sporco_attivo=True`, tutti gli altri `False`. Idempotente (basata su `$exists`).
+- ✅ Frontend `ClienteForm.jsx`: nuovo toggle "Scafo sporco" (data-testid `switch-scafo-sporco`) accanto ad "Antivegetativa". Rimosso il warning giallo obsoleto. Aggiunto info-testo quando entrambi sono OFF. Preview costi include il nuovo parametro.
+- ✅ Test 4 combinazioni backend:
+  - OFF/OFF → antivegetativa=0, scafo=0
+  - ON/OFF → antivegetativa=200, scafo=0
+  - ON/ON → antivegetativa=200, scafo=120
+  - OFF/ON → antivegetativa=0, scafo=120
+- ✅ Migrazione verificata: Bianchi (scafo 90€) e Semp (scafo 75€) preservati con scafo=True; altri 8 clienti con antivegetativa attiva → scafo=False.
+
 ## Backlog (P0 → P2)
 ### P1 — enhancements
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)

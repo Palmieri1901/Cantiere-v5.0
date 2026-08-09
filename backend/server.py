@@ -188,6 +188,7 @@ class Cliente(BaseModel):
     girante_2_attivo: bool = True
     # Interruttori applicabilità
     antivegetativa_attiva: bool = True
+    scafo_sporco_attivo: bool = False
     girante_attivo: bool = True
     lavaggio_inizio_attivo: bool = True
     lavaggio_fine_attivo: bool = True
@@ -246,6 +247,7 @@ class ClienteCreate(BaseModel):
     numero_termostati_2: Optional[int] = 1
     girante_2_attivo: Optional[bool] = None
     antivegetativa_attiva: Optional[bool] = True
+    scafo_sporco_attivo: Optional[bool] = None
     girante_attivo: Optional[bool] = True
     lavaggio_inizio_attivo: Optional[bool] = True
     lavaggio_fine_attivo: Optional[bool] = True
@@ -389,7 +391,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   litri_olio_motore_2: float = 3.0,
                   numero_candele_2: int = 4,
                   numero_termostati_2: int = 1,
-                  girante_2_attivo: bool = True) -> dict:
+                  girante_2_attivo: bool = True,
+                  scafo_sporco_attivo: bool = False) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     manodopera = calcola_motore_labor(potenza_motore, t)
     ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore)
@@ -407,7 +410,7 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     motore_tot = round(manodopera + ricambi_tot + manodopera_2 + ricambi_2_tot, 2)
 
     antiveg = round(lunghezza * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
-    scafo_sporco = round(lunghezza * t.maggiorazione_scafo_sporco_per_metro, 2) if not antivegetativa_attiva else 0.0
+    scafo_sporco = round(lunghezza * t.maggiorazione_scafo_sporco_per_metro, 2) if scafo_sporco_attivo else 0.0
     lav_inizio = round(t.costo_lavaggio_inizio_stagione, 2) if lavaggio_inizio_attivo else 0.0
     lav_fine = round(t.costo_lavaggio_fine_stagione, 2) if lavaggio_fine_attivo else 0.0
 
@@ -497,7 +500,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         litri_olio_motore_2: float = 3.0,
                         numero_candele_2: int = 4,
                         numero_termostati_2: int = 1,
-                        girante_2_attivo: bool = True):
+                        girante_2_attivo: bool = True,
+                        scafo_sporco_attivo: bool = False):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
     t = await get_tariffe_doc()
@@ -506,7 +510,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          antivegetativa_attiva, girante_attivo, litri_olio_motore,
                          lavaggio_inizio_attivo, lavaggio_fine_attivo,
                          secondo_motore, potenza_motore_2, litri_olio_motore_2,
-                         numero_candele_2, numero_termostati_2, girante_2_attivo)
+                         numero_candele_2, numero_termostati_2, girante_2_attivo,
+                         scafo_sporco_attivo)
 
 
 # --- Clienti ---
@@ -614,6 +619,7 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         int(payload.numero_candele_2 or 4),
         int(payload.numero_termostati_2 or 1),
         bool(payload.girante_2_attivo if payload.girante_2_attivo is not None else True),
+        bool(payload.scafo_sporco_attivo if payload.scafo_sporco_attivo is not None else False),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -1467,6 +1473,19 @@ async def seed_admin():
 async def _startup():
     await db.users.create_index("email", unique=True)
     await seed_admin()
+    # Migrazione iter13: chi aveva scafo_sporco applicato (costo > 0) senza il nuovo flag scafo_sporco_attivo
+    # imposta il flag a True per preservare il comportamento pre-esistente. Idempotente.
+    try:
+        await db.clienti.update_many(
+            {"scafo_sporco_attivo": {"$exists": False}, "costo_scafo_sporco": {"$gt": 0}},
+            {"$set": {"scafo_sporco_attivo": True}},
+        )
+        await db.clienti.update_many(
+            {"scafo_sporco_attivo": {"$exists": False}},
+            {"$set": {"scafo_sporco_attivo": False}},
+        )
+    except Exception as e:
+        logger.warning(f"Migration iter13 scafo_sporco_attivo skipped: {e}")
 
 
 # ---------- REPORT INCASSI ----------
@@ -1840,6 +1859,7 @@ async def apri_anno(payload: ApriAnnoRequest):
                 int(c.get("numero_candele_2", 4) or 4),
                 int(c.get("numero_termostati_2", 1) or 1),
                 bool(c.get("girante_2_attivo", True)),
+                bool(c.get("scafo_sporco_attivo", False)),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)
