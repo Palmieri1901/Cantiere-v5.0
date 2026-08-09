@@ -42,7 +42,7 @@ export default function Clienti() {
   useEffect(() => { load(); }, [year]);
 
   const filtered = useMemo(() => {
-    return clienti.filter((c) => {
+    const list = clienti.filter((c) => {
       if (tipoSostaFilter !== "all" && c.tipo_sosta !== tipoSostaFilter) return false;
       if (!q) return true;
       const s = q.toLowerCase();
@@ -52,6 +52,12 @@ export default function Clienti() {
         c.tipo_barca?.toLowerCase().includes(s) ||
         String(c.posto_barca || "").includes(s)
       );
+    });
+    // Ordina alfabeticamente per cognome (case + accent insensitive), poi per nome
+    return [...list].sort((a, b) => {
+      const cog = (a.cognome || "").localeCompare(b.cognome || "", "it", { sensitivity: "base" });
+      if (cog !== 0) return cog;
+      return (a.nome || "").localeCompare(b.nome || "", "it", { sensitivity: "base" });
     });
   }, [clienti, q, tipoSostaFilter]);
 
