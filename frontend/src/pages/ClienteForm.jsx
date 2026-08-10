@@ -358,7 +358,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                       data-testid="input-giorni-temporanea"
                     />
                     <p className="text-[11px] text-muted-foreground mt-1">
-                      Sosta temporanea = sempre su piazzale (fuori). Tariffa: € / giorno / metro.
+                      Sosta temporanea = sempre su piazzale (fuori). Tariffa: € al mt / giorno.
                     </p>
                   </div>
                 )}

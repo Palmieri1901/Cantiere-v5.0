@@ -692,7 +692,7 @@ async def listino_prezzi_pdf():
         ("SOSTA", [
             ("Sosta al coperto", "sosta_dentro_per_metro", "€ / metro / anno"),
             ("Sosta su piazzale (fuori)", "sosta_fuori_per_metro", "€ / metro / anno"),
-            ("Sosta temporanea", "sosta_temporanea_giornaliera", "€ / giorno"),
+            ("Sosta temporanea", "sosta_temporanea_giornaliera", "€ al mt / giorno"),
             ("Movimentazione (fuori sede)", "costo_movimentazione_per_metro", "€ / metro"),
             ("Taccaggio (fuori sede)", "costo_taccaggio_per_metro", "€ / metro"),
         ]),
