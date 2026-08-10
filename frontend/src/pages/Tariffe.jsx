@@ -16,7 +16,7 @@ const GROUPS = [
     fields: [
       { key: "sosta_dentro_per_metro", label: "Sosta al coperto", desc: "€ / metro / anno (posto coperto/dentro)" },
       { key: "sosta_fuori_per_metro", label: "Sosta su piazzale (fuori)", desc: "€ / metro / anno" },
-      { key: "sosta_temporanea_giornaliera", label: "Sosta temporanea", desc: "€ / giorno" },
+      { key: "sosta_temporanea_giornaliera", label: "Sosta temporanea", desc: "€ / giorno / metro" },
       { key: "costo_movimentazione_per_metro", label: "Movimentazione (fuori sede)", desc: "€ / metro (sosta fuori sede)" },
       { key: "costo_taccaggio_per_metro", label: "Taccaggio (fuori sede)", desc: "€ / metro (sosta fuori sede)" },
     ],

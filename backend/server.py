@@ -497,10 +497,10 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
             "costo_varo": varo_val,
         })
     elif tipo_sosta == "temporanea":
-        # Tariffa a giornata × numero di giorni
+        # Tariffa a giorno × metro × numero di giorni
         giorni = int(giorni_sosta_temporanea or 0)
         base.update({
-            "costo_sosta": round(giorni * t.sosta_temporanea_giornaliera, 2),
+            "costo_sosta": round(giorni * lunghezza * t.sosta_temporanea_giornaliera, 2),
             "costo_copertura": copertura,
             "costo_alaggio": alaggio_val,
             "costo_varo": varo_val,

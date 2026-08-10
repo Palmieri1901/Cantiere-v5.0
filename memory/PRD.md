@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter27 (2026-02-20) — Sosta temporanea: tariffa × giorni × metri
+- ✅ `calcola_costi`: per `tipo_sosta="temporanea"` il costo è ora `lunghezza × giorni × sosta_temporanea_giornaliera` (prima solo `giorni × tariffa`).
+- ✅ Aggiornati label pagina Tariffe e PDF Listino: "€ / giorno / metro".
+- ✅ Test: L=7 × 10 gg × 25€ = 1.750€. L=5 × 5 gg × 25€ = 625€ (con tariffa base 25).
+
 ## Iter26 (2026-02-20) — Home: nuova collocazione e aspetto dei tasti
 - ✅ Hero snellito: 3 sole azioni principali ("Vai al gestionale" primario con shadow, "Gestione clienti" outline con icona Anchor, "Info cantiere" ghost).
 - ✅ Nuova sezione **"Azioni rapide"** con 3 card icona+titolo+sottotitolo per: Preventivo veloce (card primary evidenziata), Listino prezzi PDF, Excel commercialista. Ogni card con hover lift, ombra e freccia animata.
