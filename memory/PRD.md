@@ -165,6 +165,12 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter38 (2026-02-20) — Eliminato riquadro Simulazione dalla pagina Tariffe
+- ✅ Rimosso interamente il pannello sticky "Simulazione" (input lunghezza/HP/sosta/olio/candele/termostati + preview + totale).
+- ✅ Rimossa la funzione helper `PreviewRow` e tutte le state variabili `simL/simHP/simSosta/simGiorni/simOlio/simCandele/simTermostati`.
+- ✅ Rimossi gli import non più usati (`Select` da shadcn).
+- ✅ Layout ora single-column full-width per i gruppi di tariffe (grid-cols-1 anziché lg:grid-cols-3).
+
 ## Iter37 (2026-02-20) — Simulazione completa personalizzabile
 - ✅ Aggiunto **Select "Tipo di sosta"** (`select-simulazione-sosta`): Al coperto / Su piazzale / Fuori sede / Temporanea. Il costo sosta si ricalcola con la formula corretta per ciascun tipo.
 - ✅ Se scelto "Temporanea" appare input **N° giorni** (`input-simulazione-giorni`).
