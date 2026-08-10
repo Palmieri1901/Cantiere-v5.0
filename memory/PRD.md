@@ -165,6 +165,13 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter28 (2026-02-20) — Filtro Pagati/Non pagati e riepilogo incassi
+- ✅ **3 card KPI cliccabili** sopra la lista: "Tutti", "Da incassare" (rosso, con totale € e conteggio non pagati), "Incassato" (verde, con totale € e conteggio pagati). Click → filtra la lista.
+- ✅ **Dropdown filtro "Pagamento"** (data-testid `filter-pagamento`) affianco al filtro tipo sosta: Tutti / Solo non pagati / Solo pagati.
+- ✅ **Nuova colonna "Pagamento"** nella tabella con badge verde "Pagato" o outline rosso "Non pagato".
+- ✅ **Toggle rapido pagato/non pagato** (data-testid `btn-toggle-pagato-{id}`) tra le azioni riga: icona check verde se non pagato → segna come pagato (data odierna); icona X rossa se pagato → segna come non pagato.
+- ✅ Test PUT diretto backend conferma il flag `pagato` e `data_pagamento` vengono aggiornati.
+
 ## Iter27 (2026-02-20) — Sosta temporanea: tariffa × giorni × metri
 - ✅ `calcola_costi`: per `tipo_sosta="temporanea"` il costo è ora `lunghezza × giorni × sosta_temporanea_giornaliera` (prima solo `giorni × tariffa`).
 - ✅ Aggiornati label pagina Tariffe e PDF Listino: "€ / giorno / metro".

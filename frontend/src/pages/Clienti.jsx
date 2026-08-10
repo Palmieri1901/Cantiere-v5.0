@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText, Eye } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText, Eye, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
 import ClienteDettaglio from "@/pages/ClienteDettaglio";
@@ -27,6 +27,7 @@ export default function Clienti() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [tipoSostaFilter, setTipoSostaFilter] = useState("all");
+  const [pagamentoFilter, setPagamentoFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [dettaglio, setDettaglio] = useState(null);
@@ -46,6 +47,8 @@ export default function Clienti() {
   const filtered = useMemo(() => {
     const list = clienti.filter((c) => {
       if (tipoSostaFilter !== "all" && c.tipo_sosta !== tipoSostaFilter) return false;
+      if (pagamentoFilter === "pagati" && !c.pagato) return false;
+      if (pagamentoFilter === "non_pagati" && c.pagato) return false;
       if (!q) return true;
       const s = q.toLowerCase();
       return (
@@ -61,7 +64,7 @@ export default function Clienti() {
       if (cog !== 0) return cog;
       return (a.nome || "").localeCompare(b.nome || "", "it", { sensitivity: "base" });
     });
-  }, [clienti, q, tipoSostaFilter]);
+  }, [clienti, q, tipoSostaFilter, pagamentoFilter]);
 
   const totale = (c) => {
     const base = (c.costo_sosta || 0) + (c.costo_copertura || 0) + (c.costo_alaggio || 0) +
@@ -72,6 +75,21 @@ export default function Clienti() {
       .reduce((s, it) => s + (Number(it?.prezzo) || 0), 0);
     return base + extra;
   };
+
+  // Riepilogo pagamenti su TUTTI i clienti dell'anno (non solo filtrati)
+  const riepilogoPagamenti = useMemo(() => {
+    let daIncassare = 0, incassati = 0, nPagati = 0, nNonPagati = 0;
+    clienti.forEach((c) => {
+      const t = (c.costo_sosta || 0) + (c.costo_copertura || 0) + (c.costo_alaggio || 0) +
+        (c.costo_varo || 0) + (c.costo_antivegetativa || 0) + (c.costo_manutenzione_motore || 0) +
+        (c.costo_lavaggio_inizio || 0) + (c.costo_lavaggio_fine || 0) + (c.costo_scafo_sporco || 0) +
+        (c.costo_movimentazione || 0) + (c.costo_taccaggio || 0) +
+        (Array.isArray(c.lavorazioni_extra) ? c.lavorazioni_extra : []).reduce((s, it) => s + (Number(it?.prezzo) || 0), 0);
+      if (c.pagato) { incassati += t; nPagati += 1; }
+      else { daIncassare += t; nNonPagati += 1; }
+    });
+    return { daIncassare, incassati, nPagati, nNonPagati };
+  }, [clienti]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -85,9 +103,26 @@ export default function Clienti() {
     }
   };
 
+  const togglePagato = async (c) => {
+    try {
+      const nuovoStato = !c.pagato;
+      const payload = {
+        nome: c.nome, cognome: c.cognome, tipo_barca: c.tipo_barca,
+        lunghezza: c.lunghezza, tipo_sosta: c.tipo_sosta,
+        pagato: nuovoStato,
+        data_pagamento: nuovoStato ? new Date().toISOString().slice(0, 10) : null,
+      };
+      await api.put(`/clienti/${c.id}`, payload);
+      toast.success(nuovoStato ? "Segnato come pagato" : "Segnato come non pagato");
+      load();
+    } catch {
+      toast.error("Errore aggiornamento pagamento");
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 max-w-[1400px]" data-testid="clienti-page">
-      <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <div className="label-mini mb-2">Anagrafica</div>
           <h1 className="font-display text-4xl font-semibold tracking-tight">Clienti</h1>
@@ -114,6 +149,40 @@ export default function Clienti() {
         </div>
       </div>
 
+      {/* Riepilogo pagamenti */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4" data-testid="riepilogo-pagamenti">
+        <button
+          type="button"
+          onClick={() => setPagamentoFilter("all")}
+          data-testid="kpi-tutti"
+          className={`text-left p-4 rounded-lg border transition-all ${pagamentoFilter === "all" ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/30"}`}
+        >
+          <div className="flex items-center gap-1.5 label-mini mb-1"><Eye className="w-3.5 h-3.5" /> Tutti</div>
+          <div className="font-display text-2xl font-semibold">{clienti.length}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Totale clienti anno {year}</div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPagamentoFilter("non_pagati")}
+          data-testid="kpi-non-pagati"
+          className={`text-left p-4 rounded-lg border transition-all ${pagamentoFilter === "non_pagati" ? "border-destructive bg-destructive/5 ring-2 ring-destructive/30" : "border-border bg-card hover:border-destructive/30"}`}
+        >
+          <div className="flex items-center gap-1.5 label-mini mb-1 text-destructive"><AlertCircle className="w-3.5 h-3.5" /> Da incassare</div>
+          <div className="font-display text-2xl font-semibold text-destructive font-mono-num">{fmtEuro(riepilogoPagamenti.daIncassare)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{riepilogoPagamenti.nNonPagati} clienti non hanno pagato</div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPagamentoFilter("pagati")}
+          data-testid="kpi-pagati"
+          className={`text-left p-4 rounded-lg border transition-all ${pagamentoFilter === "pagati" ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-300/40" : "border-border bg-card hover:border-emerald-400/40"}`}
+        >
+          <div className="flex items-center gap-1.5 label-mini mb-1 text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" /> Incassato</div>
+          <div className="font-display text-2xl font-semibold text-emerald-700 font-mono-num">{fmtEuro(riepilogoPagamenti.incassati)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{riepilogoPagamenti.nPagati} clienti hanno saldato</div>
+        </button>
+      </div>
+
       <Card className="p-4 mb-4">
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[240px]">
@@ -138,6 +207,16 @@ export default function Clienti() {
               <SelectItem value="temporanea">Temporanea</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={pagamentoFilter} onValueChange={setPagamentoFilter}>
+            <SelectTrigger className="w-[180px]" data-testid="filter-pagamento">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti i pagamenti</SelectItem>
+              <SelectItem value="non_pagati">Solo non pagati</SelectItem>
+              <SelectItem value="pagati">Solo pagati</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
@@ -150,16 +229,17 @@ export default function Clienti() {
               <TableHead>Barca</TableHead>
               <TableHead className="text-right">Lungh.</TableHead>
               <TableHead>Sosta</TableHead>
+              <TableHead>Pagamento</TableHead>
               <TableHead className="text-right">Totale</TableHead>
-              <TableHead className="w-32 text-right">Azioni</TableHead>
+              <TableHead className="w-40 text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">Caricamento…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Caricamento…</TableCell></TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-16 text-center">
+                <TableCell colSpan={8} className="py-16 text-center">
                   <div className="text-muted-foreground mb-3">Nessun cliente trovato.</div>
                   <Button variant="outline" onClick={() => { setEditing(null); setFormOpen(true); }} data-testid="btn-nuovo-cliente-empty">
                     <Plus className="w-4 h-4 mr-2" /> Aggiungi il primo cliente
@@ -190,9 +270,28 @@ export default function Clienti() {
                       {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : c.tipo_sosta === "temporanea" ? "Temporanea" : "Su piazzale"}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    {c.pagato ? (
+                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-100" data-testid={`badge-pagato-${c.id}`}>
+                        <CheckCircle2 className="w-3 h-3 mr-1" /> Pagato
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-destructive/40 text-destructive bg-destructive/5" data-testid={`badge-non-pagato-${c.id}`}>
+                        <XCircle className="w-3 h-3 mr-1" /> Non pagato
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(totale(c))}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon" variant="ghost"
+                        onClick={() => togglePagato(c)}
+                        data-testid={`btn-toggle-pagato-${c.id}`}
+                        title={c.pagato ? "Segna come NON pagato" : "Segna come pagato"}
+                      >
+                        {c.pagato ? <XCircle className="w-4 h-4 text-destructive" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => setDettaglio(c)} data-testid={`btn-dettaglio-${c.id}`} title="Vedi conteggio dettagliato">
                         <Eye className="w-4 h-4" />
                       </Button>
