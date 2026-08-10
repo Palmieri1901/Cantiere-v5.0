@@ -194,11 +194,11 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
     // Preventivo veloce: solo nome+cognome obbligatori
     if (isPreventivo) {
       if (!f.nome?.trim() || !f.cognome?.trim()) {
-        toast.error("Inserisci almeno nome e cognome");
+        toast.error("Inserisci almeno cognome e nome");
         return;
       }
     } else if (!f.nome || !f.cognome || !f.tipo_barca || !f.lunghezza) {
-      toast.error("Compila nome, cognome, tipo barca e lunghezza");
+      toast.error("Compila cognome, nome, tipo barca e lunghezza");
       return;
     }
     setSaving(true);
@@ -291,7 +291,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
           </SheetTitle>
           <SheetDescription>
             {isPreventivo
-              ? "Compila almeno nome e cognome. Puoi aggiungere lunghezza, motore e servizi per un preventivo dettagliato. Il PDF viene generato senza salvare il cliente."
+              ? "Compila almeno cognome e nome. Puoi aggiungere lunghezza, motore e servizi per un preventivo dettagliato. Il PDF viene generato senza salvare il cliente."
               : "Compila i dati del cliente. I costi vengono calcolati automaticamente in base alle tariffe."}
           </SheetDescription>
         </SheetHeader>
@@ -301,11 +301,11 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
           <section>
             <div className="label-mini mb-3">Anagrafica</div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nome *">
-                <Input value={f.nome} onChange={(e) => update("nome", e.target.value)} data-testid="input-nome" />
-              </Field>
               <Field label="Cognome *">
                 <Input value={f.cognome} onChange={(e) => update("cognome", e.target.value)} data-testid="input-cognome" />
+              </Field>
+              <Field label="Nome *">
+                <Input value={f.nome} onChange={(e) => update("nome", e.target.value)} data-testid="input-nome" />
               </Field>
               <Field label="Codice fiscale">
                 <Input value={f.codice_fiscale} onChange={(e) => update("codice_fiscale", e.target.value.toUpperCase())} maxLength={16} className="uppercase font-mono-num" data-testid="input-codice-fiscale" />

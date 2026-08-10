@@ -19,7 +19,7 @@ Sono circa 200 posti barca"
 - **Meccanico / responsabile lavori**: aggiorna note lavori eseguiti e scadenze manutenzione
 
 ## Core Requirements (static)
-- Anagrafica clienti (nome, cognome, tel, email)
+- Anagrafica clienti (cognome, nome, tel, email) — visualizzazione sempre nell'ordine Cognome → Nome
 - Dati barca (tipo, lunghezza in metri, tipo sosta dentro/fuori, posto barca 1-200)
 - Calcolo automatico costi: sosta, copertura, alaggio, varo, antivegetativa, manutenzione motore
 - Override manuale per ogni singolo cliente

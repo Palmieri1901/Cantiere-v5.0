@@ -205,7 +205,7 @@ export default function Clienti() {
           <div className="relative flex-1 min-w-[240px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cerca nome, cognome, tipo barca, posto…"
+              placeholder="Cerca cognome, nome, tipo barca, posto…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="pl-9"

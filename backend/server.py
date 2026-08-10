@@ -1072,7 +1072,7 @@ async def posti_barca(anno: Optional[int] = None):
             "numero": i,
             "occupato": c is not None,
             "cliente_id": c.get("id") if c else None,
-            "cliente_nome": f"{c.get('nome','')} {c.get('cognome','')}" if c else None,
+            "cliente_nome": f"{c.get('cognome','')} {c.get('nome','')}" if c else None,
             "tipo_sosta": c.get("tipo_sosta") if c else None,
             "tipo_barca": c.get("tipo_barca") if c else None,
         })
