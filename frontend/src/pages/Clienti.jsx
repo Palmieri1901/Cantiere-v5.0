@@ -223,6 +223,12 @@ export default function Clienti() {
         onSaved={load}
       />
 
+      <ClienteDettaglio
+        open={!!dettaglio}
+        onOpenChange={(o) => !o && setDettaglio(null)}
+        cliente={dettaglio}
+      />
+
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent data-testid="delete-dialog">
           <AlertDialogHeader>

@@ -171,6 +171,7 @@ Sono circa 200 posti barca"
 - ✅ Info sintesi in alto: barca, sosta, posto, stato pagamento.
 - ✅ Nuova icona "occhio" nella lista clienti (`btn-dettaglio-{id}`) apre il dialog. Pulsante "Scarica preventivo PDF" all'interno del dialog per continuità.
 - ✅ Nasconde automaticamente le voci a 0 € per una lettura pulita.
+- 🐛 **BUGFIX**: il componente `<ClienteDettaglio>` era importato ma non veniva renderizzato nel JSX di `Clienti.jsx` → l'icona occhio non apriva nulla. Aggiunto rendering del componente. Testing_agent iter11: 100% PASS su tutti gli scenari (apertura dialog, contenuto, chiusura Chiudi/ESC/click-esterno, PDF link, totale coerente con lista).
 
 ## Iter24 (2026-02-20) — Moltiplicatore movimenti alaggio+varo
 - ✅ Backend: nuovo campo `numero_movimenti: int = 1` su `Cliente` (Optional in `ClienteCreate`). `calcola_costi` accetta il parametro e moltiplica `costo_alaggio` e `costo_varo` per il numero di movimenti richiesti (solo con destinazione="marina_di_campo"; per "altra" resta manuale).

@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only test of the 'Vedi conteggio dettagliato' (eye icon) bug fix on /clienti. All acceptance criteria verified successfully.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "page_load": "PASS - /clienti loaded, 10 clients present for anno 2026",
+    "eye_button_opens_dialog": "PASS - clicking [data-testid=btn-dettaglio-{id}] opens [data-testid=cliente-dettaglio]",
+    "dialog_content": "PASS - title shows 'Bianchi Mario' (cognome+nome), sections visible (Sosta & trattamenti, etc.), totale annuale visible",
+    "totale_matches_row": "PASS - dialog TOTALE ANNUALE = 1935,00 € matches row total in the table",
+    "pdf_button_url": "PASS - btn-dettaglio-pdf href = {REACT_APP_BACKEND_URL}/api/clienti/{id}/preventivo.pdf",
+    "close_button": "PASS - btn-dettaglio-chiudi closes the dialog",
+    "esc_key_closes": "PASS - ESC closes the dialog",
+    "outside_click_closes": "PASS - clicking outside overlay closes the dialog"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Clienti.jsx correctly renders <ClienteDettaglio open={!!dettaglio} .../> at lines 226-230; bug fix confirmed.",
+    "ClienteDettaglio.jsx totale computation includes all 11 cost keys + lavorazioni_extra, matches the totale() function in Clienti.jsx (consistent)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not tested)", "frontend": "100%"},
+  "seed_data_creation": "None - 10 clients already present for anno 2026",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bug fix for cliente-dettaglio dialog on /clienti page is fully verified. Eye button opens dialog, all close mechanisms (Chiudi button, ESC, outside click) work. PDF href is correct. Totale annuale matches the row total shown in the clients table."
+}
