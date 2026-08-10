@@ -99,6 +99,8 @@ class Tariffe(BaseModel):
     varo_fino_5m: float = 90.0
     varo_oltre_5m_per_metro: float = 25.0
     antivegetativa_per_metro: float = 60.0
+    # Tariffa sosta temporanea (a giorno)
+    sosta_temporanea_giornaliera: float = 25.0
     # Manodopera motore a scaglioni di potenza HP
     motore_labor_2_15hp: float = 90.0
     motore_labor_fino_40hp: float = 180.0
@@ -163,7 +165,8 @@ class Cliente(BaseModel):
     cognome: str
     tipo_barca: str
     lunghezza: float  # metri
-    tipo_sosta: str  # "dentro" | "fuori" | "fuori_sede"
+    tipo_sosta: str  # "dentro" | "fuori" | "fuori_sede" | "temporanea"
+    giorni_sosta_temporanea: int = 0
     anno: int = Field(default_factory=lambda: datetime.now().year)
     posto_barca: Optional[int] = None  # 1-200
     telefono: Optional[str] = ""
@@ -230,6 +233,7 @@ class ClienteCreate(BaseModel):
     tipo_barca: str
     lunghezza: float
     tipo_sosta: str
+    giorni_sosta_temporanea: Optional[int] = None
     anno: Optional[int] = None
     posto_barca: Optional[int] = None
     telefono: Optional[str] = ""
@@ -403,7 +407,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   scafo_sporco_attivo: bool = False,
                   copertura_attiva: bool = False,
                   litri_olio_piede: float = 1.0,
-                  litri_olio_piede_2: float = 1.0) -> dict:
+                  litri_olio_piede_2: float = 1.0,
+                  giorni_sosta_temporanea: int = 0) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     manodopera = calcola_motore_labor(potenza_motore, t)
     ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
@@ -463,6 +468,15 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
             "costo_alaggio": 0.0,
             "costo_varo": 0.0,
         })
+    elif tipo_sosta == "temporanea":
+        # Tariffa a giornata × numero di giorni
+        giorni = int(giorni_sosta_temporanea or 0)
+        base.update({
+            "costo_sosta": round(giorni * t.sosta_temporanea_giornaliera, 2),
+            "costo_copertura": copertura,
+            "costo_alaggio": 0.0,
+            "costo_varo": 0.0,
+        })
     else:
         base.update({
             "costo_sosta": round(lunghezza * t.sosta_dentro_per_metro, 2),
@@ -518,9 +532,10 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         scafo_sporco_attivo: bool = False,
                         copertura_attiva: bool = False,
                         litri_olio_piede: float = 1.0,
-                        litri_olio_piede_2: float = 1.0):
-    if tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
-        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
+                        litri_olio_piede_2: float = 1.0,
+                        giorni_sosta_temporanea: int = 0):
+    if tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
+        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     t = await get_tariffe_doc()
     return calcola_costi(lunghezza, tipo_sosta, t, potenza_motore,
                          numero_candele, numero_termostati,
@@ -529,7 +544,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          secondo_motore, potenza_motore_2, litri_olio_motore_2,
                          numero_candele_2, numero_termostati_2, girante_2_attivo,
                          scafo_sporco_attivo, copertura_attiva,
-                         litri_olio_piede, litri_olio_piede_2)
+                         litri_olio_piede, litri_olio_piede_2,
+                         giorni_sosta_temporanea)
 
 
 # --- Clienti ---
@@ -1007,7 +1023,10 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     elems.append(Paragraph("CLIENTE E IMBARCAZIONE", h2))
     potenza = doc.get('potenza_motore') or 0
     litri_pdf = doc.get('litri_olio_motore') or 0
-    sosta_label = 'Al coperto' if doc.get('tipo_sosta')=='dentro' else 'Fuori sede' if doc.get('tipo_sosta')=='fuori_sede' else 'Su piazzale (fuori)'
+    sosta_label = ('Al coperto' if doc.get('tipo_sosta')=='dentro'
+                   else 'Fuori sede' if doc.get('tipo_sosta')=='fuori_sede'
+                   else f"Temporanea · {int(doc.get('giorni_sosta_temporanea') or 0)} giorni" if doc.get('tipo_sosta')=='temporanea'
+                   else 'Su piazzale (fuori)')
     info_tbl = Table([
         [Paragraph("Cliente", label), Paragraph("Contatti", label)],
         [Paragraph(f"<b>{doc.get('cognome','')} {doc.get('nome','')}</b>", val),
@@ -1562,7 +1581,7 @@ async def report_incassi(anno: Optional[int] = None):
     )
 
     # Ripartizione per tipo sosta
-    per_tipo_sosta = {"dentro": 0.0, "fuori": 0.0, "fuori_sede": 0.0}
+    per_tipo_sosta = {"dentro": 0.0, "fuori": 0.0, "fuori_sede": 0.0, "temporanea": 0.0}
     for d in docs:
         tipo = d.get("tipo_sosta")
         if tipo in per_tipo_sosta:
@@ -1898,6 +1917,7 @@ async def apri_anno(payload: ApriAnnoRequest):
                 bool(c.get("copertura_attiva", False)),
                 float(c.get("litri_olio_piede", 1.0) or 1.0),
                 float(c.get("litri_olio_piede_2", 1.0) or 1.0),
+                int(c.get("giorni_sosta_temporanea", 0) or 0),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)

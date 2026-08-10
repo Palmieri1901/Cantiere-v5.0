@@ -20,7 +20,8 @@ import { FileText, Plus, X, Wrench, Zap } from "lucide-react";
 
 const empty = {
   nome: "", cognome: "", tipo_barca: "", lunghezza: "",
-  tipo_sosta: "dentro", posto_barca: "",
+  tipo_sosta: "dentro",
+  giorni_sosta_temporanea: 0, posto_barca: "",
   telefono: "", email: "",
   codice_fiscale: "", indirizzo: "", cellulare: "",
   pagato: false,
@@ -93,6 +94,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         copertura_attiva: f.copertura_attiva ? "true" : "false",
         litri_olio_piede: f.litri_olio_piede || 0,
         litri_olio_piede_2: f.litri_olio_piede_2 || 0,
+        giorni_sosta_temporanea: f.giorni_sosta_temporanea || 0,
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -104,7 +106,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -195,6 +197,11 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
           prezzo: Number(it?.prezzo) || 0,
         }))
         .filter((it) => it.descrizione || it.prezzo > 0),
+      giorni_sosta_temporanea: Number(f.giorni_sosta_temporanea) || 0,
+      litri_olio_piede: Number(f.litri_olio_piede) || 0,
+      litri_olio_piede_2: Number(f.litri_olio_piede_2) || 0,
+      scafo_sporco_attivo: !!f.scafo_sporco_attivo,
+      copertura_attiva: !!f.copertura_attiva,
       scadenza_antivegetativa: f.scadenza_antivegetativa || null,
       scadenza_manutenzione: f.scadenza_manutenzione || null,
     };
@@ -280,8 +287,22 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
                     <SelectItem value="dentro">Al coperto (dentro)</SelectItem>
                     <SelectItem value="fuori">Su piazzale (fuori)</SelectItem>
                     <SelectItem value="fuori_sede">Fuori sede</SelectItem>
+                    <SelectItem value="temporanea">Temporanea (a giorni)</SelectItem>
                   </SelectContent>
                 </Select>
+                {f.tipo_sosta === "temporanea" && (
+                  <div className="mt-2" data-testid="wrap-giorni-temporanea">
+                    <Label className="text-xs text-muted-foreground">N° giorni</Label>
+                    <Input
+                      type="number" min="0" step="1"
+                      placeholder="es. 15"
+                      value={f.giorni_sosta_temporanea}
+                      onChange={(e) => update("giorni_sosta_temporanea", e.target.value)}
+                      className="mt-1 font-mono-num"
+                      data-testid="input-giorni-temporanea"
+                    />
+                  </div>
+                )}
               </Field>
               <Field label="Posto barca (1-200)">
                 <div className="flex gap-2">

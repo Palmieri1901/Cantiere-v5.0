@@ -66,6 +66,7 @@ export default function Report() {
     { label: "Coperto", value: r.per_tipo_sosta.dentro || 0 },
     { label: "Su piazzale", value: r.per_tipo_sosta.fuori || 0 },
     { label: "Fuori sede", value: r.per_tipo_sosta.fuori_sede || 0 },
+    { label: "Temporanea", value: r.per_tipo_sosta.temporanea || 0 },
   ];
 
   return (
@@ -272,7 +273,7 @@ export default function Report() {
                       <TableCell className="font-medium">{c.cognome} {c.nome}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{c.tipo_barca}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : "Su piazzale"}
+                        {c.tipo_sosta === "dentro" ? "Coperto" : c.tipo_sosta === "fuori_sede" ? "Fuori sede" : c.tipo_sosta === "temporanea" ? "Temporanea" : "Su piazzale"}
                       </TableCell>
                       <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(c.totale)}</TableCell>
                       <TableCell className="text-center">
