@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter21 (2026-02-20) — Alaggio/Varo modificabili con destinazione "Altra"
+- ✅ Frontend `ClienteForm.jsx`: quando `alaggio_varo_attivo=true` e destinazione="altra" i campi Alaggio/Varo mostrano la **tariffa Marina di Campo come punto di partenza** (pre-fill automatico se valore=0). L'utente può poi modificarli liberamente in base alla nuova destinazione.
+- ✅ Preserva i valori manuali: cambi di lunghezza/motore non azzerano più i costi alaggio/varo digitati manualmente.
+- ✅ Testo di aiuto aggiornato: "Modifica i costi qui sotto se il movimento verso questa destinazione ha un prezzo diverso dalla tariffa di Marina di Campo."
+
 ## Iter20 (2026-02-20) — Spunta indipendente "Alaggio e varo"
 - ✅ Nuovo campo `alaggio_varo_attivo: bool = False` su `Cliente` (Optional in `ClienteCreate`).
 - ✅ `calcola_costi`: quando `alaggio_varo_attivo=True` i costi alaggio/varo vengono **sempre calcolati** indipendentemente dal tipo di sosta (dentro/fuori/fuori_sede/temporanea). Se destinazione="altra" → costi manuali.

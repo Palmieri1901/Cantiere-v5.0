@@ -76,6 +76,10 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
   useEffect(() => {
     if (!open || f.override_costi) return;
     if (!f.lunghezza || f.lunghezza <= 0) return;
+    // Se destinazione="altra" per suggerire tariffa iniziale, invia sempre marina_di_campo al calc
+    const destPerCalc = f.alaggio_varo_attivo && f.destinazione_alaggio_varo === "altra"
+      ? "marina_di_campo"
+      : (f.destinazione_alaggio_varo || "marina_di_campo");
     const t = setTimeout(() => {
       const params = new URLSearchParams({
         lunghezza: f.lunghezza,
@@ -99,7 +103,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         litri_olio_piede: f.litri_olio_piede || 0,
         litri_olio_piede_2: f.litri_olio_piede_2 || 0,
         giorni_sosta_temporanea: f.giorni_sosta_temporanea || 0,
-        destinazione_alaggio_varo: f.destinazione_alaggio_varo || "marina_di_campo",
+        destinazione_alaggio_varo: destPerCalc,
         alaggio_varo_attivo: f.alaggio_varo_attivo ? "true" : "false",
       });
       api.get(`/calcola-costi?${params}`)
@@ -107,7 +111,18 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
           const { ricambi_dettaglio, ricambi_2_dettaglio, ...rest } = r.data;
           setRicambiDettaglio(ricambi_dettaglio || null);
           setRicambi2Dettaglio(ricambi_2_dettaglio || null);
-          setF((prev) => ({ ...prev, ...rest }));
+          setF((prev) => {
+            const merged = { ...prev, ...rest };
+            // Se destinazione="altra" e spunta attiva: preserva i valori manuali (non azzerare)
+            // Se il valore corrente era 0 (appena passato ad altra) → suggerisce la tariffa Marina come punto di partenza
+            if (prev.alaggio_varo_attivo && prev.destinazione_alaggio_varo === "altra") {
+              const prevA = Number(prev.costo_alaggio) || 0;
+              const prevV = Number(prev.costo_varo) || 0;
+              merged.costo_alaggio = prevA > 0 ? prev.costo_alaggio : (Number(rest.costo_alaggio) || 0);
+              merged.costo_varo = prevV > 0 ? prev.costo_varo : (Number(rest.costo_varo) || 0);
+            }
+            return merged;
+          });
         })
         .catch(() => {});
     }, 250);
@@ -549,7 +564,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                         data-testid="input-destinazione-altra-nome"
                       />
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        Inserisci manualmente i costi di alaggio e varo qui sotto.
+                        Modifica i costi qui sotto se il movimento verso questa destinazione ha un prezzo diverso dalla tariffa di Marina di Campo.
                       </p>
                     </div>
                   )}
