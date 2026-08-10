@@ -81,6 +81,7 @@ export default function Tariffe() {
   const [t, setT] = useState(null);
   const [saving, setSaving] = useState(false);
   const [simL, setSimL] = useState(8); // lunghezza in metri per la simulazione
+  const [simHP, setSimHP] = useState(120); // potenza motore in HP per la simulazione
   const { year } = useYear();
 
   const load = () => api.get("/tariffe").then((r) => setT(r.data));
@@ -110,8 +111,8 @@ export default function Tariffe() {
 
   if (!t) return <div className="p-8 text-muted-foreground">Caricamento…</div>;
 
-  // Simulazione: lunghezza scelta dall'utente, 120 HP, 4L olio, 4 candele, 1 termostato, sosta fuori
-  const L = Math.max(0, Number(simL) || 0), HP = 120, LITRI = 4, NC = 4, NT = 1;
+  // Simulazione: lunghezza e potenza motore scelte dall'utente, 4L olio, 4 candele, 1 termostato, sosta fuori
+  const L = Math.max(0, Number(simL) || 0), HP = Math.max(0, Number(simHP) || 0), LITRI = 4, NC = 4, NT = 1;
   const alaggio = L <= 5 ? t.alaggio_fino_5m : t.alaggio_oltre_5m_per_metro;
   const varo = L <= 5 ? t.varo_fino_5m : t.varo_oltre_5m_per_metro;
   const labor = HP <= 15 ? t.motore_labor_2_15hp
@@ -193,22 +194,36 @@ export default function Tariffe() {
         <Card className="p-6 h-fit sticky top-6 bg-secondary/40" data-testid="preview-tariffe">
           <div className="label-mini mb-3">Simulazione</div>
 
-          {/* Input lunghezza barca */}
-          <div className="mb-4">
-            <Label className="text-xs text-muted-foreground">Lunghezza barca (metri)</Label>
-            <div className="flex items-center gap-2 mt-1">
+          {/* Input lunghezza + HP */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Lunghezza (m)</Label>
               <Input
                 type="number" step="0.1" min="0"
                 value={simL}
                 onChange={(e) => setSimL(e.target.value)}
-                className="font-mono-num text-right h-10 flex-1"
+                className="mt-1 font-mono-num text-right h-10"
                 data-testid="input-simulazione-lunghezza"
               />
-              <span className="text-sm text-muted-foreground shrink-0">m</span>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Potenza motore (HP)</Label>
+              <Input
+                type="number" step="1" min="0"
+                value={simHP}
+                onChange={(e) => setSimHP(e.target.value)}
+                className="mt-1 font-mono-num text-right h-10"
+                data-testid="input-simulazione-hp"
+              />
             </div>
           </div>
 
-          <h3 className="font-display text-base font-semibold mb-1">Barca {L || 0}m · 120 HP</h3>
+          <h3 className="font-display text-base font-semibold mb-1">Barca {L || 0}m · {HP || 0} HP</h3>
+          <p className="text-xs text-muted-foreground mb-1">
+            Scaglione manodopera: <b>{
+              HP <= 15 ? "2–15 HP" : HP <= 40 ? "16–40 HP" : HP <= 150 ? "41–150 HP" : "oltre 150 HP"
+            }</b>
+          </p>
           <p className="text-xs text-muted-foreground mb-5">Sosta su piazzale (fuori), 4L olio motore, 4 candele, 1 termostato</p>
 
           <div className="space-y-3 text-sm">
