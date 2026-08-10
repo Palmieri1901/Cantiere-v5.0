@@ -165,6 +165,12 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter32 (2026-02-20) — Excel commercialista: selezione anno
+- ✅ Home → Azioni rapide → "Excel per commercialista" ora apre un dialog `dialog-export-excel` invece di scaricare direttamente l'anno corrente.
+- ✅ Menu a tendina (`select-anno-excel`) con 6 opzioni: anno prossimo + anno corrente (marcato "· anno in corso") + 5 anni precedenti.
+- ✅ Bottone "Scarica anno YYYY" (`btn-excel-scarica`) fa il download del file `.xlsx` con i clienti dell'anno selezionato + toast di conferma.
+- ✅ Nessuna modifica backend: usa l'endpoint esistente `/api/export/clienti.xlsx?anno=X`.
+
 ## Iter31 (2026-02-20) — BUGFIX: modifica tariffa sosta temporanea non salvava
 - 🐛 **BUG risolto**: il campo `sosta_temporanea_giornaliera` **mancava nel modello `TariffeUpdate`** → il PUT `/api/tariffe` ignorava silenziosamente la modifica e ripristinava il valore precedente.
 - ✅ Aggiunto `sosta_temporanea_giornaliera: Optional[float] = None` in `TariffeUpdate`.

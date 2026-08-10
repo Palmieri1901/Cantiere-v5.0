@@ -10,6 +10,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Home() {
   const [c, setC] = useState(null);
@@ -18,6 +22,10 @@ export default function Home() {
   const [restoreData, setRestoreData] = useState(null);
   const [restoring, setRestoring] = useState(false);
   const [openPreventivo, setOpenPreventivo] = useState(false);
+  const [openExcel, setOpenExcel] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const [excelYear, setExcelYear] = useState(String(currentYear));
+  const anniDisponibili = Array.from({ length: 6 }, (_, i) => currentYear + 1 - i);
 
   const load = () => {
     api.get("/cantiere").then((r) => setC(r.data));
@@ -144,12 +152,51 @@ export default function Home() {
             testId="cta-export-excel"
             icon={FileSpreadsheet}
             title="Excel per commercialista"
-            subtitle={`Esporta clienti anno ${new Date().getFullYear()}`}
-            href={`${API}/export/clienti.xlsx?anno=${new Date().getFullYear()}`}
-            download
+            subtitle="Scegli l'anno da esportare"
+            onClick={() => { setExcelYear(String(currentYear)); setOpenExcel(true); }}
           />
         </div>
       </div>
+
+      {/* Dialog scelta anno per Excel */}
+      <Dialog open={openExcel} onOpenChange={setOpenExcel}>
+        <DialogContent className="max-w-md" data-testid="dialog-export-excel">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-primary" /> Excel per commercialista
+            </DialogTitle>
+            <DialogDescription>
+              Seleziona l'anno dei clienti da esportare. Il file .xlsx si scaricherà automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="label-mini block mb-2">Anno</label>
+            <Select value={excelYear} onValueChange={setExcelYear}>
+              <SelectTrigger data-testid="select-anno-excel" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {anniDisponibili.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}{y === currentYear ? "  ·  anno in corso" : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenExcel(false)} data-testid="btn-excel-annulla">Annulla</Button>
+            <Button
+              asChild
+              className="bg-primary hover:bg-primary/90"
+              data-testid="btn-excel-scarica"
+              onClick={() => { setOpenExcel(false); toast.success(`Excel ${excelYear} in download`); }}
+            >
+              <a href={`${API}/export/clienti.xlsx?anno=${excelYear}`} download>
+                <Download className="w-4 h-4 mr-2" /> Scarica anno {excelYear}
+              </a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Info + stats */}
       <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
