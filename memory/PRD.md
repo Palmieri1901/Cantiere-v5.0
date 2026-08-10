@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter31 (2026-02-20) — BUGFIX: modifica tariffa sosta temporanea non salvava
+- 🐛 **BUG risolto**: il campo `sosta_temporanea_giornaliera` **mancava nel modello `TariffeUpdate`** → il PUT `/api/tariffe` ignorava silenziosamente la modifica e ripristinava il valore precedente.
+- ✅ Aggiunto `sosta_temporanea_giornaliera: Optional[float] = None` in `TariffeUpdate`.
+- ✅ Test: PUT 33.5 → GET 33.5 (prima: PUT 33.5 → GET 25.0). Ripristinato valore a 25 per non alterare i clienti esistenti.
+
 ## Iter30 (2026-02-20) — BUGFIX: salvataggio cliente sosta temporanea
 - 🐛 **BUG risolto**: `create_cliente` e `update_cliente` validavano `tipo_sosta not in ("dentro","fuori","fuori_sede")` **senza includere "temporanea"** → HTTP 400 al salvataggio.
 - ✅ Aggiunto "temporanea" nella whitelist di validazione in entrambi gli endpoint POST/PUT `/api/clienti`.

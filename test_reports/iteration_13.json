@@ -1,0 +1,26 @@
+{
+  "summary": "Verified bug fix for 'Sosta temporanea' tariff persistence. Backend PUT /api/tariffe now accepts sosta_temporanea_giornaliera (previously missing from TariffeUpdate model), so the value persists. Verified via direct API (PUT 30.5 -> GET 30.5) and end-to-end UI flow on /tariffe route: initial=25 -> filled 30.5 -> Salva -> reload -> value remained 30.5. Final value reset back to 25 via API.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Route mismatch", "issues": ["Review request mentions /impostazioni-tariffe as the settings page URL, but that route does not exist and redirects to the homepage. The actual working route is /tariffe. If /impostazioni-tariffe was intended as an alias, it needs a router entry; otherwise update documentation."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Consider adding /impostazioni-tariffe route alias if that URL was expected (currently only /tariffe works)."
+  ],
+  "critical_code_review_comments": [
+    "server.py is very large (>1300 lines). Consider splitting into modules (tariffe, clienti, lavori, pdf) for maintainability.",
+    "TariffeUpdate model duplicates every field from Tariffe — easy for future fields to be forgotten again (this was the exact root cause of this bug). Suggest generating TariffeUpdate dynamically from Tariffe via `create_model` or using `model_config = ConfigDict(extra='ignore')` on a partial pattern, or use `Tariffe.model_fields` to build an Optional variant."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. Value modified temporarily to 30.5 then reset to 25.0 via API.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bug fix verified. Tariffe page is at /tariffe (not /impostazioni-tariffe). Auth is disabled. PUT /api/tariffe with partial payload {sosta_temporanea_giornaliera: X} works correctly and triggers client recalculation via /api/tariffe/ricalcola?anno=YEAR.",
+  "rca of the issue": "Root cause: TariffeUpdate Pydantic model (backend/server.py ~L132-160) was missing the field `sosta_temporanea_giornaliera`. On PUT /api/tariffe the field was silently dropped by Pydantic (extra fields ignored). The handler merged only non-None fields from TariffeUpdate onto current tariffe, so the DB value stayed unchanged. The GET response therefore returned the previous value and the UI 'reverted' the change. Fix: added `sosta_temporanea_giornaliera: Optional[float] = None` to TariffeUpdate. Verified via curl PUT→GET and via full UI flow with page reload. Mitigation suggestion: build the Update model programmatically from Tariffe to prevent future omissions."
+}

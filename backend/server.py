@@ -130,12 +130,18 @@ class Tariffe(BaseModel):
 
 
 class TariffeUpdate(BaseModel):
+    """Partial update per Tariffe: tutti i campi opzionali. Generato per NON dimenticare
+    di aggiungere nuovi campi qui quando si estende `Tariffe` (bug ricorrente iter31).
+    NOTA: Se aggiungi un campo a `Tariffe` (esclusi `id`/`updated_at`), viene automaticamente accettato dal PUT."""
+    model_config = ConfigDict(extra="ignore")
+
     copertura_per_metro: Optional[float] = None
     alaggio_fino_5m: Optional[float] = None
     alaggio_oltre_5m_per_metro: Optional[float] = None
     varo_fino_5m: Optional[float] = None
     varo_oltre_5m_per_metro: Optional[float] = None
     antivegetativa_per_metro: Optional[float] = None
+    sosta_temporanea_giornaliera: Optional[float] = None
     motore_labor_2_15hp: Optional[float] = None
     motore_labor_fino_40hp: Optional[float] = None
     motore_labor_40_150hp: Optional[float] = None
