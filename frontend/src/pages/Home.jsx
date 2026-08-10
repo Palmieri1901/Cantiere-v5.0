@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function Home() {
   const [c, setC] = useState(null);
-  const [stats, setStats] = useState(null);
   const restoreRef = useRef(null);
   const [restoreData, setRestoreData] = useState(null);
   const [restoring, setRestoring] = useState(false);
@@ -29,7 +28,6 @@ export default function Home() {
 
   const load = () => {
     api.get("/cantiere").then((r) => setC(r.data));
-    api.get("/stats").then((r) => setStats(r.data));
   };
 
   useEffect(() => { load(); }, []);
@@ -198,7 +196,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* Info + stats */}
+      {/* Info */}
       <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 grid grid-cols-1 gap-6">
         {/* Contatti */}
         <Card className="p-6" data-testid="home-contatti">
@@ -245,22 +243,6 @@ export default function Home() {
             <div className="text-sm text-muted-foreground bg-muted/40 rounded-md p-4 border border-dashed border-border">
               Nessuna informazione impostata. <Link to="/impostazioni" className="text-primary underline">Aggiungi ora →</Link>
             </div>
-          )}
-        </Card>
-
-        {/* Stats */}
-        <Card className="p-6 bg-primary/5 border-primary/30" data-testid="home-stats">
-          <div className="label-mini mb-4 flex items-center gap-1.5">
-            <Anchor className="w-3.5 h-3.5 text-primary" /> Attività in corso
-          </div>
-          {stats ? (
-            <div className="space-y-4">
-              <StatBlock label="Clienti gestiti" value={stats.totale_clienti} />
-              <StatBlock label="Posti barca occupati" value={`${stats.posti_occupati} / ${stats.posti_totali}`} />
-              <StatBlock label="Entrate stimate" value={new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(stats.entrate_totali)} highlight />
-            </div>
-          ) : (
-            <div className="text-muted-foreground text-sm">Caricamento…</div>
           )}
         </Card>
       </div>
@@ -378,16 +360,5 @@ function QuickActionCard({ icon: Icon, title, subtitle, onClick, href, download,
     <button type="button" onClick={onClick} data-testid={testId} className="block w-full text-left">
       {inner}
     </button>
-  );
-}
-
-function StatBlock({ label, value, highlight }) {
-  return (
-    <div>
-      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className={`font-display font-mono-num text-2xl mt-0.5 ${highlight ? "text-primary font-bold" : "font-semibold"}`}>
-        {value}
-      </div>
-    </div>
   );
 }

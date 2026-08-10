@@ -18,6 +18,15 @@ Sono circa 200 posti barca"
 - **Titolare cantiere / segreteria**: gestisce l'anagrafica dei 200 posti barca, monitora entrate stimate e scadenze
 - **Meccanico / responsabile lavori**: aggiorna note lavori eseguiti e scadenze manutenzione
 
+## Architecture (2026-02)
+Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
+- `database.py` — Mongo client, logger, TOTAL_POSTI
+- `models.py` — Pydantic (Cliente, Tariffe, Lavoro, Cantiere, ecc.)
+- `helpers.py` — serialize, calcola_costi, _euro
+- `auth.py` — JWT + endpoints + seed_admin
+- `pdf_builders.py` — PDF preventivo + storico multi-anno
+- `routers/*.py` — un file per dominio: tariffe, clienti, lavori, stats, export, cantiere, backup, preventivo, report, anni
+
 ## Core Requirements (static)
 - Anagrafica clienti (cognome, nome, tel, email) — visualizzazione sempre nell'ordine Cognome → Nome
 - Dati barca (tipo, lunghezza in metri, tipo sosta dentro/fuori, posto barca 1-200)
