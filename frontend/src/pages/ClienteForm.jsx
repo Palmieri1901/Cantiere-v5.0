@@ -44,7 +44,8 @@ const empty = {
   scadenza_antivegetativa: "", scadenza_manutenzione: "",
 };
 
-export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
+export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode = "cliente" }) {
+  const isPreventivo = mode === "preventivo";
   const [f, setF] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [ricambiDettaglio, setRicambiDettaglio] = useState(null);
@@ -158,7 +159,13 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
     (Number(f.costo_scafo_sporco) || 0) + totaleExtra;
 
   const save = async () => {
-    if (!f.nome || !f.cognome || !f.tipo_barca || !f.lunghezza) {
+    // Preventivo veloce: solo nome+cognome obbligatori
+    if (isPreventivo) {
+      if (!f.nome?.trim() || !f.cognome?.trim()) {
+        toast.error("Inserisci almeno nome e cognome");
+        return;
+      }
+    } else if (!f.nome || !f.cognome || !f.tipo_barca || !f.lunghezza) {
       toast.error("Compila nome, cognome, tipo barca e lunghezza");
       return;
     }
@@ -166,7 +173,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
     const payload = {
       ...f,
       anno: cliente?.anno || year,
-      lunghezza: Number(f.lunghezza),
+      lunghezza: Number(f.lunghezza) || 0,
       potenza_motore: Number(f.potenza_motore) || 0,
       litri_olio_motore: Number(f.litri_olio_motore) || 0,
       numero_candele: Number(f.numero_candele) || 0,
@@ -206,7 +213,20 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       scadenza_manutenzione: f.scadenza_manutenzione || null,
     };
     try {
-      if (cliente?.id) {
+      if (isPreventivo) {
+        // Scarica il PDF senza salvare
+        const res = await api.post("/preventivo/pdf", payload, { responseType: "blob" });
+        const blob = new Blob([res.data], { type: "application/pdf" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `preventivo_${(f.cognome || "").trim()}_${(f.nome || "").trim()}.pdf`.replace(/\s+/g, "_");
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success("Preventivo PDF generato");
+      } else if (cliente?.id) {
         await api.put(`/clienti/${cliente.id}`, payload);
         toast.success("Cliente aggiornato");
       } else {
@@ -230,10 +250,12 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto" data-testid="cliente-form">
         <SheetHeader>
           <SheetTitle className="font-display text-2xl">
-            {cliente ? "Modifica cliente" : "Nuovo cliente"}
+            {isPreventivo ? "Preventivo veloce" : (cliente ? "Modifica cliente" : "Nuovo cliente")}
           </SheetTitle>
           <SheetDescription>
-            Compila i dati del cliente. I costi vengono calcolati automaticamente in base alle tariffe.
+            {isPreventivo
+              ? "Compila almeno nome e cognome. Puoi aggiungere lunghezza, motore e servizi per un preventivo dettagliato. Il PDF viene generato senza salvare il cliente."
+              : "Compila i dati del cliente. I costi vengono calcolati automaticamente in base alle tariffe."}
           </SheetDescription>
         </SheetHeader>
 
@@ -662,7 +684,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved }) {
         <SheetFooter className="gap-2 sticky bottom-0 bg-background py-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="btn-annulla">Annulla</Button>
           <Button onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90" data-testid="btn-salva">
-            {saving ? "Salvataggio…" : "Salva cliente"}
+            {isPreventivo
+              ? (saving ? "Generazione…" : (<><FileText className="w-4 h-4 mr-2" /> Scarica preventivo PDF</>))
+              : (saving ? "Salvataggio…" : "Salva cliente")}
           </Button>
         </SheetFooter>
       </SheetContent>

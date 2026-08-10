@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { api, API } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sailboat, MapPin, Phone, Mail, Clock, ArrowRight, Anchor, Building2, Globe, Database, Download, Upload, AlertTriangle } from "lucide-react";
+import { Sailboat, MapPin, Phone, Mail, Clock, ArrowRight, Anchor, Building2, Globe, Database, Download, Upload, AlertTriangle, FileText } from "lucide-react";
 import { toast } from "sonner";
+import ClienteForm from "@/pages/ClienteForm";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
@@ -16,6 +17,7 @@ export default function Home() {
   const restoreRef = useRef(null);
   const [restoreData, setRestoreData] = useState(null);
   const [restoring, setRestoring] = useState(false);
+  const [openPreventivo, setOpenPreventivo] = useState(false);
 
   const load = () => {
     api.get("/cantiere").then((r) => setC(r.data));
@@ -101,12 +103,24 @@ export default function Home() {
             <Button asChild variant="outline" size="lg" data-testid="cta-clienti">
               <Link to="/clienti">Gestione clienti</Link>
             </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setOpenPreventivo(true)}
+              data-testid="cta-preventivo-veloce"
+              className="border-primary/40 text-primary hover:bg-primary/10"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Preventivo veloce (PDF)
+            </Button>
             <Button asChild variant="ghost" size="lg" data-testid="cta-impostazioni">
               <Link to="/impostazioni">Modifica info cantiere</Link>
             </Button>
           </div>
         </div>
       </div>
+
+      <ClienteForm open={openPreventivo} onOpenChange={setOpenPreventivo} mode="preventivo" />
 
       {/* Info + stats */}
       <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
