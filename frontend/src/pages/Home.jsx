@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api, API } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sailboat, MapPin, Phone, Mail, Clock, ArrowRight, Anchor, Building2, Globe, Database, Download, Upload, AlertTriangle, FileText } from "lucide-react";
+import { Sailboat, MapPin, Phone, Mail, Clock, ArrowRight, Anchor, Building2, Globe, Database, Download, Upload, AlertTriangle, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
 import {
@@ -117,6 +117,12 @@ export default function Home() {
               <a href={`${API}/tariffe/listino.pdf`} target="_blank" rel="noreferrer">
                 <FileText className="w-4 h-4 mr-2" />
                 Listino prezzi (PDF)
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="lg" data-testid="cta-export-excel" className="border-primary/40 text-primary hover:bg-primary/10">
+              <a href={`${API}/export/clienti.xlsx?anno=${new Date().getFullYear()}`} download>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Excel clienti (commercialista)
               </a>
             </Button>
             <Button asChild variant="ghost" size="lg" data-testid="cta-impostazioni">

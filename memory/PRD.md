@@ -165,6 +165,13 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter19 (2026-02-20) — Export Excel completo per commercialista
+- ✅ Backend `/api/export/clienti.xlsx?anno=X`: rigenerato da zero. 33 colonne human-readable in italiano (Anno, Posto, Cognome, Nome, CF, Indirizzo, Contatti, Barca, Lunghezza, Tipo sosta, Destinazione alaggio, tutti i costi separati con "€", Lavorazioni extra €, TOTALE €, Pagato, Scadenze, Note).
+- ✅ Formattazione openpyxl: header navy + testo bianco, riga TOTALI arancio con formule `=SUM()` sulle colonne valuta, formato `#,##0.00 "€"`, larghezze personalizzate, freeze panes A2. Filtro per anno con sheet name "Clienti YYYY".
+- ✅ Frontend `Clienti.jsx`: bottone Excel passa `?anno=` corrente.
+- ✅ Frontend `Home.jsx`: nuovo CTA "Excel clienti (commercialista)" accanto a Listino prezzi.
+- ✅ Test: HTTP 200, file .xlsx 7.4KB, riga TOTALI in fondo con formule SUM.
+
 ## Iter18 (2026-02-20) — Lavaggi stagionali al metro lineare
 - ✅ Backend: `costo_lavaggio_inizio_stagione` e `costo_lavaggio_fine_stagione` ora sono **tariffe al metro** e vengono moltiplicate per la lunghezza barca in `calcola_costi`.
 - ✅ PDF Listino: gruppo "Copertura & trattamenti scafo" mostra "€ / metro" per i lavaggi (prima "forfait").

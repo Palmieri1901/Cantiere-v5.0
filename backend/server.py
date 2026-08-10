@@ -1021,17 +1021,152 @@ async def export_csv():
 
 
 @api_router.get("/export/clienti.xlsx")
-async def export_xlsx():
-    docs = await db.clienti.find({}, {"_id": 0}).to_list(1000)
-    df = pd.DataFrame(docs) if docs else pd.DataFrame()
+async def export_xlsx(anno: Optional[int] = None):
+    q = {}
+    if anno is not None:
+        q["anno"] = anno
+    docs = await db.clienti.find(q, {"_id": 0}).to_list(1000)
+    docs.sort(key=lambda d: ((d.get("cognome") or "").strip().lower(), (d.get("nome") or "").strip().lower()))
+
+    # Colonne human-readable per il commercialista
+    COLS = [
+        ("Anno", "anno"),
+        ("Posto", "posto_barca"),
+        ("Cognome", "cognome"),
+        ("Nome", "nome"),
+        ("Codice Fiscale", "codice_fiscale"),
+        ("Indirizzo", "indirizzo"),
+        ("Telefono", "telefono"),
+        ("Cellulare", "cellulare"),
+        ("Email", "email"),
+        ("Tipo barca", "tipo_barca"),
+        ("Lunghezza (m)", "lunghezza"),
+        ("Tipo sosta", "tipo_sosta"),
+        ("Gg. sosta temp.", "giorni_sosta_temporanea"),
+        ("Destinazione alaggio/varo", "destinazione_alaggio_varo"),
+        ("Nome altra destinazione", "destinazione_altra_nome"),
+        ("Sosta €", "costo_sosta"),
+        ("Movimentazione €", "costo_movimentazione"),
+        ("Taccaggio €", "costo_taccaggio"),
+        ("Copertura €", "costo_copertura"),
+        ("Alaggio €", "costo_alaggio"),
+        ("Varo €", "costo_varo"),
+        ("Antivegetativa €", "costo_antivegetativa"),
+        ("Magg. scafo sporco €", "costo_scafo_sporco"),
+        ("Lavaggio inizio €", "costo_lavaggio_inizio"),
+        ("Lavaggio fine €", "costo_lavaggio_fine"),
+        ("Manutenzione motore €", "costo_manutenzione_motore"),
+        ("Lavorazioni extra €", "__totale_extra__"),
+        ("TOTALE €", "__totale__"),
+        ("Pagato", "__pagato__"),
+        ("Data pagamento", "data_pagamento"),
+        ("Scad. antivegetativa", "scadenza_antivegetativa"),
+        ("Scad. manutenzione", "scadenza_manutenzione"),
+        ("Note lavori", "note_lavori"),
+    ]
+
+    COST_KEYS = ("costo_sosta","costo_movimentazione","costo_taccaggio","costo_copertura",
+                 "costo_alaggio","costo_varo","costo_antivegetativa","costo_scafo_sporco",
+                 "costo_lavaggio_inizio","costo_lavaggio_fine","costo_manutenzione_motore")
+
+    def row_for(d: dict):
+        tot_extra = round(sum(float((it or {}).get("prezzo") or 0) for it in (d.get("lavorazioni_extra") or [])), 2)
+        totale = round(sum(float(d.get(k) or 0) for k in COST_KEYS) + tot_extra, 2)
+        sosta_map = {"dentro": "Al coperto", "fuori": "Su piazzale", "fuori_sede": "Fuori sede", "temporanea": "Temporanea"}
+        dest_map = {"marina_di_campo": "Marina di Campo", "altra": "Altra"}
+        out = {}
+        for label, key in COLS:
+            if key == "__totale__":
+                out[label] = totale
+            elif key == "__totale_extra__":
+                out[label] = tot_extra
+            elif key == "__pagato__":
+                out[label] = "Sì" if d.get("pagato") else "No"
+            elif key == "tipo_sosta":
+                out[label] = sosta_map.get(d.get("tipo_sosta"), d.get("tipo_sosta") or "")
+            elif key == "destinazione_alaggio_varo":
+                out[label] = dest_map.get(d.get("destinazione_alaggio_varo"), "")
+            else:
+                out[label] = d.get(key, "")
+        return out
+
+    rows = [row_for(d) for d in docs]
+    df = pd.DataFrame(rows, columns=[c[0] for c in COLS]) if rows else pd.DataFrame(columns=[c[0] for c in COLS])
+
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as writer:
-        (df if not df.empty else pd.DataFrame({"info": ["Nessun cliente"]})).to_excel(writer, index=False, sheet_name="Clienti")
+        sheet_name = f"Clienti {anno}" if anno else "Clienti"
+        df.to_excel(writer, index=False, sheet_name=sheet_name)
+        ws = writer.sheets[sheet_name]
+        # Formattazione: header grassetto, auto-width, valute a 2 decimali, riga totali
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        header_fill = PatternFill(start_color="17324D", end_color="17324D", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF", size=10)
+        totali_fill = PatternFill(start_color="B0562E", end_color="B0562E", fill_type="solid")
+        totali_font = Font(bold=True, color="FFFFFF", size=10)
+        thin = Side(border_style="thin", color="D9D9D9")
+
+        # Header row
+        for col_idx, (label, _) in enumerate(COLS, start=1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = Border(top=thin, bottom=thin, left=thin, right=thin)
+
+        # Colonne valuta (indice 1-based)
+        currency_labels = {label for label, _ in COLS if label.endswith("€")}
+        for row_idx in range(2, len(rows) + 2):
+            for col_idx, (label, _) in enumerate(COLS, start=1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                if label in currency_labels:
+                    cell.number_format = '#,##0.00 "€"'
+                    cell.alignment = Alignment(horizontal="right")
+                elif label == "Lunghezza (m)":
+                    cell.number_format = '0.00'
+                    cell.alignment = Alignment(horizontal="right")
+                if label == "TOTALE €":
+                    cell.font = Font(bold=True)
+
+        # Riga TOTALI in fondo
+        if rows:
+            tot_row = len(rows) + 2
+            ws.cell(row=tot_row, column=1, value="TOTALI").font = totali_font
+            ws.cell(row=tot_row, column=1).fill = totali_fill
+            ws.cell(row=tot_row, column=1).alignment = Alignment(horizontal="right")
+            # Merge cells da colonna 1 a 15 per etichetta TOTALI
+            ws.merge_cells(start_row=tot_row, start_column=1, end_row=tot_row, end_column=15)
+            for col_idx, (label, _) in enumerate(COLS, start=1):
+                if label in currency_labels:
+                    col_letter = get_column_letter(col_idx)
+                    ws.cell(row=tot_row, column=col_idx, value=f"=SUM({col_letter}2:{col_letter}{tot_row-1})")
+                    ws.cell(row=tot_row, column=col_idx).number_format = '#,##0.00 "€"'
+                    ws.cell(row=tot_row, column=col_idx).font = totali_font
+                    ws.cell(row=tot_row, column=col_idx).fill = totali_fill
+                    ws.cell(row=tot_row, column=col_idx).alignment = Alignment(horizontal="right")
+
+        # Auto-width colonne
+        widths = {
+            "Anno": 8, "Posto": 8, "Cognome": 16, "Nome": 14, "Codice Fiscale": 20,
+            "Indirizzo": 28, "Telefono": 14, "Cellulare": 14, "Email": 24,
+            "Tipo barca": 18, "Lunghezza (m)": 12, "Tipo sosta": 14,
+            "Gg. sosta temp.": 10, "Destinazione alaggio/varo": 22, "Nome altra destinazione": 22,
+            "Pagato": 8, "Data pagamento": 14, "Scad. antivegetativa": 16, "Scad. manutenzione": 16,
+            "Note lavori": 40,
+        }
+        for col_idx, (label, _) in enumerate(COLS, start=1):
+            ws.column_dimensions[get_column_letter(col_idx)].width = widths.get(label, 15 if label.endswith("€") else 14)
+        ws.row_dimensions[1].height = 28
+        ws.freeze_panes = "A2"
+
     buf.seek(0)
+    fname = f"clienti_cantiere_{anno}.xlsx" if anno else "clienti_cantiere.xlsx"
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=clienti_cantiere.xlsx"}
+        headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
 
 

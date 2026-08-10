@@ -93,12 +93,12 @@ export default function Clienti() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild data-testid="btn-export-csv">
-            <a href={`${API}/export/clienti.csv`} download>
+            <a href={`${API}/export/clienti.csv?anno=${year}`} download>
               <FileDown className="w-4 h-4 mr-2" /> CSV
             </a>
           </Button>
           <Button variant="outline" asChild data-testid="btn-export-xlsx">
-            <a href={`${API}/export/clienti.xlsx`} download>
+            <a href={`${API}/export/clienti.xlsx?anno=${year}`} download>
               <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel
             </a>
           </Button>
