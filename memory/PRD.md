@@ -165,6 +165,12 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter40 (2026-02-20) — BUGFIX: servizi opzionali sempre visibili
+- 🐛 **BUG risolto**: quando si disattivava lo switch "Motore presente" il condizionale nascondeva **tutti** i servizi opzionali (antivegetativa, scafo sporco, copertura, lavaggi, alaggio/varo), impedendo di configurare un cliente senza motore che voleva questi servizi.
+- ✅ Restrutturato JSX: la griglia di ToggleRow è ora **fuori** dal condizionale `primo_motore_attivo` e sempre visibile. Solo i 5 input motore (HP/olio/olio piede/candele/termostati) + il toggle "Sostituzione girante" restano condizionati.
+- ✅ Rimossi tag di chiusura orfani (`</>` e `)}` lasciati dal refactoring).
+- ✅ **Testing_agent iter14: 100% PASS frontend**. Backend testato: motore OFF + antivegetativa + lavaggi + alaggio/varo × 2 → totale 1650€ (senza costi motore).
+
 ## Iter39 (2026-02-20) — Spunta 1° motore (motore presente si/no)
 - ✅ Backend: nuovo campo `primo_motore_attivo: bool = True` su `Cliente` (Optional in `ClienteCreate`). Default True per non alterare i clienti esistenti.
 - ✅ `calcola_costi`: quando `primo_motore_attivo=False` manodopera + ricambi del 1° motore vengono azzerati (il costo_manutenzione_motore resta somma di eventuale 2° motore).

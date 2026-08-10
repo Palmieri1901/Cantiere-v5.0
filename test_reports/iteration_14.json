@@ -1,0 +1,22 @@
+{
+  "summary": "Verified bug fix in ClienteForm: disabling 'Motore presente' switch hides ONLY engine-specific fields (HP, olio, candele, termostati, girante) while keeping all other optional services (antivegetativa, scafo sporco, copertura, lavaggio inizio/fine, alaggio/varo) visible and interactive. Client save with motore=OFF works correctly (total 1650€ calculated with antivegetativa + lavaggio + alaggio/varo × 2, no engine cost). Cleanup completed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ClienteForm.jsx (~870 lines) is large — consider splitting Motore/Costi/LavorazioniExtra into subcomponents for maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "n/a (auth disabled)",
+  "seed_data_creation": "Created and deleted a test cliente 'TESTBUG MotoreOff' during test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug from iteration 13 (motore switch OFF hiding all optional services) is fixed. Verified via UI e2e on /clienti. Motor fields + girante hide; antivegetativa/scafo/copertura/lavaggi/alaggio-varo remain visible. Save works. Total computed on server includes non-engine costs when primo_motore_attivo=false.",
+  "rca of the issue": "Previously the entire optional-services block was rendered inside the {primo_motore_attivo && (...)} conditional. Fix: moved the ToggleRow grid (antivegetativa, scafo_sporco, copertura, lavaggio_inizio, lavaggio_fine, alaggio_varo) OUTSIDE the conditional; only HP/olio/candele/termostati inputs and the 'Sostituzione girante' toggle remain inside the {primo_motore_attivo !== false} branch. Backend calcola_costi already zeroes only manodopera+ricambi motore when primo_motore_attivo=false."
+}

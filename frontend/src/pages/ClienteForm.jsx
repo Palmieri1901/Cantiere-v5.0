@@ -402,33 +402,35 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               </div>
             </div>
             {f.primo_motore_attivo === false ? (
-              <div className="p-4 rounded-md border border-dashed border-border bg-muted/20 text-sm text-muted-foreground" data-testid="motore-disattivato">
-                Motore <b>disattivato</b> — nessun costo manodopera/ricambi verrà calcolato per questa barca.
+              <div className="p-4 rounded-md border border-dashed border-border bg-muted/20 text-sm text-muted-foreground mb-4" data-testid="motore-disattivato">
+                Motore <b>disattivato</b> — nessun costo manodopera/ricambi motore verrà calcolato. I servizi opzionali qui sotto restano comunque disponibili.
               </div>
             ) : (
-            <>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <Field label="Cavalli (HP)">
-                <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
-              </Field>
-              <Field label="Litri olio motore">
-                <Input type="number" min="0" step="0.1" value={f.litri_olio_motore} onChange={(e) => update("litri_olio_motore", e.target.value)} data-testid="input-litri-olio" />
-              </Field>
-              <Field label="Litri olio piede">
-                <Input type="number" min="0" step="0.1" value={f.litri_olio_piede} onChange={(e) => update("litri_olio_piede", e.target.value)} data-testid="input-litri-olio-piede" />
-              </Field>
-              <Field label="N° candele">
-                <Input type="number" min="0" step="1" value={f.numero_candele} onChange={(e) => update("numero_candele", e.target.value)} data-testid="input-numero-candele" />
-              </Field>
-              <Field label="N° termostati">
-                <Input type="number" min="0" step="1" value={f.numero_termostati} onChange={(e) => update("numero_termostati", e.target.value)} data-testid="input-numero-termostati" />
-              </Field>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-2">
-              Fasce manodopera: 2-15 HP · 16-40 HP · 41-150 HP · &gt;150 HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
-            </div>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <Field label="Cavalli (HP)">
+                    <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
+                  </Field>
+                  <Field label="Litri olio motore">
+                    <Input type="number" min="0" step="0.1" value={f.litri_olio_motore} onChange={(e) => update("litri_olio_motore", e.target.value)} data-testid="input-litri-olio" />
+                  </Field>
+                  <Field label="Litri olio piede">
+                    <Input type="number" min="0" step="0.1" value={f.litri_olio_piede} onChange={(e) => update("litri_olio_piede", e.target.value)} data-testid="input-litri-olio-piede" />
+                  </Field>
+                  <Field label="N° candele">
+                    <Input type="number" min="0" step="1" value={f.numero_candele} onChange={(e) => update("numero_candele", e.target.value)} data-testid="input-numero-candele" />
+                  </Field>
+                  <Field label="N° termostati">
+                    <Input type="number" min="0" step="1" value={f.numero_termostati} onChange={(e) => update("numero_termostati", e.target.value)} data-testid="input-numero-termostati" />
+                  </Field>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-2">
+                  Fasce manodopera: 2-15 HP · 16-40 HP · 41-150 HP · &gt;150 HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
+                </div>
+              </>
+            )}
 
-            {/* Servizi opzionali */}
+            {/* Servizi opzionali - SEMPRE visibili, anche senza motore */}
             <div className="mt-4 grid grid-cols-2 gap-3">
               <ToggleRow
                 label="Antivegetativa"
@@ -452,13 +454,15 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                 testId="switch-copertura"
                 disabled={f.tipo_sosta === "dentro"}
               />
-              <ToggleRow
-                label={f.secondo_motore ? "Girante 1° motore" : "Sostituzione girante"}
-                description="Includi ricambio girante"
-                checked={!!f.girante_attivo}
-                onChange={(v) => update("girante_attivo", v)}
-                testId="switch-girante"
-              />
+              {f.primo_motore_attivo !== false && (
+                <ToggleRow
+                  label={f.secondo_motore ? "Girante 1° motore" : "Sostituzione girante"}
+                  description="Includi ricambio girante"
+                  checked={!!f.girante_attivo}
+                  onChange={(v) => update("girante_attivo", v)}
+                  testId="switch-girante"
+                />
+              )}
               <ToggleRow
                 label="Lavaggio inizio stagione"
                 description="Includi lavaggio a inizio stagione"
@@ -485,8 +489,6 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               <div className="mt-2 text-[11px] text-muted-foreground bg-muted/40 border border-border rounded-md p-2" data-testid="info-no-antiveg">
                 Antivegetativa disattivata. Attiva "Scafo sporco" se serve applicare la maggiorazione.
               </div>
-            )}
-            </>
             )}
 
             {/* Secondo motore */}
