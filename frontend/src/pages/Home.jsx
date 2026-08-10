@@ -104,7 +104,7 @@ export default function Home() {
           <div className="mt-10 flex flex-wrap gap-3">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-12 px-6" data-testid="cta-dashboard">
               <Link to="/dashboard">
-                Vai al gestionale
+                Panoramica
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
@@ -199,9 +199,9 @@ export default function Home() {
       </Dialog>
 
       {/* Info + stats */}
-      <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 grid grid-cols-1 gap-6">
         {/* Contatti */}
-        <Card className="p-6 lg:col-span-2" data-testid="home-contatti">
+        <Card className="p-6" data-testid="home-contatti">
           <div className="label-mini mb-4 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5" /> Sede & contatti
           </div>
