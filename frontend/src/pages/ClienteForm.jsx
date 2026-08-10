@@ -561,8 +561,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                   <BreakdownRow label={`Candele (${f.numero_candele || 0})`} value={ricambiDettaglio.candele} />
                   <BreakdownRow label={`Termostati (${f.numero_termostati || 0})`} value={ricambiDettaglio.termostati} />
                   <BreakdownRow label={`Olio piede (${f.litri_olio_piede || 0}L)`} value={ricambiDettaglio.olio_piede} />
-                  <BreakdownRow label="Anodi interni" value={ricambiDettaglio.anodi_interni} />
-                  <BreakdownRow label="Anodi esterni" value={ricambiDettaglio.anodi_esterni} />
+                  <BreakdownRow label="Kit anodi interni" value={ricambiDettaglio.anodi_interni} />
+                  <BreakdownRow label="Kit anodi esterni" value={ricambiDettaglio.anodi_esterni} />
                   <BreakdownRow label="Ingrassaggio" value={ricambiDettaglio.ingrassaggio} />
                 </div>
                 <div className="flex justify-between mt-2 pt-2 border-t border-border/60 text-xs">

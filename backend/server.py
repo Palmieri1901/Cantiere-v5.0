@@ -643,8 +643,8 @@ async def listino_prezzi_pdf():
             ("Candela", "costo_candela", "cad."),
             ("Termostato", "costo_termostato", "cad."),
             ("Olio piede", "costo_olio_piede", "€ / litro"),
-            ("Anodi interni (set)", "costo_anodi_interni", "forfait"),
-            ("Anodi esterni (set)", "costo_anodi_esterni", "forfait"),
+            ("Kit anodi interni", "costo_anodi_interni", "forfait"),
+            ("Kit anodi esterni", "costo_anodi_esterni", "forfait"),
             ("Ingrassaggio completo", "costo_ingrassaggio", "forfait"),
         ]),
     ]
@@ -1457,8 +1457,8 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
             ["Candele", str(nc), _euro(nc * t_current.costo_candela)],
             ["Termostato", str(nt), _euro(nt * t_current.costo_termostato)],
             ["Olio piede", f"{litri_piede:g} L", _euro(litri_piede * t_current.costo_olio_piede)],
-            ["Anodi interni", "1", _euro(t_current.costo_anodi_interni)],
-            ["Anodi esterni", "1", _euro(t_current.costo_anodi_esterni)],
+            ["Kit anodi interni", "1", _euro(t_current.costo_anodi_interni)],
+            ["Kit anodi esterni", "1", _euro(t_current.costo_anodi_esterni)],
             ["Ingrassaggio", "1", _euro(t_current.costo_ingrassaggio)],
         ])
         subtotale = manod + ric_tot
