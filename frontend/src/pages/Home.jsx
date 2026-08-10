@@ -113,6 +113,12 @@ export default function Home() {
               <FileText className="w-4 h-4 mr-2" />
               Preventivo veloce (PDF)
             </Button>
+            <Button asChild variant="outline" size="lg" data-testid="cta-listino-pdf" className="border-primary/40 text-primary hover:bg-primary/10">
+              <a href={`${API}/tariffe/listino.pdf`} target="_blank" rel="noreferrer">
+                <FileText className="w-4 h-4 mr-2" />
+                Listino prezzi (PDF)
+              </a>
+            </Button>
             <Button asChild variant="ghost" size="lg" data-testid="cta-impostazioni">
               <Link to="/impostazioni">Modifica info cantiere</Link>
             </Button>
