@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter30 (2026-02-20) — BUGFIX: salvataggio cliente sosta temporanea
+- 🐛 **BUG risolto**: `create_cliente` e `update_cliente` validavano `tipo_sosta not in ("dentro","fuori","fuori_sede")` **senza includere "temporanea"** → HTTP 400 al salvataggio.
+- ✅ Aggiunto "temporanea" nella whitelist di validazione in entrambi gli endpoint POST/PUT `/api/clienti`.
+- ✅ Testing_agent iter12: **100% PASS backend+frontend** — creazione end-to-end via UI (Gommone 6m, 5 giorni temporanea) salva correttamente, badge "Piazzale (temp.)", modifica dei giorni funzionante.
+
 ## Iter29 (2026-02-20) — Sosta temporanea = sempre su piazzale
 - ✅ Migrazione automatica all'avvio: clienti esistenti con `tipo_sosta="temporanea"` ricevono `alaggio_varo_attivo=True` (visto che sono sempre su piazzale).
 - ✅ Frontend `ClienteForm.jsx`: quando l'utente seleziona `tipo_sosta="temporanea"`, `alaggio_varo_attivo` viene attivato automaticamente. Testo informativo sotto il campo giorni: "Sosta temporanea = sempre su piazzale (fuori). Tariffa: € / giorno / metro."

@@ -1,0 +1,17 @@
+{
+  "summary": "Verified bug fix: creazione e modifica cliente con tipo_sosta='temporanea'. Backend accetta ora 'temporanea' in POST/PUT /api/clienti (HTTP 200). UI end-to-end: creazione con Nome=MarioTest, Cognome=TemporaneaTest, Gommone, 6m, tipo_sosta=Temporanea (a giorni), giorni=5 → salvataggio riuscito, dialog chiuso, nessun toast errore. Cliente appare in lista con badge 'Piazzale (temp.)' e totale 1829,00 € (costo_sosta backend = 750€ per 6m x 5gg + altri servizi calcolati automaticamente). Modifica esistente (temporanea → fuori → temporanea con giorni=7) salvata senza errori. Cleanup completato via UI (delete dialog + toast 'Cliente eliminato'). Nessun errore console.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py: 2496 righe - considerare split in moduli (routers) per manutenibilità",
+    "ClienteForm.jsx: 845 righe - anche qui si potrebbe estrarre sezioni (Motore, Costi, LavorazioniExtra) in componenti figli"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Creato e poi eliminato cliente TemporaneaTest MarioTest",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bug tipo_sosta='temporanea' completamente risolto lato backend (create_cliente/update_cliente ora includono 'temporanea' nella whitelist) e verificato end-to-end nella UI /clienti."
+}

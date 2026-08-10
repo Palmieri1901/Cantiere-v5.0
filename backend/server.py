@@ -829,8 +829,8 @@ async def get_cliente(cliente_id: str):
 
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(payload: ClienteCreate):
-    if payload.tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
-        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
+    if payload.tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
+        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     if payload.posto_barca is not None:
         if payload.posto_barca < 1 or payload.posto_barca > TOTAL_POSTI:
             raise HTTPException(400, f"Posto barca deve essere tra 1 e {TOTAL_POSTI}")
@@ -896,8 +896,8 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
     if not existing:
         raise HTTPException(404, "Cliente non trovato")
 
-    if payload.tipo_sosta not in ("dentro", "fuori", "fuori_sede"):
-        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori' o 'fuori_sede'")
+    if payload.tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
+        raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
 
     if payload.posto_barca is not None:
         if payload.posto_barca < 1 or payload.posto_barca > TOTAL_POSTI:
