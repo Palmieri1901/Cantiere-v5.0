@@ -14,9 +14,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
+import ClienteDettaglio from "@/pages/ClienteDettaglio";
 import { API } from "@/lib/api";
 import { useYear } from "@/lib/year";
 
@@ -28,6 +29,7 @@ export default function Clienti() {
   const [tipoSostaFilter, setTipoSostaFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [dettaglio, setDettaglio] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const { year } = useYear();
 
@@ -191,6 +193,9 @@ export default function Clienti() {
                   <TableCell className="text-right font-mono-num font-semibold">{fmtEuro(totale(c))}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => setDettaglio(c)} data-testid={`btn-dettaglio-${c.id}`} title="Vedi conteggio dettagliato">
+                        <Eye className="w-4 h-4" />
+                      </Button>
                       <Button size="icon" variant="ghost" asChild data-testid={`btn-pdf-${c.id}`} title="Scarica preventivo PDF">
                         <a href={`${API}/clienti/${c.id}/preventivo.pdf`} download target="_blank" rel="noreferrer">
                           <FileText className="w-4 h-4" />

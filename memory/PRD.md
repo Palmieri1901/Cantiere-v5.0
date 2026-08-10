@@ -165,6 +165,13 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter25 (2026-02-20) — Dettaglio cliente in-app (senza scaricare PDF)
+- ✅ Nuovo componente `/app/frontend/src/pages/ClienteDettaglio.jsx`: dialog che mostra il conteggio completo di ogni cliente direttamente in pagina.
+- ✅ Sezioni: Sosta & trattamenti · Alaggio & Varo (con destinazione e × N mov.) · Manutenzione motore (dettaglio 1°+2°) · Lavorazioni extra riga per riga · **TOTALE ANNUALE** grande.
+- ✅ Info sintesi in alto: barca, sosta, posto, stato pagamento.
+- ✅ Nuova icona "occhio" nella lista clienti (`btn-dettaglio-{id}`) apre il dialog. Pulsante "Scarica preventivo PDF" all'interno del dialog per continuità.
+- ✅ Nasconde automaticamente le voci a 0 € per una lettura pulita.
+
 ## Iter24 (2026-02-20) — Moltiplicatore movimenti alaggio+varo
 - ✅ Backend: nuovo campo `numero_movimenti: int = 1` su `Cliente` (Optional in `ClienteCreate`). `calcola_costi` accetta il parametro e moltiplica `costo_alaggio` e `costo_varo` per il numero di movimenti richiesti (solo con destinazione="marina_di_campo"; per "altra" resta manuale).
 - ✅ Endpoint `/api/calcola-costi` accetta `numero_movimenti`. Test: L=8, 3 movimenti → 300€/300€ (100€ forfait × 3).
