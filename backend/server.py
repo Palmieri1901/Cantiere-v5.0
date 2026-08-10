@@ -433,8 +433,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
 
     antiveg = round(lunghezza * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
     scafo_sporco = round(lunghezza * t.maggiorazione_scafo_sporco_per_metro, 2) if scafo_sporco_attivo else 0.0
-    lav_inizio = round(t.costo_lavaggio_inizio_stagione, 2) if lavaggio_inizio_attivo else 0.0
-    lav_fine = round(t.costo_lavaggio_fine_stagione, 2) if lavaggio_fine_attivo else 0.0
+    lav_inizio = round(lunghezza * t.costo_lavaggio_inizio_stagione, 2) if lavaggio_inizio_attivo else 0.0
+    lav_fine = round(lunghezza * t.costo_lavaggio_fine_stagione, 2) if lavaggio_fine_attivo else 0.0
 
     base = {
         "costo_antivegetativa": antiveg,
@@ -627,8 +627,8 @@ async def listino_prezzi_pdf():
             ("Copertura", "copertura_per_metro", "€ / metro"),
             ("Antivegetativa", "antivegetativa_per_metro", "€ / metro"),
             ("Maggiorazione scafo sporco", "maggiorazione_scafo_sporco_per_metro", "€ / metro"),
-            ("Lavaggio inizio stagione", "costo_lavaggio_inizio_stagione", "forfait"),
-            ("Lavaggio fine stagione", "costo_lavaggio_fine_stagione", "forfait"),
+            ("Lavaggio inizio stagione", "costo_lavaggio_inizio_stagione", "€ / metro"),
+            ("Lavaggio fine stagione", "costo_lavaggio_fine_stagione", "€ / metro"),
         ]),
         ("MANODOPERA MOTORE", [
             ("Manodopera · 2-15 HP", "motore_labor_2_15hp", "forfait"),

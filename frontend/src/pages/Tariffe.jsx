@@ -43,8 +43,8 @@ const GROUPS = [
     title: "Lavaggi stagionali",
     icon: Waves,
     fields: [
-      { key: "costo_lavaggio_inizio_stagione", label: "Lavaggio inizio stagione", desc: "Costo fisso" },
-      { key: "costo_lavaggio_fine_stagione", label: "Lavaggio fine stagione", desc: "Costo fisso" },
+      { key: "costo_lavaggio_inizio_stagione", label: "Lavaggio inizio stagione", desc: "€ / metro" },
+      { key: "costo_lavaggio_fine_stagione", label: "Lavaggio fine stagione", desc: "€ / metro" },
     ],
   },
   {
