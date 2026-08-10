@@ -26,6 +26,7 @@ const empty = {
   codice_fiscale: "", indirizzo: "", cellulare: "",
   pagato: false,
   potenza_motore: 0, litri_olio_motore: 3, litri_olio_piede: 1, numero_candele: 4, numero_termostati: 1,
+  primo_motore_attivo: true,
   secondo_motore: false,
   potenza_motore_2: 0, litri_olio_motore_2: 3, litri_olio_piede_2: 1, numero_candele_2: 4, numero_termostati_2: 1,
   girante_2_attivo: true,
@@ -94,6 +95,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         lavaggio_inizio_attivo: f.lavaggio_inizio_attivo ? "true" : "false",
         lavaggio_fine_attivo: f.lavaggio_fine_attivo ? "true" : "false",
         secondo_motore: f.secondo_motore ? "true" : "false",
+        primo_motore_attivo: f.primo_motore_attivo === false ? "false" : "true",
         potenza_motore_2: f.potenza_motore_2 || 0,
         litri_olio_motore_2: f.litri_olio_motore_2 || 0,
         numero_candele_2: f.numero_candele_2 || 0,
@@ -129,7 +131,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
 
   // Sosta temporanea = sempre su piazzale (fuori) → attiva default alaggio/varo
   useEffect(() => {
@@ -213,6 +215,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       lavaggio_inizio_attivo: !!f.lavaggio_inizio_attivo,
       lavaggio_fine_attivo: !!f.lavaggio_fine_attivo,
       secondo_motore: !!f.secondo_motore,
+      primo_motore_attivo: f.primo_motore_attivo !== false,
       potenza_motore_2: Number(f.potenza_motore_2) || 0,
       litri_olio_motore_2: Number(f.litri_olio_motore_2) || 0,
       numero_candele_2: Number(f.numero_candele_2) || 0,
@@ -386,7 +389,24 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
 
           {/* Motore */}
           <section>
-            <div className="label-mini mb-3">{f.secondo_motore ? "1° Motore" : "Motore"}</div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="label-mini">{f.secondo_motore ? "1° Motore" : "Motore"}</div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="switch-primo-motore" className="text-sm text-muted-foreground">Motore presente</Label>
+                <Switch
+                  id="switch-primo-motore"
+                  checked={f.primo_motore_attivo !== false}
+                  onCheckedChange={(v) => update("primo_motore_attivo", v)}
+                  data-testid="switch-primo-motore"
+                />
+              </div>
+            </div>
+            {f.primo_motore_attivo === false ? (
+              <div className="p-4 rounded-md border border-dashed border-border bg-muted/20 text-sm text-muted-foreground" data-testid="motore-disattivato">
+                Motore <b>disattivato</b> — nessun costo manodopera/ricambi verrà calcolato per questa barca.
+              </div>
+            ) : (
+            <>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <Field label="Cavalli (HP)">
                 <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
@@ -465,6 +485,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               <div className="mt-2 text-[11px] text-muted-foreground bg-muted/40 border border-border rounded-md p-2" data-testid="info-no-antiveg">
                 Antivegetativa disattivata. Attiva "Scafo sporco" se serve applicare la maggiorazione.
               </div>
+            )}
+            </>
             )}
 
             {/* Secondo motore */}

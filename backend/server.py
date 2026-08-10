@@ -190,6 +190,8 @@ class Cliente(BaseModel):
     litri_olio_piede: float = 1.0
     numero_candele: int = 4
     numero_termostati: int = 1
+    # Primo motore: spunta si/no. Se False non calcola manodopera + ricambi.
+    primo_motore_attivo: bool = True
     # Secondo motore (opzionale)
     secondo_motore: bool = False
     potenza_motore_2: float = 0.0
@@ -263,6 +265,7 @@ class ClienteCreate(BaseModel):
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
     secondo_motore: Optional[bool] = False
+    primo_motore_attivo: Optional[bool] = None
     potenza_motore_2: Optional[float] = 0.0
     litri_olio_motore_2: Optional[float] = 3.0
     litri_olio_piede_2: Optional[float] = None
@@ -430,11 +433,17 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   giorni_sosta_temporanea: int = 0,
                   destinazione_alaggio_varo: str = "marina_di_campo",
                   alaggio_varo_attivo: bool = False,
-                  numero_movimenti: int = 1) -> dict:
+                  numero_movimenti: int = 1,
+                  primo_motore_attivo: bool = True) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
-    manodopera = calcola_motore_labor(potenza_motore, t)
-    ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
-    ricambi_tot = round(sum(ricambi.values()), 2)
+    if primo_motore_attivo:
+        manodopera = calcola_motore_labor(potenza_motore, t)
+        ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
+        ricambi_tot = round(sum(ricambi.values()), 2)
+    else:
+        manodopera = 0.0
+        ricambi = {}
+        ricambi_tot = 0.0
 
     # Secondo motore (se presente)
     manodopera_2 = 0.0
@@ -582,6 +591,7 @@ async def ricalcola_costi_anno(anno: int):
                 str(c.get("destinazione_alaggio_varo") or "marina_di_campo"),
                 bool(c.get("alaggio_varo_attivo", False)),
                 int(c.get("numero_movimenti") or 1),
+                bool(c.get("primo_motore_attivo", True)),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)
@@ -798,7 +808,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         giorni_sosta_temporanea: int = 0,
                         destinazione_alaggio_varo: str = "marina_di_campo",
                         alaggio_varo_attivo: bool = False,
-                        numero_movimenti: int = 1):
+                        numero_movimenti: int = 1,
+                        primo_motore_attivo: bool = True):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     t = await get_tariffe_doc()
@@ -811,7 +822,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          scafo_sporco_attivo, copertura_attiva,
                          litri_olio_piede, litri_olio_piede_2,
                          giorni_sosta_temporanea, destinazione_alaggio_varo,
-                         alaggio_varo_attivo, numero_movimenti)
+                         alaggio_varo_attivo, numero_movimenti,
+                         primo_motore_attivo)
 
 
 # --- Clienti ---
@@ -871,6 +883,7 @@ async def create_cliente(payload: ClienteCreate):
         (payload.destinazione_alaggio_varo or "marina_di_campo"),
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else False),
         int(payload.numero_movimenti or 1),
+        bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else True),
     )
     # Rimuovi dettaglio non-modello prima di applicarlo
     ricambi_dettaglio = auto_costi.pop("ricambi_dettaglio", None)
@@ -939,6 +952,7 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         (payload.destinazione_alaggio_varo or existing.get("destinazione_alaggio_varo") or "marina_di_campo"),
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else existing.get("alaggio_varo_attivo", False)),
         int(payload.numero_movimenti if payload.numero_movimenti is not None else existing.get("numero_movimenti", 1) or 1),
+        bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else existing.get("primo_motore_attivo", True)),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -2087,6 +2101,7 @@ async def preventivo_pdf_inline(payload: PreventivoInline):
         (payload.destinazione_alaggio_varo or "marina_di_campo"),
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else False),
         int(payload.numero_movimenti or 1),
+        bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else True),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -2689,6 +2704,7 @@ async def apri_anno(payload: ApriAnnoRequest):
                 str(c.get("destinazione_alaggio_varo") or "marina_di_campo"),
                 bool(c.get("alaggio_varo_attivo", False)),
                 int(c.get("numero_movimenti") or 1),
+                bool(c.get("primo_motore_attivo", True)),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)

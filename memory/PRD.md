@@ -165,6 +165,13 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter39 (2026-02-20) — Spunta 1° motore (motore presente si/no)
+- ✅ Backend: nuovo campo `primo_motore_attivo: bool = True` su `Cliente` (Optional in `ClienteCreate`). Default True per non alterare i clienti esistenti.
+- ✅ `calcola_costi`: quando `primo_motore_attivo=False` manodopera + ricambi del 1° motore vengono azzerati (il costo_manutenzione_motore resta somma di eventuale 2° motore).
+- ✅ Endpoint `/api/calcola-costi` accetta il nuovo parametro. Test: HP=50 attivo → manodopera ~150+ricambi. HP=50 disattivo → tutto zero.
+- ✅ POST/PUT clienti, preventivo_pdf_inline, duplicazione anno, ricalcola-anno passano il parametro.
+- ✅ Frontend `ClienteForm.jsx`: nel blocco "1° Motore" nuovo Switch **"Motore presente"** (`switch-primo-motore`, default ON). Se OFF, i campi HP/olio/candele/termostati/girante vengono sostituiti da un box "Motore disattivato" e nessun costo motore viene calcolato.
+
 ## Iter38 (2026-02-20) — Eliminato riquadro Simulazione dalla pagina Tariffe
 - ✅ Rimosso interamente il pannello sticky "Simulazione" (input lunghezza/HP/sosta/olio/candele/termostati + preview + totale).
 - ✅ Rimossa la funzione helper `PreviewRow` e tutte le state variabili `simL/simHP/simSosta/simGiorni/simOlio/simCandele/simTermostati`.
