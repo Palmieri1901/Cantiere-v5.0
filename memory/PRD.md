@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter29 (2026-02-20) — Sosta temporanea = sempre su piazzale
+- ✅ Migrazione automatica all'avvio: clienti esistenti con `tipo_sosta="temporanea"` ricevono `alaggio_varo_attivo=True` (visto che sono sempre su piazzale).
+- ✅ Frontend `ClienteForm.jsx`: quando l'utente seleziona `tipo_sosta="temporanea"`, `alaggio_varo_attivo` viene attivato automaticamente. Testo informativo sotto il campo giorni: "Sosta temporanea = sempre su piazzale (fuori). Tariffa: € / giorno / metro."
+- ✅ Lista clienti `Clienti.jsx`: il badge per temporanea ora mostra "Piazzale (temp.)" per riflettere la natura outdoor.
+
 ## Iter28 (2026-02-20) — Filtro Pagati/Non pagati e riepilogo incassi
 - ✅ **3 card KPI cliccabili** sopra la lista: "Tutti", "Da incassare" (rosso, con totale € e conteggio non pagati), "Incassato" (verde, con totale € e conteggio pagati). Click → filtra la lista.
 - ✅ **Dropdown filtro "Pagamento"** (data-testid `filter-pagamento`) affianco al filtro tipo sosta: Tutti / Solo non pagati / Solo pagati.

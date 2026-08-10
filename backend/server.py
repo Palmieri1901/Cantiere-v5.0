@@ -2038,10 +2038,10 @@ async def _startup():
         )
     except Exception as e:
         logger.warning(f"Migration iter14 copertura_attiva skipped: {e}")
-    # Migrazione iter20: chi aveva tipo_sosta="fuori" → alaggio_varo_attivo=True (preserva comportamento pregresso)
+    # Migrazione iter20: chi aveva tipo_sosta="fuori" o "temporanea" → alaggio_varo_attivo=True (preserva comportamento pregresso · sosta temporanea è sempre su piazzale)
     try:
         await db.clienti.update_many(
-            {"alaggio_varo_attivo": {"$exists": False}, "tipo_sosta": "fuori"},
+            {"alaggio_varo_attivo": {"$exists": False}, "tipo_sosta": {"$in": ["fuori", "temporanea"]}},
             {"$set": {"alaggio_varo_attivo": True}},
         )
         await db.clienti.update_many(
@@ -2050,6 +2050,14 @@ async def _startup():
         )
     except Exception as e:
         logger.warning(f"Migration iter20 alaggio_varo_attivo skipped: {e}")
+    # Migrazione iter29: forza alaggio_varo_attivo=True su temporanea esistenti (che avevano False)
+    try:
+        await db.clienti.update_many(
+            {"tipo_sosta": "temporanea", "alaggio_varo_attivo": False},
+            {"$set": {"alaggio_varo_attivo": True}},
+        )
+    except Exception as e:
+        logger.warning(f"Migration iter29 temporanea→alaggio_varo skipped: {e}")
 
 
 # ---------- REPORT INCASSI ----------

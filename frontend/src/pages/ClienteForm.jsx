@@ -131,6 +131,14 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
     return () => clearTimeout(t);
   }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
 
+  // Sosta temporanea = sempre su piazzale (fuori) → attiva default alaggio/varo
+  useEffect(() => {
+    if (f.tipo_sosta === "temporanea" && !f.alaggio_varo_attivo) {
+      update("alaggio_varo_attivo", true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.tipo_sosta]);
+
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
   const assegnaPostoAuto = async () => {
@@ -349,6 +357,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                       className="mt-1 font-mono-num"
                       data-testid="input-giorni-temporanea"
                     />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Sosta temporanea = sempre su piazzale (fuori). Tariffa: € / giorno / metro.
+                    </p>
                   </div>
                 )}
               </Field>
