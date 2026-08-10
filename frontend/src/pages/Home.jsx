@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api, API } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sailboat, MapPin, Phone, Mail, Clock, ArrowRight, Anchor, Building2, Globe, Database, Download, Upload, AlertTriangle, FileText, FileSpreadsheet } from "lucide-react";
+import { Sailboat, MapPin, Phone, Mail, Clock, ArrowRight, Anchor, Building2, Globe, Database, Download, Upload, AlertTriangle, FileText, FileSpreadsheet, Settings, Zap } from "lucide-react";
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
 import {
@@ -94,45 +94,62 @@ export default function Home() {
           )}
 
           <div className="mt-10 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="bg-primary hover:bg-primary/90" data-testid="cta-dashboard">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-12 px-6" data-testid="cta-dashboard">
               <Link to="/dashboard">
                 Vai al gestionale
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" data-testid="cta-clienti">
-              <Link to="/clienti">Gestione clienti</Link>
+            <Button asChild variant="outline" size="lg" className="h-12 px-6 border-foreground/20 hover:bg-foreground/5" data-testid="cta-clienti">
+              <Link to="/clienti">
+                <Anchor className="w-4 h-4 mr-2" />
+                Gestione clienti
+              </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setOpenPreventivo(true)}
-              data-testid="cta-preventivo-veloce"
-              className="border-primary/40 text-primary hover:bg-primary/10"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Preventivo veloce (PDF)
-            </Button>
-            <Button asChild variant="outline" size="lg" data-testid="cta-listino-pdf" className="border-primary/40 text-primary hover:bg-primary/10">
-              <a href={`${API}/tariffe/listino.pdf`} target="_blank" rel="noreferrer">
-                <FileText className="w-4 h-4 mr-2" />
-                Listino prezzi (PDF)
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg" data-testid="cta-export-excel" className="border-primary/40 text-primary hover:bg-primary/10">
-              <a href={`${API}/export/clienti.xlsx?anno=${new Date().getFullYear()}`} download>
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Excel clienti (commercialista)
-              </a>
-            </Button>
-            <Button asChild variant="ghost" size="lg" data-testid="cta-impostazioni">
-              <Link to="/impostazioni">Modifica info cantiere</Link>
+            <Button asChild variant="ghost" size="lg" className="h-12 px-4 text-muted-foreground hover:text-foreground" data-testid="cta-impostazioni">
+              <Link to="/impostazioni">
+                <Settings className="w-4 h-4 mr-2" />
+                Info cantiere
+              </Link>
             </Button>
           </div>
         </div>
       </div>
 
       <ClienteForm open={openPreventivo} onOpenChange={setOpenPreventivo} mode="preventivo" />
+
+      {/* Azioni rapide */}
+      <div className="max-w-6xl mx-auto px-6 md:px-10 pt-14">
+        <div className="flex items-center gap-2 label-mini mb-4">
+          <Zap className="w-3.5 h-3.5" /> Azioni rapide
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="home-quick-actions">
+          <QuickActionCard
+            testId="cta-preventivo-veloce"
+            icon={FileText}
+            title="Preventivo veloce"
+            subtitle="Crea un PDF senza salvare il cliente"
+            onClick={() => setOpenPreventivo(true)}
+            variant="primary"
+          />
+          <QuickActionCard
+            testId="cta-listino-pdf"
+            icon={FileText}
+            title="Listino prezzi (PDF)"
+            subtitle="Stampa il tariffario aggiornato"
+            href={`${API}/tariffe/listino.pdf`}
+            newTab
+          />
+          <QuickActionCard
+            testId="cta-export-excel"
+            icon={FileSpreadsheet}
+            title="Excel per commercialista"
+            subtitle={`Esporta clienti anno ${new Date().getFullYear()}`}
+            href={`${API}/export/clienti.xlsx?anno=${new Date().getFullYear()}`}
+            download
+          />
+        </div>
+      </div>
 
       {/* Info + stats */}
       <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -274,6 +291,46 @@ function InfoBlock({ icon: Icon, label, children, testId }) {
       </div>
       <div className="text-sm text-foreground leading-relaxed">{children}</div>
     </div>
+  );
+}
+
+function QuickActionCard({ icon: Icon, title, subtitle, onClick, href, download, newTab, testId, variant }) {
+  const isPrimary = variant === "primary";
+  const inner = (
+    <div className={`group h-full flex items-start gap-3 p-5 rounded-lg border transition-all duration-200 cursor-pointer ${
+      isPrimary
+        ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5"
+        : "bg-card border-border hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5"
+    }`}>
+      <div className={`shrink-0 w-10 h-10 rounded-md grid place-items-center transition-colors ${
+        isPrimary ? "bg-primary-foreground/15 text-primary-foreground" : "bg-primary/10 text-primary group-hover:bg-primary/15"
+      }`}>
+        <Icon className="w-5 h-5" strokeWidth={1.8} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`font-display text-base font-semibold leading-tight ${isPrimary ? "" : "text-foreground"}`}>
+          {title}
+        </div>
+        <div className={`text-xs mt-1 leading-snug ${isPrimary ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+          {subtitle}
+        </div>
+      </div>
+      <ArrowRight className={`w-4 h-4 mt-1.5 shrink-0 transition-transform group-hover:translate-x-1 ${
+        isPrimary ? "text-primary-foreground/70" : "text-muted-foreground"
+      }`} />
+    </div>
+  );
+  if (href) {
+    return (
+      <a href={href} target={newTab ? "_blank" : undefined} rel={newTab ? "noreferrer" : undefined} download={download} data-testid={testId} className="block">
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} data-testid={testId} className="block w-full text-left">
+      {inner}
+    </button>
   );
 }
 

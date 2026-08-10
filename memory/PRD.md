@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter26 (2026-02-20) — Home: nuova collocazione e aspetto dei tasti
+- ✅ Hero snellito: 3 sole azioni principali ("Vai al gestionale" primario con shadow, "Gestione clienti" outline con icona Anchor, "Info cantiere" ghost).
+- ✅ Nuova sezione **"Azioni rapide"** con 3 card icona+titolo+sottotitolo per: Preventivo veloce (card primary evidenziata), Listino prezzi PDF, Excel commercialista. Ogni card con hover lift, ombra e freccia animata.
+- ✅ Nuovo componente `QuickActionCard` con supporto onClick e href (download/newTab).
+
 ## Iter25 (2026-02-20) — Dettaglio cliente in-app (senza scaricare PDF)
 - ✅ Nuovo componente `/app/frontend/src/pages/ClienteDettaglio.jsx`: dialog che mostra il conteggio completo di ogni cliente direttamente in pagina.
 - ✅ Sezioni: Sosta & trattamenti · Alaggio & Varo (con destinazione e × N mov.) · Manutenzione motore (dettaglio 1°+2°) · Lavorazioni extra riga per riga · **TOTALE ANNUALE** grande.
