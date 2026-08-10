@@ -165,6 +165,14 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter33 (2026-02-20) — Storico cliente multi-anno PDF
+- ✅ **Backend**: nuovi endpoint `GET /api/clienti-nominativi` (lista distinct cognome+nome con anni per ognuno) e `GET /api/clienti-storico.pdf?cognome=X&nome=Y` (PDF A4 dello storico).
+- ✅ **Layout PDF A4**: header cantiere con logo, intestazione "STORICO CLIENTE + nome", sezione anagrafica (contatti, imbarcazione, anni tracciati), poi per ogni anno (in ordine decrescente): barra navy "ANNO YYYY", tabella costi dettagliati (con voci Alaggio/Varo che includono destinazione e × N mov., lavorazioni extra riga per riga), riga "TOTALE ANNO", stato pagamento colorato.
+- ✅ In fondo box teak "TOTALE GENERALE STORICO" con la somma di tutti gli anni.
+- ✅ **Frontend Clienti.jsx**: nuovo bottone "Storico cliente" (`btn-storico-cliente`) in header. Al click apre `dialog-storico-cliente` con menu a tendina di tutti i nominativi (cognome nome · anni presenti) e bottone "Genera PDF storico" che scarica il file.
+- ✅ Rinominato route da `/clienti/storico.pdf` a `/clienti-storico.pdf` per evitare route-shadowing con la route parametrica `/clienti/{cliente_id}`.
+- ✅ Test API: `GET /api/clienti-nominativi` → 12 nominativi. PDF Figo Giorgio (2 anni: 2026+2027) → HTTP 200, 19KB, header PDF valido.
+
 ## Iter32 (2026-02-20) — Excel commercialista: selezione anno
 - ✅ Home → Azioni rapide → "Excel per commercialista" ora apre un dialog `dialog-export-excel` invece di scaricare direttamente l'anno corrente.
 - ✅ Menu a tendina (`select-anno-excel`) con 6 opzioni: anno prossimo + anno corrente (marcato "· anno in corso") + 5 anni precedenti.

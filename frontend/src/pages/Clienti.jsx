@@ -14,12 +14,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText, Eye, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, FileSpreadsheet, FileDown, FileText, Eye, CheckCircle2, XCircle, AlertCircle, History } from "lucide-react";
 import { toast } from "sonner";
 import ClienteForm from "@/pages/ClienteForm";
 import ClienteDettaglio from "@/pages/ClienteDettaglio";
 import { API } from "@/lib/api";
 import { useYear } from "@/lib/year";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
 
 
 export default function Clienti() {
@@ -32,6 +35,9 @@ export default function Clienti() {
   const [editing, setEditing] = useState(null);
   const [dettaglio, setDettaglio] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [openStorico, setOpenStorico] = useState(false);
+  const [nominativi, setNominativi] = useState([]);
+  const [storicoSel, setStoricoSel] = useState("");
   const { year } = useYear();
 
   const load = () => {
@@ -138,6 +144,17 @@ export default function Clienti() {
             <a href={`${API}/export/clienti.xlsx?anno=${year}`} download>
               <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel
             </a>
+          </Button>
+          <Button
+            variant="outline"
+            data-testid="btn-storico-cliente"
+            onClick={() => {
+              api.get("/clienti-nominativi").then((r) => setNominativi(r.data || []));
+              setStoricoSel("");
+              setOpenStorico(true);
+            }}
+          >
+            <History className="w-4 h-4 mr-2" /> Storico cliente
           </Button>
           <Button
             onClick={() => { setEditing(null); setFormOpen(true); }}
@@ -327,6 +344,68 @@ export default function Clienti() {
         onOpenChange={(o) => !o && setDettaglio(null)}
         cliente={dettaglio}
       />
+
+      <Dialog open={openStorico} onOpenChange={setOpenStorico}>
+        <DialogContent className="max-w-md" data-testid="dialog-storico-cliente">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" /> Storico cliente
+            </DialogTitle>
+            <DialogDescription>
+              Seleziona il cliente per generare un report PDF A4 diviso per anni.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="label-mini block mb-2">Nome cliente</label>
+            <Select value={storicoSel} onValueChange={setStoricoSel}>
+              <SelectTrigger data-testid="select-storico-cliente" className="w-full">
+                <SelectValue placeholder="Seleziona un cliente…" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[320px]">
+                {nominativi.length === 0 && (
+                  <div className="px-3 py-4 text-sm text-muted-foreground">Nessun cliente registrato</div>
+                )}
+                {nominativi.map((n) => {
+                  const key = `${n.cognome}|${n.nome}`;
+                  const anniStr = (n.anni && n.anni.length) ? n.anni.join(", ") : "—";
+                  return (
+                    <SelectItem key={key} value={key}>
+                      <span>{n.cognome} {n.nome}</span>
+                      <span className="text-xs text-muted-foreground ml-2">· {anniStr}</span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {storicoSel && (
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Il PDF includerà una sezione per ogni anno con tutti i costi e il totale generale.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenStorico(false)} data-testid="btn-storico-annulla">Annulla</Button>
+            <Button
+              asChild={!!storicoSel}
+              disabled={!storicoSel}
+              className="bg-primary hover:bg-primary/90"
+              data-testid="btn-storico-scarica"
+              onClick={() => { if (storicoSel) { setOpenStorico(false); toast.success("Storico in download"); } }}
+            >
+              {storicoSel ? (
+                <a
+                  href={`${API}/clienti-storico.pdf?cognome=${encodeURIComponent(storicoSel.split("|")[0])}&nome=${encodeURIComponent(storicoSel.split("|")[1])}`}
+                  download target="_blank" rel="noreferrer"
+                >
+                  <FileText className="w-4 h-4 mr-2" /> Genera PDF storico
+                </a>
+              ) : (
+                <span><FileText className="w-4 h-4 mr-2 inline" /> Seleziona un cliente</span>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent data-testid="delete-dialog">
