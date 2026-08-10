@@ -165,6 +165,12 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter37 (2026-02-20) — Simulazione completa personalizzabile
+- ✅ Aggiunto **Select "Tipo di sosta"** (`select-simulazione-sosta`): Al coperto / Su piazzale / Fuori sede / Temporanea. Il costo sosta si ricalcola con la formula corretta per ciascun tipo.
+- ✅ Se scelto "Temporanea" appare input **N° giorni** (`input-simulazione-giorni`).
+- ✅ Nuovi input configurabili in grid a 3 colonne: **Olio (L)**, **Candele**, **Termostati** — tutti impattano il calcolo ricambi motore in tempo reale.
+- ✅ Sottotitolo dinamico mostra la configurazione attuale ("Sosta su piazzale · 4L olio, 4 candele, 1 termostato").
+
 ## Iter36 (2026-02-20) — Simulazione tariffe: potenza motore personalizzata
 - ✅ Aggiunto input "Potenza motore (HP)" (`input-simulazione-hp`, default 120) accanto al campo lunghezza (grid 2 colonne).
 - ✅ Ricalcolo automatico della manodopera in base allo scaglione (2–15, 16–40, 41–150, oltre 150 HP).

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Settings2, RefreshCw, Save, Waves, Anchor, Wrench, Cog } from "lucide-react";
@@ -82,6 +83,11 @@ export default function Tariffe() {
   const [saving, setSaving] = useState(false);
   const [simL, setSimL] = useState(8); // lunghezza in metri per la simulazione
   const [simHP, setSimHP] = useState(120); // potenza motore in HP per la simulazione
+  const [simSosta, setSimSosta] = useState("fuori"); // tipo sosta per la simulazione
+  const [simGiorni, setSimGiorni] = useState(15); // giorni per sosta temporanea
+  const [simOlio, setSimOlio] = useState(4); // litri olio motore
+  const [simCandele, setSimCandele] = useState(4);
+  const [simTermostati, setSimTermostati] = useState(1);
   const { year } = useYear();
 
   const load = () => api.get("/tariffe").then((r) => setT(r.data));
@@ -111,8 +117,13 @@ export default function Tariffe() {
 
   if (!t) return <div className="p-8 text-muted-foreground">Caricamento…</div>;
 
-  // Simulazione: lunghezza e potenza motore scelte dall'utente, 4L olio, 4 candele, 1 termostato, sosta fuori
-  const L = Math.max(0, Number(simL) || 0), HP = Math.max(0, Number(simHP) || 0), LITRI = 4, NC = 4, NT = 1;
+  // Simulazione: parametri configurabili dall'utente
+  const L = Math.max(0, Number(simL) || 0);
+  const HP = Math.max(0, Number(simHP) || 0);
+  const LITRI = Math.max(0, Number(simOlio) || 0);
+  const NC = Math.max(0, Number(simCandele) || 0);
+  const NT = Math.max(0, Number(simTermostati) || 0);
+  const GIORNI = Math.max(0, Number(simGiorni) || 0);
   const alaggio = L <= 5 ? t.alaggio_fino_5m : t.alaggio_oltre_5m_per_metro;
   const varo = L <= 5 ? t.varo_fino_5m : t.varo_oltre_5m_per_metro;
   const labor = HP <= 15 ? t.motore_labor_2_15hp
@@ -123,7 +134,18 @@ export default function Tariffe() {
     + NC * Number(t.costo_candela) + NT * Number(t.costo_termostato) + Number(t.costo_olio_piede)
     + Number(t.costo_anodi_interni) + Number(t.costo_anodi_esterni) + Number(t.costo_ingrassaggio);
   const motore = Number(labor) + ricambi;
-  const totale = L * Number(t.sosta_fuori_per_metro) + L * Number(t.copertura_per_metro)
+  // Costo sosta in base al tipo scelto
+  const costoSosta =
+    simSosta === "dentro" ? L * Number(t.sosta_dentro_per_metro)
+    : simSosta === "fuori_sede" ? 0
+    : simSosta === "temporanea" ? L * GIORNI * Number(t.sosta_temporanea_giornaliera)
+    : L * Number(t.sosta_fuori_per_metro);
+  const sostaLabel =
+    simSosta === "dentro" ? "Sosta al coperto"
+    : simSosta === "fuori_sede" ? "Sosta fuori sede"
+    : simSosta === "temporanea" ? `Sosta temporanea (${GIORNI} gg)`
+    : "Sosta su piazzale";
+  const totale = costoSosta + L * Number(t.copertura_per_metro)
     + alaggio + varo + L * Number(t.antivegetativa_per_metro) + motore;
 
   return (
@@ -195,7 +217,7 @@ export default function Tariffe() {
           <div className="label-mini mb-3">Simulazione</div>
 
           {/* Input lunghezza + HP */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             <div>
               <Label className="text-xs text-muted-foreground">Lunghezza (m)</Label>
               <Input
@@ -218,13 +240,76 @@ export default function Tariffe() {
             </div>
           </div>
 
+          {/* Tipo di sosta */}
+          <div className="mb-3">
+            <Label className="text-xs text-muted-foreground">Tipo di sosta</Label>
+            <Select value={simSosta} onValueChange={setSimSosta}>
+              <SelectTrigger className="mt-1 h-10" data-testid="select-simulazione-sosta">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dentro">Al coperto</SelectItem>
+                <SelectItem value="fuori">Su piazzale (fuori)</SelectItem>
+                <SelectItem value="fuori_sede">Fuori sede</SelectItem>
+                <SelectItem value="temporanea">Temporanea (a giorni)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {simSosta === "temporanea" && (
+            <div className="mb-3">
+              <Label className="text-xs text-muted-foreground">N° giorni sosta temporanea</Label>
+              <Input
+                type="number" step="1" min="0"
+                value={simGiorni}
+                onChange={(e) => setSimGiorni(e.target.value)}
+                className="mt-1 font-mono-num text-right h-10"
+                data-testid="input-simulazione-giorni"
+              />
+            </div>
+          )}
+
+          {/* Ricambi motore configurabili */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Olio (L)</Label>
+              <Input
+                type="number" step="0.1" min="0"
+                value={simOlio}
+                onChange={(e) => setSimOlio(e.target.value)}
+                className="mt-1 font-mono-num text-right h-10"
+                data-testid="input-simulazione-olio"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Candele</Label>
+              <Input
+                type="number" step="1" min="0"
+                value={simCandele}
+                onChange={(e) => setSimCandele(e.target.value)}
+                className="mt-1 font-mono-num text-right h-10"
+                data-testid="input-simulazione-candele"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Termostati</Label>
+              <Input
+                type="number" step="1" min="0"
+                value={simTermostati}
+                onChange={(e) => setSimTermostati(e.target.value)}
+                className="mt-1 font-mono-num text-right h-10"
+                data-testid="input-simulazione-termostati"
+              />
+            </div>
+          </div>
+
           <h3 className="font-display text-base font-semibold mb-1">Barca {L || 0}m · {HP || 0} HP</h3>
           <p className="text-xs text-muted-foreground mb-1">
             Scaglione manodopera: <b>{
               HP <= 15 ? "2–15 HP" : HP <= 40 ? "16–40 HP" : HP <= 150 ? "41–150 HP" : "oltre 150 HP"
             }</b>
           </p>
-          <p className="text-xs text-muted-foreground mb-5">Sosta su piazzale (fuori), 4L olio motore, 4 candele, 1 termostato</p>
+          <p className="text-xs text-muted-foreground mb-5">{sostaLabel} · {LITRI}L olio, {NC} candele, {NT} termostati</p>
 
           <div className="space-y-3 text-sm">
             <PreviewRow label="Sosta su piazzale" value={L * t.sosta_fuori_per_metro} />
