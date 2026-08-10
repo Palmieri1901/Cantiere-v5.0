@@ -350,16 +350,17 @@ async def get_tariffe_doc() -> Tariffe:
 
 
 def calcola_alaggio(lunghezza: float, t: Tariffe) -> float:
-    """Alaggio: forfait fino a 5m, sopra 5m tariffa a metro."""
+    """Alaggio: forfait ≤5m e forfait >5m (due tariffe fisse, non moltiplicate per metro)."""
     if lunghezza <= 5:
         return round(t.alaggio_fino_5m, 2)
-    return round(lunghezza * t.alaggio_oltre_5m_per_metro, 2)
+    return round(t.alaggio_oltre_5m_per_metro, 2)
 
 
 def calcola_varo(lunghezza: float, t: Tariffe) -> float:
+    """Varo: forfait ≤5m e forfait >5m (due tariffe fisse, non moltiplicate per metro)."""
     if lunghezza <= 5:
         return round(t.varo_fino_5m, 2)
-    return round(lunghezza * t.varo_oltre_5m_per_metro, 2)
+    return round(t.varo_oltre_5m_per_metro, 2)
 
 
 def calcola_motore_labor(potenza_hp: float, t: Tariffe) -> float:
@@ -685,9 +686,9 @@ async def listino_prezzi_pdf():
         ]),
         ("ALAGGIO & VARO", [
             ("Alaggio · fino a 5 m", "alaggio_fino_5m", "forfait"),
-            ("Alaggio · oltre 5 m", "alaggio_oltre_5m_per_metro", "€ / metro"),
+            ("Alaggio · oltre 5 m", "alaggio_oltre_5m_per_metro", "forfait"),
             ("Varo · fino a 5 m", "varo_fino_5m", "forfait"),
-            ("Varo · oltre 5 m", "varo_oltre_5m_per_metro", "€ / metro"),
+            ("Varo · oltre 5 m", "varo_oltre_5m_per_metro", "forfait"),
         ]),
         ("COPERTURA & TRATTAMENTI SCAFO", [
             ("Copertura", "copertura_per_metro", "€ / metro"),

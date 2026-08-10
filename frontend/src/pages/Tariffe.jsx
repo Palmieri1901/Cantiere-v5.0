@@ -26,9 +26,9 @@ const GROUPS = [
     icon: Waves,
     fields: [
       { key: "alaggio_fino_5m", label: "Alaggio · fino a 5 m", desc: "Forfait per barche ≤ 5 m" },
-      { key: "alaggio_oltre_5m_per_metro", label: "Alaggio · oltre 5 m", desc: "€ / metro (per L > 5m)" },
+      { key: "alaggio_oltre_5m_per_metro", label: "Alaggio · oltre 5 m", desc: "Forfait per barche > 5 m" },
       { key: "varo_fino_5m", label: "Varo · fino a 5 m", desc: "Forfait per barche ≤ 5 m" },
-      { key: "varo_oltre_5m_per_metro", label: "Varo · oltre 5 m", desc: "€ / metro (per L > 5m)" },
+      { key: "varo_oltre_5m_per_metro", label: "Varo · oltre 5 m", desc: "Forfait per barche > 5 m" },
     ],
   },
   {
@@ -111,8 +111,8 @@ export default function Tariffe() {
 
   // Simulazione barca 8m, 120 HP, 4L olio, 4 candele, 1 termostato, sosta fuori
   const L = 8, HP = 120, LITRI = 4, NC = 4, NT = 1;
-  const alaggio = L <= 5 ? t.alaggio_fino_5m : L * t.alaggio_oltre_5m_per_metro;
-  const varo = L <= 5 ? t.varo_fino_5m : L * t.varo_oltre_5m_per_metro;
+  const alaggio = L <= 5 ? t.alaggio_fino_5m : t.alaggio_oltre_5m_per_metro;
+  const varo = L <= 5 ? t.varo_fino_5m : t.varo_oltre_5m_per_metro;
   const labor = HP <= 15 ? t.motore_labor_2_15hp
     : HP <= 40 ? t.motore_labor_fino_40hp
     : HP <= 150 ? t.motore_labor_40_150hp

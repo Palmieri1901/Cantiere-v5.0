@@ -165,6 +165,12 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter23 (2026-02-20) — Alaggio/Varo oltre 5 m come forfait
+- ✅ Backend `calcola_alaggio` e `calcola_varo`: la tariffa `alaggio_oltre_5m_per_metro` (e la corrispondente per il varo) è ora trattata come **forfait fisso** per barche > 5 m (prima veniva moltiplicata per la lunghezza). Nome del campo mantenuto per compatibilità DB.
+- ✅ PDF Listino e pagina Tariffe: descrizione aggiornata a "Forfait per barche > 5 m".
+- ✅ Simulazione anteprima Tariffe usa il valore fisso.
+- ✅ Test: L=8 → tariffa forfait "oltre 5m" fissa (non 8× moltiplicato). L=4 → tariffa forfait "fino a 5m".
+
 ## Iter22 (2026-02-20) — Ricalcolo automatico all'aggiornamento tariffe
 - ✅ Backend: nuovo endpoint `POST /api/tariffe/ricalcola?anno=X` che ricalcola i costi di tutti i clienti dell'anno indicato usando le tariffe correnti. Rispetta `override_costi` (non tocca chi ha costi manuali globali) e destinazione="altra" per alaggio/varo (preserva valori manuali di destinazioni diverse).
 - ✅ Frontend `Tariffe.jsx`: salvando le tariffe viene automaticamente chiamato l'endpoint con l'anno in corso (`useYear` context). Toast informa "Tariffe aggiornate · N/M clienti YYYY ricalcolati".
