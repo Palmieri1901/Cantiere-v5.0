@@ -80,6 +80,7 @@ const ALL_KEYS = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
 export default function Tariffe() {
   const [t, setT] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [simL, setSimL] = useState(8); // lunghezza in metri per la simulazione
   const { year } = useYear();
 
   const load = () => api.get("/tariffe").then((r) => setT(r.data));
@@ -109,8 +110,8 @@ export default function Tariffe() {
 
   if (!t) return <div className="p-8 text-muted-foreground">Caricamento…</div>;
 
-  // Simulazione barca 8m, 120 HP, 4L olio, 4 candele, 1 termostato, sosta fuori
-  const L = 8, HP = 120, LITRI = 4, NC = 4, NT = 1;
+  // Simulazione: lunghezza scelta dall'utente, 120 HP, 4L olio, 4 candele, 1 termostato, sosta fuori
+  const L = Math.max(0, Number(simL) || 0), HP = 120, LITRI = 4, NC = 4, NT = 1;
   const alaggio = L <= 5 ? t.alaggio_fino_5m : t.alaggio_oltre_5m_per_metro;
   const varo = L <= 5 ? t.varo_fino_5m : t.varo_oltre_5m_per_metro;
   const labor = HP <= 15 ? t.motore_labor_2_15hp
@@ -191,14 +192,30 @@ export default function Tariffe() {
         {/* Preview */}
         <Card className="p-6 h-fit sticky top-6 bg-secondary/40" data-testid="preview-tariffe">
           <div className="label-mini mb-3">Simulazione</div>
-          <h3 className="font-display text-lg font-semibold mb-1">Barca 8m · 120 HP</h3>
+
+          {/* Input lunghezza barca */}
+          <div className="mb-4">
+            <Label className="text-xs text-muted-foreground">Lunghezza barca (metri)</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                type="number" step="0.1" min="0"
+                value={simL}
+                onChange={(e) => setSimL(e.target.value)}
+                className="font-mono-num text-right h-10 flex-1"
+                data-testid="input-simulazione-lunghezza"
+              />
+              <span className="text-sm text-muted-foreground shrink-0">m</span>
+            </div>
+          </div>
+
+          <h3 className="font-display text-base font-semibold mb-1">Barca {L || 0}m · 120 HP</h3>
           <p className="text-xs text-muted-foreground mb-5">Sosta su piazzale (fuori), 4L olio motore, 4 candele, 1 termostato</p>
 
           <div className="space-y-3 text-sm">
             <PreviewRow label="Sosta su piazzale" value={L * t.sosta_fuori_per_metro} />
             <PreviewRow label="Copertura" value={L * t.copertura_per_metro} />
-            <PreviewRow label="Alaggio (>5m)" value={alaggio} />
-            <PreviewRow label="Varo (>5m)" value={varo} />
+            <PreviewRow label={L <= 5 ? "Alaggio (≤5m)" : "Alaggio (>5m)"} value={alaggio} />
+            <PreviewRow label={L <= 5 ? "Varo (≤5m)" : "Varo (>5m)"} value={varo} />
             <PreviewRow label="Antivegetativa" value={L * t.antivegetativa_per_metro} />
             <div className="pt-2 border-t border-border/60">
               <PreviewRow label="Manodopera motore" value={labor} />
@@ -209,7 +226,7 @@ export default function Tariffe() {
 
           <div className="mt-5 pt-4 border-t border-primary/30">
             <div className="label-mini">Totale annuale</div>
-            <div className="font-mono-num text-3xl font-bold text-primary mt-1">{fmtEuro(totale)}</div>
+            <div className="font-mono-num text-3xl font-bold text-primary mt-1" data-testid="simulazione-totale">{fmtEuro(totale)}</div>
           </div>
         </Card>
       </div>

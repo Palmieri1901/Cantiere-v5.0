@@ -165,6 +165,11 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter34 (2026-02-20) — Simulazione tariffe con lunghezza personalizzata
+- ✅ Nel riquadro "Simulazione" della pagina Tariffe, aggiunto input numerico "Lunghezza barca (metri)" (`input-simulazione-lunghezza`, default 8m).
+- ✅ Al variare della lunghezza si aggiornano in tempo reale tutte le voci (sosta, copertura, alaggio/varo con etichetta ≤5m/>5m, antivegetativa) e il totale annuale (`simulazione-totale`).
+- ✅ Titolo dinamico "Barca Nm · 120 HP" che riflette il valore inserito.
+
 ## Iter33 (2026-02-20) — Storico cliente multi-anno PDF
 - ✅ **Backend**: nuovi endpoint `GET /api/clienti-nominativi` (lista distinct cognome+nome con anni per ognuno) e `GET /api/clienti-storico.pdf?cognome=X&nome=Y` (PDF A4 dello storico).
 - ✅ **Layout PDF A4**: header cantiere con logo, intestazione "STORICO CLIENTE + nome", sezione anagrafica (contatti, imbarcazione, anni tracciati), poi per ogni anno (in ordine decrescente): barra navy "ANNO YYYY", tabella costi dettagliati (con voci Alaggio/Varo che includono destinazione e × N mov., lavorazioni extra riga per riga), riga "TOTALE ANNO", stato pagamento colorato.
