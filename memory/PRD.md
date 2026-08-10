@@ -165,6 +165,15 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter20 (2026-02-20) — Spunta indipendente "Alaggio e varo"
+- ✅ Nuovo campo `alaggio_varo_attivo: bool = False` su `Cliente` (Optional in `ClienteCreate`).
+- ✅ `calcola_costi`: quando `alaggio_varo_attivo=True` i costi alaggio/varo vengono **sempre calcolati** indipendentemente dal tipo di sosta (dentro/fuori/fuori_sede/temporanea). Se destinazione="altra" → costi manuali.
+- ✅ Endpoint `/api/calcola-costi` accetta `alaggio_varo_attivo`. Verificato: dentro+7m+attivo=marina → 700€/700€. dentro+attivo=false → 0€. attivo+altra → 0€ (manuale).
+- ✅ create/update cliente, preventivo_pdf_inline e duplicazione anno passano il nuovo parametro.
+- ✅ **Migrazione iter20** all'avvio: clienti con `tipo_sosta="fuori"` esistenti ricevono `alaggio_varo_attivo=True` (preserva comportamento pre-esistente). Idempotente.
+- ✅ Frontend `ClienteForm.jsx`: nuovo toggle "Alaggio e varo" (`switch-alaggio-varo`). Blocco destinazione + costi alaggio/varo ora visibile per **qualsiasi tipo di sosta** quando il toggle è attivo. Deps `useEffect` aggiornate.
+- ✅ Test CRUD: POST cliente sosta="dentro"+alaggio_attivo=true → costo_alaggio/varo 600€ calcolati. PDF preventivo contiene "Alaggio" e "Varo" ✅.
+
 ## Iter19 (2026-02-20) — Export Excel completo per commercialista
 - ✅ Backend `/api/export/clienti.xlsx?anno=X`: rigenerato da zero. 33 colonne human-readable in italiano (Anno, Posto, Cognome, Nome, CF, Indirizzo, Contatti, Barca, Lunghezza, Tipo sosta, Destinazione alaggio, tutti i costi separati con "€", Lavorazioni extra €, TOTALE €, Pagato, Scadenze, Note).
 - ✅ Formattazione openpyxl: header navy + testo bianco, riga TOTALI arancio con formule `=SUM()` sulle colonne valuta, formato `#,##0.00 "€"`, larghezze personalizzate, freeze panes A2. Filtro per anno con sheet name "Clienti YYYY".
