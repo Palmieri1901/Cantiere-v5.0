@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Settings2, RefreshCw, Save, Waves, Anchor, Wrench, Cog } from "lucide-react";
+import { useYear } from "@/lib/year";
 
 const GROUPS = [
   {
@@ -79,6 +80,7 @@ const ALL_KEYS = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
 export default function Tariffe() {
   const [t, setT] = useState(null);
   const [saving, setSaving] = useState(false);
+  const { year } = useYear();
 
   const load = () => api.get("/tariffe").then((r) => setT(r.data));
   useEffect(() => { load(); }, []);
@@ -89,7 +91,14 @@ export default function Tariffe() {
       const payload = {};
       ALL_KEYS.forEach((k) => { payload[k] = Number(t[k]) || 0; });
       await api.put("/tariffe", payload);
-      toast.success("Tariffe aggiornate");
+      // Ricalcolo automatico di tutti i clienti dell'anno in corso
+      try {
+        const r = await api.post(`/tariffe/ricalcola?anno=${year}`);
+        const { aggiornati, totali } = r.data || {};
+        toast.success(`Tariffe aggiornate · ${aggiornati}/${totali} clienti ${year} ricalcolati`);
+      } catch {
+        toast.success("Tariffe aggiornate (ricalcolo clienti non riuscito)");
+      }
       load();
     } catch {
       toast.error("Errore nel salvataggio");

@@ -165,6 +165,10 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter22 (2026-02-20) — Ricalcolo automatico all'aggiornamento tariffe
+- ✅ Backend: nuovo endpoint `POST /api/tariffe/ricalcola?anno=X` che ricalcola i costi di tutti i clienti dell'anno indicato usando le tariffe correnti. Rispetta `override_costi` (non tocca chi ha costi manuali globali) e destinazione="altra" per alaggio/varo (preserva valori manuali di destinazioni diverse).
+- ✅ Frontend `Tariffe.jsx`: salvando le tariffe viene automaticamente chiamato l'endpoint con l'anno in corso (`useYear` context). Toast informa "Tariffe aggiornate · N/M clienti YYYY ricalcolati".
+
 ## Iter21 (2026-02-20) — Alaggio/Varo modificabili con destinazione "Altra"
 - ✅ Frontend `ClienteForm.jsx`: quando `alaggio_varo_attivo=true` e destinazione="altra" i campi Alaggio/Varo mostrano la **tariffa Marina di Campo come punto di partenza** (pre-fill automatico se valore=0). L'utente può poi modificarli liberamente in base alla nuova destinazione.
 - ✅ Preserva i valori manuali: cambi di lunghezza/motore non azzerano più i costi alaggio/varo digitati manualmente.

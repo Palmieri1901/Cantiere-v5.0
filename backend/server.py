@@ -534,6 +534,63 @@ async def update_tariffe(payload: TariffeUpdate):
     return t
 
 
+@api_router.post("/tariffe/ricalcola")
+async def ricalcola_costi_anno(anno: int):
+    """Ricalcola i costi di tutti i clienti dell'anno indicato usando le tariffe correnti.
+    Rispetta: override_costi (non ricalcola i costi manuali) e destinazione="altra" (preserva alaggio/varo manuali)."""
+    t = await get_tariffe_doc()
+    clienti_docs = await db.clienti.find({"anno": anno}, {"_id": 0}).to_list(10000)
+    aggiornati = 0
+    for c in clienti_docs:
+        try:
+            auto_costi = calcola_costi(
+                float(c.get("lunghezza") or 0),
+                str(c.get("tipo_sosta") or "dentro"),
+                t,
+                float(c.get("potenza_motore") or 0),
+                int(c.get("numero_candele") or 4),
+                int(c.get("numero_termostati") or 1),
+                bool(c.get("antivegetativa_attiva", True)),
+                bool(c.get("girante_attivo", True)),
+                float(c.get("litri_olio_motore") or 3.0),
+                bool(c.get("lavaggio_inizio_attivo", True)),
+                bool(c.get("lavaggio_fine_attivo", True)),
+                bool(c.get("secondo_motore", False)),
+                float(c.get("potenza_motore_2") or 0),
+                float(c.get("litri_olio_motore_2") or 3.0),
+                int(c.get("numero_candele_2") or 4),
+                int(c.get("numero_termostati_2") or 1),
+                bool(c.get("girante_2_attivo", True)),
+                bool(c.get("scafo_sporco_attivo", False)),
+                bool(c.get("copertura_attiva", False)),
+                float(c.get("litri_olio_piede") or 1.0),
+                float(c.get("litri_olio_piede_2") or 1.0),
+                int(c.get("giorni_sosta_temporanea") or 0),
+                str(c.get("destinazione_alaggio_varo") or "marina_di_campo"),
+                bool(c.get("alaggio_varo_attivo", False)),
+            )
+            auto_costi.pop("ricambi_dettaglio", None)
+            auto_costi.pop("ricambi_2_dettaglio", None)
+
+            override = bool(c.get("override_costi", False))
+            manual_av = bool(c.get("alaggio_varo_attivo", False)) and str(c.get("destinazione_alaggio_varo")) == "altra"
+
+            updates = {}
+            for k, v in auto_costi.items():
+                if override:
+                    continue  # non toccare i costi manuali
+                if manual_av and k in ("costo_alaggio", "costo_varo"):
+                    continue  # preserva valori manuali per destinazione altra
+                updates[k] = v
+            if updates:
+                updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+                await db.clienti.update_one({"id": c["id"]}, {"$set": updates})
+                aggiornati += 1
+        except Exception as e:
+            logger.warning(f"Ricalcolo cliente {c.get('id')} fallito: {e}")
+    return {"ok": True, "anno": anno, "aggiornati": aggiornati, "totali": len(clienti_docs)}
+
+
 @api_router.get("/tariffe/listino.pdf")
 async def listino_prezzi_pdf():
     """Genera il listino prezzi ufficiale su carta intestata del cantiere.
