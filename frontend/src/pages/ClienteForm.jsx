@@ -35,6 +35,7 @@ const empty = {
   lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
   alaggio_varo_attivo: false,
+  numero_movimenti: 1,
   destinazione_alaggio_varo: "marina_di_campo",
   destinazione_altra_nome: "",
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
@@ -105,6 +106,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         giorni_sosta_temporanea: f.giorni_sosta_temporanea || 0,
         destinazione_alaggio_varo: destPerCalc,
         alaggio_varo_attivo: f.alaggio_varo_attivo ? "true" : "false",
+        numero_movimenti: Number(f.numero_movimenti) || 1,
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -127,7 +129,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
 
   const update = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
 
@@ -230,6 +232,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       scafo_sporco_attivo: !!f.scafo_sporco_attivo,
       copertura_attiva: !!f.copertura_attiva,
       alaggio_varo_attivo: !!f.alaggio_varo_attivo,
+      numero_movimenti: Math.max(1, Number(f.numero_movimenti) || 1),
       destinazione_alaggio_varo: f.destinazione_alaggio_varo || "marina_di_campo",
       destinazione_altra_nome: (f.destinazione_altra_nome || "").trim(),
       scadenza_antivegetativa: f.scadenza_antivegetativa || null,
@@ -553,8 +556,23 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 pt-3 border-t border-border/50">
+                    <div>
+                      <Label className="text-sm font-medium">Numero movimenti (alaggio + varo)</Label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Es. se il cliente chiede 2 alaggi e 2 vari inserisci "2". Il costo viene moltiplicato.
+                      </p>
+                    </div>
+                    <Input
+                      type="number" min="1" step="1"
+                      value={f.numero_movimenti ?? 1}
+                      onChange={(e) => update("numero_movimenti", e.target.value)}
+                      className="w-[120px] font-mono-num text-right"
+                      data-testid="input-numero-movimenti"
+                    />
+                  </div>
                   {f.destinazione_alaggio_varo === "altra" && (
-                    <div className="mt-2">
+                    <div className="mt-3 pt-3 border-t border-border/50">
                       <Label className="text-xs text-muted-foreground">Nome destinazione</Label>
                       <Input
                         placeholder="es. Portoferraio, Piombino, ..."

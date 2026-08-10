@@ -165,6 +165,14 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
+## Iter24 (2026-02-20) — Moltiplicatore movimenti alaggio+varo
+- ✅ Backend: nuovo campo `numero_movimenti: int = 1` su `Cliente` (Optional in `ClienteCreate`). `calcola_costi` accetta il parametro e moltiplica `costo_alaggio` e `costo_varo` per il numero di movimenti richiesti (solo con destinazione="marina_di_campo"; per "altra" resta manuale).
+- ✅ Endpoint `/api/calcola-costi` accetta `numero_movimenti`. Test: L=8, 3 movimenti → 300€/300€ (100€ forfait × 3).
+- ✅ POST/PUT clienti, preventivo_pdf_inline, duplicazione anno e ricalcola-anno passano il nuovo parametro.
+- ✅ PDF preventivo: voci "Alaggio × N mov." e "Varo × N mov." (mostrate solo se N>1).
+- ✅ Excel export: nuova colonna "N° movimenti".
+- ✅ Frontend `ClienteForm.jsx`: nel blocco "Destinazione alaggio / varo" (visibile solo se toggle ON) c'è un input "Numero movimenti (alaggio + varo)" con placeholder e testo esplicativo.
+
 ## Iter23 (2026-02-20) — Alaggio/Varo oltre 5 m come forfait
 - ✅ Backend `calcola_alaggio` e `calcola_varo`: la tariffa `alaggio_oltre_5m_per_metro` (e la corrispondente per il varo) è ora trattata come **forfait fisso** per barche > 5 m (prima veniva moltiplicata per la lunghezza). Nome del campo mantenuto per compatibilità DB.
 - ✅ PDF Listino e pagina Tariffe: descrizione aggiornata a "Forfait per barche > 5 m".

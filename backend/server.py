@@ -200,6 +200,8 @@ class Cliente(BaseModel):
     lavaggio_fine_attivo: bool = True
     # Alaggio/Varo: spunta indipendente (attiva anche per soste dentro/temporanea/fuori_sede)
     alaggio_varo_attivo: bool = False
+    # Numero movimenti alaggio+varo richiesti (default 1). Il costo viene moltiplicato.
+    numero_movimenti: int = 1
     # Destinazione alaggio/varo: "marina_di_campo" (tariffa fissa) o "altra" (costo manuale)
     destinazione_alaggio_varo: str = "marina_di_campo"
     destinazione_altra_nome: Optional[str] = ""
@@ -271,6 +273,7 @@ class ClienteCreate(BaseModel):
     costo_alaggio: Optional[float] = None
     costo_varo: Optional[float] = None
     alaggio_varo_attivo: Optional[bool] = None
+    numero_movimenti: Optional[int] = None
     destinazione_alaggio_varo: Optional[str] = None
     destinazione_altra_nome: Optional[str] = None
     costo_antivegetativa: Optional[float] = None
@@ -419,7 +422,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   litri_olio_piede_2: float = 1.0,
                   giorni_sosta_temporanea: int = 0,
                   destinazione_alaggio_varo: str = "marina_di_campo",
-                  alaggio_varo_attivo: bool = False) -> dict:
+                  alaggio_varo_attivo: bool = False,
+                  numero_movimenti: int = 1) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     manodopera = calcola_motore_labor(potenza_motore, t)
     ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
@@ -465,10 +469,11 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     copertura = round(lunghezza * t.copertura_per_metro, 2) if copertura_attiva else 0.0
 
     # Alaggio/Varo: spunta indipendente. Se attiva, calcola sempre (tranne se destinazione="altra" = manuale)
+    mov = max(1, int(numero_movimenti or 1))
     if alaggio_varo_attivo:
         if destinazione_alaggio_varo == "marina_di_campo":
-            alaggio_val = calcola_alaggio(lunghezza, t)
-            varo_val = calcola_varo(lunghezza, t)
+            alaggio_val = round(calcola_alaggio(lunghezza, t) * mov, 2)
+            varo_val = round(calcola_varo(lunghezza, t) * mov, 2)
         else:
             alaggio_val = 0.0
             varo_val = 0.0
@@ -569,6 +574,7 @@ async def ricalcola_costi_anno(anno: int):
                 int(c.get("giorni_sosta_temporanea") or 0),
                 str(c.get("destinazione_alaggio_varo") or "marina_di_campo"),
                 bool(c.get("alaggio_varo_attivo", False)),
+                int(c.get("numero_movimenti") or 1),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)
@@ -784,7 +790,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         litri_olio_piede_2: float = 1.0,
                         giorni_sosta_temporanea: int = 0,
                         destinazione_alaggio_varo: str = "marina_di_campo",
-                        alaggio_varo_attivo: bool = False):
+                        alaggio_varo_attivo: bool = False,
+                        numero_movimenti: int = 1):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     t = await get_tariffe_doc()
@@ -797,7 +804,7 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          scafo_sporco_attivo, copertura_attiva,
                          litri_olio_piede, litri_olio_piede_2,
                          giorni_sosta_temporanea, destinazione_alaggio_varo,
-                         alaggio_varo_attivo)
+                         alaggio_varo_attivo, numero_movimenti)
 
 
 # --- Clienti ---
@@ -856,6 +863,7 @@ async def create_cliente(payload: ClienteCreate):
         int(payload.giorni_sosta_temporanea or 0),
         (payload.destinazione_alaggio_varo or "marina_di_campo"),
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else False),
+        int(payload.numero_movimenti or 1),
     )
     # Rimuovi dettaglio non-modello prima di applicarlo
     ricambi_dettaglio = auto_costi.pop("ricambi_dettaglio", None)
@@ -923,6 +931,7 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         int(payload.giorni_sosta_temporanea or 0),
         (payload.destinazione_alaggio_varo or existing.get("destinazione_alaggio_varo") or "marina_di_campo"),
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else existing.get("alaggio_varo_attivo", False)),
+        int(payload.numero_movimenti if payload.numero_movimenti is not None else existing.get("numero_movimenti", 1) or 1),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -1117,6 +1126,7 @@ async def export_xlsx(anno: Optional[int] = None):
         ("Gg. sosta temp.", "giorni_sosta_temporanea"),
         ("Destinazione alaggio/varo", "destinazione_alaggio_varo"),
         ("Nome altra destinazione", "destinazione_altra_nome"),
+        ("N° movimenti", "numero_movimenti"),
         ("Sosta €", "costo_sosta"),
         ("Movimentazione €", "costo_movimentazione"),
         ("Taccaggio €", "costo_taccaggio"),
@@ -1463,12 +1473,14 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
     # Alaggio/Varo: mostra destinazione se altra
     dest = doc.get("destinazione_alaggio_varo") or "marina_di_campo"
     dest_nome = (doc.get("destinazione_altra_nome") or "").strip()
+    mov = int(doc.get("numero_movimenti") or 1)
+    suffix_mov = f" × {mov} mov." if mov > 1 else ""
     if dest == "altra" and dest_nome:
-        add(f"Alaggio ({dest_nome})", "costo_alaggio")
-        add(f"Varo ({dest_nome})", "costo_varo")
+        add(f"Alaggio ({dest_nome}){suffix_mov}", "costo_alaggio")
+        add(f"Varo ({dest_nome}){suffix_mov}", "costo_varo")
     else:
-        add("Alaggio", "costo_alaggio")
-        add("Varo", "costo_varo")
+        add(f"Alaggio{suffix_mov}", "costo_alaggio")
+        add(f"Varo{suffix_mov}", "costo_varo")
     add("Antivegetativa", "costo_antivegetativa")
     add("Magg. scafo sporco", "costo_scafo_sporco")
     add("Lavaggio inizio stagione", "costo_lavaggio_inizio")
@@ -1824,6 +1836,7 @@ async def preventivo_pdf_inline(payload: PreventivoInline):
         int(payload.giorni_sosta_temporanea if payload.giorni_sosta_temporanea is not None else 0),
         (payload.destinazione_alaggio_varo or "marina_di_campo"),
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else False),
+        int(payload.numero_movimenti or 1),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -2417,6 +2430,7 @@ async def apri_anno(payload: ApriAnnoRequest):
                 int(c.get("giorni_sosta_temporanea", 0) or 0),
                 str(c.get("destinazione_alaggio_varo") or "marina_di_campo"),
                 bool(c.get("alaggio_varo_attivo", False)),
+                int(c.get("numero_movimenti") or 1),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)
