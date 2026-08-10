@@ -165,7 +165,16 @@ Sono circa 200 posti barca"
 - ✅ Frontend: nuovo campo "Litri olio piede" nel form (1° motore) e "Lt olio piede 2°" nel blocco 2° motore. Griglia motore passata da 4 a 5 colonne su desktop. Breakdown dettaglio mostra "(XL)".
 - ✅ Tariffe: label aggiornata "Olio piede — Costo per litro".
 - ✅ Test: 1L → olio_piede=25€, 3L → 75€ (+50€ nel totale), 0.5L → 12.5€. Toggle re-calcolo funzionante grazie a `litri_olio_piede` nelle deps `useEffect`.
-### P1 — enhancements
+## Iter17 (2026-02-20) — Destinazione alaggio/varo (Marina di Campo vs Altra)
+- ✅ Nuovi campi `destinazione_alaggio_varo: str = "marina_di_campo"` e `destinazione_altra_nome: str = ""` su `Cliente` (Optional in `ClienteCreate`).
+- ✅ `calcola_costi` estesa: se `destinazione_alaggio_varo == "altra"` e `tipo_sosta == "fuori"` → costo_alaggio/varo restituiti a 0 (l'utente li compila manualmente).
+- ✅ Endpoint `/api/calcola-costi` accetta il nuovo parametro. Verificato: Marina + 6m → 600€/600€. Altra + 6m → 0€/0€.
+- ✅ `create_cliente`/`update_cliente`/`preventivo_pdf_inline`: quando destinazione="altra", i costi alaggio/varo dell'utente sono sempre preservati (bypass di `override_costi`).
+- ✅ PDF preventivo: le voci "Alaggio" e "Varo" mostrano il nome destinazione tra parentesi se destinazione="altra" (es. "Alaggio (Portoferraio)").
+- ✅ Frontend `ClienteForm.jsx`: nuovo blocco "Destinazione alaggio / varo" (visibile solo per sosta="fuori") con Select 2 opzioni (Marina di Campo / Altra destinazione) + input testo "Nome destinazione" quando "Altra". I campi Alaggio/Varo diventano editabili senza bisogno di override quando destinazione="altra".
+- ✅ Test CRUD backend: POST altra+Portoferraio→350€ preservato · PUT switch a marina_di_campo → auto-ricalcolo 750€ per 7.5m ✅
+
+### P1 — enhancements (aggiornato)
 - [ ] Calendario scadenze completo con view mensile (shadcn Calendar)
 - [ ] PDF export bello (fattura preventivo per cliente)
 - [ ] Sistema promemoria email/SMS per scadenze (integrazione Resend/Twilio)

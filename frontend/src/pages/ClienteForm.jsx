@@ -34,6 +34,8 @@ const empty = {
   copertura_attiva: false,
   lavaggio_inizio_attivo: true, lavaggio_fine_attivo: true,
   override_costi: false,
+  destinazione_alaggio_varo: "marina_di_campo",
+  destinazione_altra_nome: "",
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
   costo_varo: 0, costo_antivegetativa: 0, costo_manutenzione_motore: 0,
   costo_ricambi_totale: 0, costo_manodopera_motore: 0,
@@ -96,6 +98,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         litri_olio_piede: f.litri_olio_piede || 0,
         litri_olio_piede_2: f.litri_olio_piede_2 || 0,
         giorni_sosta_temporanea: f.giorni_sosta_temporanea || 0,
+        destinazione_alaggio_varo: f.destinazione_alaggio_varo || "marina_di_campo",
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -209,6 +212,8 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       litri_olio_piede_2: Number(f.litri_olio_piede_2) || 0,
       scafo_sporco_attivo: !!f.scafo_sporco_attivo,
       copertura_attiva: !!f.copertura_attiva,
+      destinazione_alaggio_varo: f.destinazione_alaggio_varo || "marina_di_campo",
+      destinazione_altra_nome: (f.destinazione_altra_nome || "").trim(),
       scadenza_antivegetativa: f.scadenza_antivegetativa || null,
       scadenza_manutenzione: f.scadenza_manutenzione || null,
     };
@@ -501,8 +506,47 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               <CostField label="Lavaggio fine stagione" value={f.costo_lavaggio_fine} onChange={(v) => update("costo_lavaggio_fine", v)} disabled={!f.override_costi} testId="costo-lavaggio-fine" />
               <CostField label="Manutenzione motore" value={f.costo_manutenzione_motore} onChange={(v) => update("costo_manutenzione_motore", v)} disabled={!f.override_costi} testId="costo-manutenzione" />
               {isFuori && <CostField label="Copertura" value={f.costo_copertura} onChange={(v) => update("costo_copertura", v)} disabled={!f.override_costi} testId="costo-copertura" />}
-              {isFuori && <CostField label="Alaggio" value={f.costo_alaggio} onChange={(v) => update("costo_alaggio", v)} disabled={!f.override_costi} testId="costo-alaggio" />}
-              {isFuori && <CostField label="Varo" value={f.costo_varo} onChange={(v) => update("costo_varo", v)} disabled={!f.override_costi} testId="costo-varo" />}
+              {isFuori && (
+                <div className="col-span-2 p-3 rounded-md border border-border bg-muted/20" data-testid="wrap-destinazione-alaggio">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div>
+                      <Label className="text-sm font-medium">Destinazione alaggio / varo</Label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Marina di Campo = tariffa fissa a movimento. Altra destinazione = costo manuale.
+                      </p>
+                    </div>
+                    <Select
+                      value={f.destinazione_alaggio_varo || "marina_di_campo"}
+                      onValueChange={(v) => update("destinazione_alaggio_varo", v)}
+                    >
+                      <SelectTrigger className="w-[220px]" data-testid="select-destinazione-alaggio">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="marina_di_campo">Marina di Campo</SelectItem>
+                        <SelectItem value="altra">Altra destinazione</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {f.destinazione_alaggio_varo === "altra" && (
+                    <div className="mt-2">
+                      <Label className="text-xs text-muted-foreground">Nome destinazione</Label>
+                      <Input
+                        placeholder="es. Portoferraio, Piombino, ..."
+                        value={f.destinazione_altra_nome || ""}
+                        onChange={(e) => update("destinazione_altra_nome", e.target.value)}
+                        className="mt-1"
+                        data-testid="input-destinazione-altra-nome"
+                      />
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Inserisci manualmente i costi di alaggio e varo qui sotto.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {isFuori && <CostField label={f.destinazione_alaggio_varo === "altra" ? `Alaggio${f.destinazione_altra_nome ? ` (${f.destinazione_altra_nome})` : ""}` : "Alaggio"} value={f.costo_alaggio} onChange={(v) => update("costo_alaggio", v)} disabled={f.destinazione_alaggio_varo === "altra" ? false : !f.override_costi} testId="costo-alaggio" />}
+              {isFuori && <CostField label={f.destinazione_alaggio_varo === "altra" ? `Varo${f.destinazione_altra_nome ? ` (${f.destinazione_altra_nome})` : ""}` : "Varo"} value={f.costo_varo} onChange={(v) => update("costo_varo", v)} disabled={f.destinazione_alaggio_varo === "altra" ? false : !f.override_costi} testId="costo-varo" />}
             </div>
 
             {/* Dettaglio motore breakdown */}
