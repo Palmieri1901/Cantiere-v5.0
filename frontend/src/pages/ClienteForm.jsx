@@ -440,7 +440,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                   </Field>
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-2">
-                  Fasce manodopera: 2-15 HP · 16-40 HP · 41-150 HP · &gt;150 HP. Se il motore è entrobordo si somma la maggiorazione dalle tariffe. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
+                  Manodopera: tariffa unica valida per qualsiasi HP. Se il motore è entrobordo si somma la maggiorazione dalle tariffe. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
                 </div>
               </>
             )}

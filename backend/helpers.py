@@ -83,18 +83,11 @@ def calcola_varo(lunghezza: float, t: Tariffe) -> float:
 
 
 def calcola_motore_labor(potenza_hp: float, t: Tariffe, tipo_motore: str = "fuoribordo") -> float:
-    """Manodopera manutenzione motore in base a potenza HP. Per l'entrobordo si somma
-    la maggiorazione fissa `t.maggiorazione_entrobordo` alla manodopera fuoribordo."""
+    """Manodopera manutenzione motore: tariffa unica valida per ogni potenza HP.
+    Se il motore è entrobordo si somma `t.maggiorazione_entrobordo`."""
     if potenza_hp <= 0:
         return 0.0
-    if potenza_hp <= 15:
-        base = t.motore_labor_2_15hp
-    elif potenza_hp <= 40:
-        base = t.motore_labor_fino_40hp
-    elif potenza_hp <= 150:
-        base = t.motore_labor_40_150hp
-    else:
-        base = t.motore_labor_oltre_150hp
+    base = t.motore_labor or 0
     if tipo_motore == "entrobordo":
         base = base + (t.maggiorazione_entrobordo or 0)
     return round(base, 2)
