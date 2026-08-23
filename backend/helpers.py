@@ -83,14 +83,21 @@ def calcola_varo(lunghezza: float, t: Tariffe) -> float:
 
 
 def calcola_motore_labor(potenza_hp: float, t: Tariffe, tipo_motore: str = "fuoribordo") -> float:
-    """Manodopera manutenzione motore: tariffa unica valida per ogni potenza HP.
-    Se il motore è entrobordo si somma `t.maggiorazione_entrobordo`."""
+    """Manodopera manutenzione motore.
+    · Fuoribordo: 4 scaglioni HP (2-15, 16-40, 41-150, oltre 150)
+    · Entrobordo: tariffa unica valida per qualsiasi HP"""
     if potenza_hp <= 0:
         return 0.0
-    base = t.motore_labor or 0
     if tipo_motore == "entrobordo":
-        base = base + (t.maggiorazione_entrobordo or 0)
-    return round(base, 2)
+        return round(t.motore_labor_entrobordo or 0, 2)
+    # fuoribordo
+    if potenza_hp <= 15:
+        return round(t.motore_labor_2_15hp, 2)
+    if potenza_hp <= 40:
+        return round(t.motore_labor_fino_40hp, 2)
+    if potenza_hp <= 150:
+        return round(t.motore_labor_40_150hp, 2)
+    return round(t.motore_labor_oltre_150hp, 2)
 
 
 def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,

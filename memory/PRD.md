@@ -29,8 +29,8 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 
 ## Motorizzazione Entrobordo/Fuoribordo (2026-02)
 - Nuovo campo `tipo_motore` (fuoribordo/entrobordo, default fuoribordo) su 1° e 2° motore in Cliente + ClienteCreate
-- **Manodopera motore = tariffa unica valida per qualsiasi HP** (campo `motore_labor`, default 180 €). Rimossi i 4 scaglioni HP (2-15, 16-40, 41-150, oltre 150)
-- Nuova voce tariffa `maggiorazione_entrobordo` (default 50 €): importo aggiunto alla manodopera quando il motore è entrobordo
+- **Fuoribordo**: manodopera a 4 scaglioni HP (`motore_labor_2_15hp`, `motore_labor_fino_40hp`, `motore_labor_40_150hp`, `motore_labor_oltre_150hp`)
+- **Entrobordo**: tariffa unica `motore_labor_entrobordo` (default 250 €) valida per qualsiasi HP
 - Selettore Fuoribordo/Entrobordo nel form cliente e preventivo veloce (per entrambi i motori)
 
 ## Core Requirements (static)

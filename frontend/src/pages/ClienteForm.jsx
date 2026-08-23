@@ -440,7 +440,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                   </Field>
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-2">
-                  Manodopera: tariffa unica valida per qualsiasi HP. Se il motore è entrobordo si somma la maggiorazione dalle tariffe. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
+                  Fuoribordo: manodopera a scaglioni HP (2-15 · 16-40 · 41-150 · &gt;150). Entrobordo: tariffa unica valida per qualsiasi HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
                 </div>
               </>
             )}

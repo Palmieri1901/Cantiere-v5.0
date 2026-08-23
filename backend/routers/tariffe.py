@@ -192,9 +192,14 @@ async def listino_prezzi_pdf():
             ("Lavaggio inizio stagione", "costo_lavaggio_inizio_stagione", "€ / metro"),
             ("Lavaggio fine stagione", "costo_lavaggio_fine_stagione", "€ / metro"),
         ]),
-        ("MANODOPERA MOTORE", [
-            ("Manodopera motore (qualsiasi HP)", "motore_labor", "forfait"),
-            ("Maggiorazione entrobordo", "maggiorazione_entrobordo", "€ (aggiunto se motore entrobordo)"),
+        ("MANODOPERA MOTORE FUORIBORDO", [
+            ("Manodopera · 2-15 HP", "motore_labor_2_15hp", "forfait"),
+            ("Manodopera · 16-40 HP", "motore_labor_fino_40hp", "forfait"),
+            ("Manodopera · 41-150 HP", "motore_labor_40_150hp", "forfait"),
+            ("Manodopera · oltre 150 HP", "motore_labor_oltre_150hp", "forfait"),
+        ]),
+        ("MANODOPERA MOTORE ENTROBORDO", [
+            ("Manodopera entrobordo (qualsiasi HP)", "motore_labor_entrobordo", "forfait unico"),
         ]),
         ("RICAMBI & MATERIALI", [
             ("Girante", "costo_girante", "cad."),

@@ -15,9 +15,12 @@ class Tariffe(BaseModel):
     varo_oltre_5m_per_metro: float = 25.0
     antivegetativa_per_metro: float = 60.0
     sosta_temporanea_giornaliera: float = 25.0
-    motore_labor: float = 180.0
-    # Maggiorazione € manodopera quando il motore è entrobordo
-    maggiorazione_entrobordo: float = 50.0
+    motore_labor_2_15hp: float = 90.0
+    motore_labor_fino_40hp: float = 180.0
+    motore_labor_40_150hp: float = 320.0
+    motore_labor_oltre_150hp: float = 550.0
+    # Manodopera unica valida per motori entrobordo (qualsiasi HP)
+    motore_labor_entrobordo: float = 250.0
     costo_girante: float = 45.0
     costo_olio_motore: float = 12.0
     costo_filtro_olio: float = 18.0
@@ -48,8 +51,11 @@ class TariffeUpdate(BaseModel):
     varo_oltre_5m_per_metro: Optional[float] = None
     antivegetativa_per_metro: Optional[float] = None
     sosta_temporanea_giornaliera: Optional[float] = None
-    motore_labor: Optional[float] = None
-    maggiorazione_entrobordo: Optional[float] = None
+    motore_labor_2_15hp: Optional[float] = None
+    motore_labor_fino_40hp: Optional[float] = None
+    motore_labor_40_150hp: Optional[float] = None
+    motore_labor_oltre_150hp: Optional[float] = None
+    motore_labor_entrobordo: Optional[float] = None
     costo_girante: Optional[float] = None
     costo_olio_motore: Optional[float] = None
     costo_filtro_olio: Optional[float] = None
