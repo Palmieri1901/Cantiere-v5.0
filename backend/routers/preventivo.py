@@ -48,6 +48,8 @@ async def preventivo_pdf_inline(payload: PreventivoInline):
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else False),
         int(payload.numero_movimenti or 1),
         bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else True),
+        (payload.tipo_motore or "fuoribordo"),
+        (payload.tipo_motore_2 or "fuoribordo"),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)

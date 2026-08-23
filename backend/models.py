@@ -19,6 +19,8 @@ class Tariffe(BaseModel):
     motore_labor_fino_40hp: float = 180.0
     motore_labor_40_150hp: float = 320.0
     motore_labor_oltre_150hp: float = 550.0
+    # Maggiorazione € manodopera quando il motore è entrobordo
+    maggiorazione_entrobordo: float = 50.0
     costo_girante: float = 45.0
     costo_olio_motore: float = 12.0
     costo_filtro_olio: float = 18.0
@@ -53,6 +55,7 @@ class TariffeUpdate(BaseModel):
     motore_labor_fino_40hp: Optional[float] = None
     motore_labor_40_150hp: Optional[float] = None
     motore_labor_oltre_150hp: Optional[float] = None
+    maggiorazione_entrobordo: Optional[float] = None
     costo_girante: Optional[float] = None
     costo_olio_motore: Optional[float] = None
     costo_filtro_olio: Optional[float] = None
@@ -94,6 +97,7 @@ class Cliente(BaseModel):
     litri_olio_piede: float = 1.0
     numero_candele: int = 4
     numero_termostati: int = 1
+    tipo_motore: str = "fuoribordo"  # "fuoribordo" | "entrobordo"
     primo_motore_attivo: bool = True
     secondo_motore: bool = False
     potenza_motore_2: float = 0.0
@@ -101,6 +105,7 @@ class Cliente(BaseModel):
     litri_olio_piede_2: float = 1.0
     numero_candele_2: int = 4
     numero_termostati_2: int = 1
+    tipo_motore_2: str = "fuoribordo"
     girante_2_attivo: bool = True
     antivegetativa_attiva: bool = True
     scafo_sporco_attivo: bool = False
@@ -157,6 +162,7 @@ class ClienteCreate(BaseModel):
     litri_olio_piede: Optional[float] = None
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
+    tipo_motore: Optional[str] = None
     secondo_motore: Optional[bool] = False
     primo_motore_attivo: Optional[bool] = None
     potenza_motore_2: Optional[float] = 0.0
@@ -164,6 +170,7 @@ class ClienteCreate(BaseModel):
     litri_olio_piede_2: Optional[float] = None
     numero_candele_2: Optional[int] = 4
     numero_termostati_2: Optional[int] = 1
+    tipo_motore_2: Optional[str] = None
     girante_2_attivo: Optional[bool] = None
     antivegetativa_attiva: Optional[bool] = True
     scafo_sporco_attivo: Optional[bool] = None

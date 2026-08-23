@@ -41,7 +41,9 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         destinazione_alaggio_varo: str = "marina_di_campo",
                         alaggio_varo_attivo: bool = False,
                         numero_movimenti: int = 1,
-                        primo_motore_attivo: bool = True):
+                        primo_motore_attivo: bool = True,
+                        tipo_motore: str = "fuoribordo",
+                        tipo_motore_2: str = "fuoribordo"):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     t = await get_tariffe_doc()
@@ -55,7 +57,7 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          litri_olio_piede, litri_olio_piede_2,
                          giorni_sosta_temporanea, destinazione_alaggio_varo,
                          alaggio_varo_attivo, numero_movimenti,
-                         primo_motore_attivo)
+                         primo_motore_attivo, tipo_motore, tipo_motore_2)
 
 
 @router.get("/clienti", response_model=List[Cliente])
@@ -114,6 +116,8 @@ async def create_cliente(payload: ClienteCreate):
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else False),
         int(payload.numero_movimenti or 1),
         bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else True),
+        (payload.tipo_motore or "fuoribordo"),
+        (payload.tipo_motore_2 or "fuoribordo"),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -179,6 +183,8 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         bool(payload.alaggio_varo_attivo if payload.alaggio_varo_attivo is not None else existing.get("alaggio_varo_attivo", False)),
         int(payload.numero_movimenti if payload.numero_movimenti is not None else existing.get("numero_movimenti", 1) or 1),
         bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else existing.get("primo_motore_attivo", True)),
+        (payload.tipo_motore if payload.tipo_motore is not None else (existing.get("tipo_motore") or "fuoribordo")),
+        (payload.tipo_motore_2 if payload.tipo_motore_2 is not None else (existing.get("tipo_motore_2") or "fuoribordo")),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)

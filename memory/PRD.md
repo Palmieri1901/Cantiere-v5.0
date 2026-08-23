@@ -27,6 +27,11 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 - `pdf_builders.py` — PDF preventivo + storico multi-anno
 - `routers/*.py` — un file per dominio: tariffe, clienti, lavori, stats, export, cantiere, backup, preventivo, report, anni
 
+## Motorizzazione Entrobordo/Fuoribordo (2026-02)
+- Nuovo campo `tipo_motore` (fuoribordo/entrobordo, default fuoribordo) su 1° e 2° motore in Cliente + ClienteCreate
+- Nuova voce tariffa `maggiorazione_entrobordo` (default 50 €): importo aggiunto alla manodopera fuoribordo quando il motore è entrobordo
+- Selettore Fuoribordo/Entrobordo nel form cliente e preventivo veloce (per entrambi i motori)
+
 ## Core Requirements (static)
 - Anagrafica clienti (cognome, nome, tel, email) — visualizzazione sempre nell'ordine Cognome → Nome
 - Dati barca (tipo, lunghezza in metri, tipo sosta dentro/fuori, posto barca 1-200)

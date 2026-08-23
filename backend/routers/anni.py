@@ -68,6 +68,8 @@ async def apri_anno(payload: ApriAnnoRequest):
                 bool(c.get("alaggio_varo_attivo", False)),
                 int(c.get("numero_movimenti") or 1),
                 bool(c.get("primo_motore_attivo", True)),
+                str(c.get("tipo_motore") or "fuoribordo"),
+                str(c.get("tipo_motore_2") or "fuoribordo"),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)

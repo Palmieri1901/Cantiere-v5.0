@@ -68,6 +68,8 @@ async def ricalcola_costi_anno(anno: int):
                 bool(c.get("alaggio_varo_attivo", False)),
                 int(c.get("numero_movimenti") or 1),
                 bool(c.get("primo_motore_attivo", True)),
+                str(c.get("tipo_motore") or "fuoribordo"),
+                str(c.get("tipo_motore_2") or "fuoribordo"),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)
@@ -195,6 +197,7 @@ async def listino_prezzi_pdf():
             ("Manodopera · 16-40 HP", "motore_labor_fino_40hp", "forfait"),
             ("Manodopera · 41-150 HP", "motore_labor_40_150hp", "forfait"),
             ("Manodopera · oltre 150 HP", "motore_labor_oltre_150hp", "forfait"),
+            ("Maggiorazione entrobordo", "maggiorazione_entrobordo", "€ (aggiunto se motore entrobordo)"),
         ]),
         ("RICAMBI & MATERIALI", [
             ("Girante", "costo_girante", "cad."),

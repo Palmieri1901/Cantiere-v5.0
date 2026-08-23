@@ -56,6 +56,7 @@ const GROUPS = [
       { key: "motore_labor_fino_40hp", label: "Da 16 a 40 HP", desc: "Costo manodopera fisso" },
       { key: "motore_labor_40_150hp", label: "Da 41 a 150 HP", desc: "Costo manodopera fisso" },
       { key: "motore_labor_oltre_150hp", label: "Oltre 150 HP", desc: "Costo manodopera fisso" },
+      { key: "maggiorazione_entrobordo", label: "Maggiorazione entrobordo", desc: "€ aggiunto alla manodopera se motore entrobordo" },
     ],
   },
   {

@@ -26,9 +26,11 @@ const empty = {
   codice_fiscale: "", indirizzo: "", cellulare: "",
   pagato: false,
   potenza_motore: 0, litri_olio_motore: 3, litri_olio_piede: 1, numero_candele: 4, numero_termostati: 1,
+  tipo_motore: "fuoribordo",
   primo_motore_attivo: true,
   secondo_motore: false,
   potenza_motore_2: 0, litri_olio_motore_2: 3, litri_olio_piede_2: 1, numero_candele_2: 4, numero_termostati_2: 1,
+  tipo_motore_2: "fuoribordo",
   girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
   scafo_sporco_attivo: false,
@@ -90,6 +92,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         litri_olio_motore: f.litri_olio_motore || 0,
         numero_candele: f.numero_candele || 0,
         numero_termostati: f.numero_termostati || 0,
+        tipo_motore: f.tipo_motore || "fuoribordo",
         antivegetativa_attiva: f.antivegetativa_attiva ? "true" : "false",
         girante_attivo: f.girante_attivo ? "true" : "false",
         lavaggio_inizio_attivo: f.lavaggio_inizio_attivo ? "true" : "false",
@@ -100,6 +103,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         litri_olio_motore_2: f.litri_olio_motore_2 || 0,
         numero_candele_2: f.numero_candele_2 || 0,
         numero_termostati_2: f.numero_termostati_2 || 0,
+        tipo_motore_2: f.tipo_motore_2 || "fuoribordo",
         girante_2_attivo: f.girante_2_attivo ? "true" : "false",
         scafo_sporco_attivo: f.scafo_sporco_attivo ? "true" : "false",
         copertura_attiva: f.copertura_attiva ? "true" : "false",
@@ -131,7 +135,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
 
   // Sosta temporanea = sempre su piazzale (fuori) → attiva default alaggio/varo
   useEffect(() => {
@@ -210,6 +214,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       litri_olio_motore: Number(f.litri_olio_motore) || 0,
       numero_candele: Number(f.numero_candele) || 0,
       numero_termostati: Number(f.numero_termostati) || 0,
+      tipo_motore: f.tipo_motore || "fuoribordo",
       antivegetativa_attiva: !!f.antivegetativa_attiva,
       girante_attivo: !!f.girante_attivo,
       lavaggio_inizio_attivo: !!f.lavaggio_inizio_attivo,
@@ -220,6 +225,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       litri_olio_motore_2: Number(f.litri_olio_motore_2) || 0,
       numero_candele_2: Number(f.numero_candele_2) || 0,
       numero_termostati_2: Number(f.numero_termostati_2) || 0,
+      tipo_motore_2: f.tipo_motore_2 || "fuoribordo",
       girante_2_attivo: !!f.girante_2_attivo,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
@@ -407,7 +413,16 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                  <Field label="Tipo motore">
+                    <Select value={f.tipo_motore || "fuoribordo"} onValueChange={(v) => update("tipo_motore", v)}>
+                      <SelectTrigger data-testid="select-tipo-motore"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fuoribordo">Fuoribordo</SelectItem>
+                        <SelectItem value="entrobordo">Entrobordo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                   <Field label="Cavalli (HP)">
                     <Input type="number" min="0" step="1" value={f.potenza_motore} onChange={(e) => update("potenza_motore", e.target.value)} data-testid="input-potenza-motore" />
                   </Field>
@@ -425,7 +440,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                   </Field>
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-2">
-                  Fasce manodopera: 2-15 HP · 16-40 HP · 41-150 HP · &gt;150 HP. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
+                  Fasce manodopera: 2-15 HP · 16-40 HP · 41-150 HP · &gt;150 HP. Se il motore è entrobordo si somma la maggiorazione dalle tariffe. Olio motore calcolato al litro. I ricambi si moltiplicano per il numero indicato.
                 </div>
               </>
             )}
@@ -505,7 +520,16 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               {f.secondo_motore && (
                 <div className="pt-3 border-t border-border/60 space-y-3">
                   <div className="label-mini">2° Motore</div>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    <Field label="Tipo 2° motore">
+                      <Select value={f.tipo_motore_2 || "fuoribordo"} onValueChange={(v) => update("tipo_motore_2", v)}>
+                        <SelectTrigger data-testid="select-tipo-motore-2"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fuoribordo">Fuoribordo</SelectItem>
+                          <SelectItem value="entrobordo">Entrobordo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
                     <Field label="Cavalli 2° motore">
                       <Input type="number" min="0" step="1" value={f.potenza_motore_2} onChange={(e) => update("potenza_motore_2", e.target.value)} data-testid="input-potenza-motore-2" />
                     </Field>

@@ -82,17 +82,22 @@ def calcola_varo(lunghezza: float, t: Tariffe) -> float:
     return round(t.varo_oltre_5m_per_metro, 2)
 
 
-def calcola_motore_labor(potenza_hp: float, t: Tariffe) -> float:
-    """Manodopera manutenzione motore in base a potenza HP."""
+def calcola_motore_labor(potenza_hp: float, t: Tariffe, tipo_motore: str = "fuoribordo") -> float:
+    """Manodopera manutenzione motore in base a potenza HP. Per l'entrobordo si somma
+    la maggiorazione fissa `t.maggiorazione_entrobordo` alla manodopera fuoribordo."""
     if potenza_hp <= 0:
         return 0.0
     if potenza_hp <= 15:
-        return round(t.motore_labor_2_15hp, 2)
-    if potenza_hp <= 40:
-        return round(t.motore_labor_fino_40hp, 2)
-    if potenza_hp <= 150:
-        return round(t.motore_labor_40_150hp, 2)
-    return round(t.motore_labor_oltre_150hp, 2)
+        base = t.motore_labor_2_15hp
+    elif potenza_hp <= 40:
+        base = t.motore_labor_fino_40hp
+    elif potenza_hp <= 150:
+        base = t.motore_labor_40_150hp
+    else:
+        base = t.motore_labor_oltre_150hp
+    if tipo_motore == "entrobordo":
+        base = base + (t.maggiorazione_entrobordo or 0)
+    return round(base, 2)
 
 
 def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,
@@ -138,10 +143,12 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   destinazione_alaggio_varo: str = "marina_di_campo",
                   alaggio_varo_attivo: bool = False,
                   numero_movimenti: int = 1,
-                  primo_motore_attivo: bool = True) -> dict:
+                  primo_motore_attivo: bool = True,
+                  tipo_motore: str = "fuoribordo",
+                  tipo_motore_2: str = "fuoribordo") -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     if primo_motore_attivo:
-        manodopera = calcola_motore_labor(potenza_motore, t)
+        manodopera = calcola_motore_labor(potenza_motore, t, tipo_motore)
         ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
         ricambi_tot = round(sum(ricambi.values()), 2)
     else:
@@ -153,7 +160,7 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     ricambi_2_tot = 0.0
     ricambi_2 = {}
     if secondo_motore:
-        manodopera_2 = calcola_motore_labor(potenza_motore_2, t)
+        manodopera_2 = calcola_motore_labor(potenza_motore_2, t, tipo_motore_2)
         ricambi_2 = calcola_ricambi(numero_candele_2, numero_termostati_2, t, girante_2_attivo, litri_olio_motore_2, litri_olio_piede_2)
         ricambi_2_tot = round(sum(ricambi_2.values()), 2)
 
