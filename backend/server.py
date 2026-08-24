@@ -18,7 +18,7 @@ from database import client as mongo_client, db, logger
 from auth import auth_router, seed_admin
 from routers import (
     tariffe, clienti, lavori, stats, export,
-    cantiere, backup, preventivo, report, anni,
+    cantiere, backup, preventivo, report, anni, contratti,
 )
 
 
@@ -43,6 +43,7 @@ api_router.include_router(backup.router)
 api_router.include_router(preventivo.router)
 api_router.include_router(report.router)
 api_router.include_router(anni.router)
+api_router.include_router(contratti.router)
 
 app.include_router(api_router)
 app.include_router(auth_router)

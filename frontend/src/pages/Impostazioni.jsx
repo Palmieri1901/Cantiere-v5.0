@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Building2, Upload, Save, RefreshCw, Trash2, ImageIcon, Download, Database, AlertTriangle } from "lucide-react";
+import { Building2, Upload, Save, RefreshCw, Trash2, ImageIcon, Download, Database, AlertTriangle, FileText, FileSignature } from "lucide-react";
 import { API } from "@/lib/api";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -50,6 +50,15 @@ export default function Impostazioni() {
       const payload = Object.fromEntries(FIELDS.map(f => [f.key, c[f.key] ?? ""]));
       payload.orari = c.orari ?? "";
       payload.logo_base64 = c.logo_base64 ?? "";
+      payload.preventivo_interno_titolo = c.preventivo_interno_titolo ?? "";
+      payload.preventivo_interno_testo = c.preventivo_interno_testo ?? "";
+      payload.preventivo_piazzale_titolo = c.preventivo_piazzale_titolo ?? "";
+      payload.preventivo_piazzale_testo = c.preventivo_piazzale_testo ?? "";
+      payload.preventivo_esclusi_titolo = c.preventivo_esclusi_titolo ?? "";
+      payload.preventivo_esclusi_testo = c.preventivo_esclusi_testo ?? "";
+      payload.preventivo_condizioni_titolo = c.preventivo_condizioni_titolo ?? "";
+      payload.preventivo_condizioni_testo = c.preventivo_condizioni_testo ?? "";
+      payload.contratto_template = c.contratto_template ?? "";
       await api.put("/cantiere", payload);
       toast.success("Informazioni salvate");
       load();
@@ -198,6 +207,61 @@ export default function Impostazioni() {
           </div>
         </Card>
       </div>
+
+      {/* Blocchi editabili del preventivo PDF */}
+      <Card className="p-6 mt-6" data-testid="preventivo-blocks-card">
+        <div className="label-mini mb-2 flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5" /> Testo condizioni del preventivo PDF
+        </div>
+        <h3 className="font-display text-xl font-semibold mb-1">Blocchi personalizzabili stampati in coda al preventivo</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-3xl">
+          Questi 4 blocchi compaiono automaticamente in fondo a ogni preventivo PDF generato. Lascia vuoto un titolo o un testo per non stamparlo.
+        </p>
+        <div className="grid grid-cols-1 gap-5">
+          {[
+            { titoloKey: "preventivo_interno_titolo", testoKey: "preventivo_interno_testo", label: "Interno cantiere" },
+            { titoloKey: "preventivo_piazzale_titolo", testoKey: "preventivo_piazzale_testo", label: "Sosta su piazzale" },
+            { titoloKey: "preventivo_esclusi_titolo", testoKey: "preventivo_esclusi_testo", label: "Esclusi dal servizio" },
+            { titoloKey: "preventivo_condizioni_titolo", testoKey: "preventivo_condizioni_testo", label: "Condizioni generali" },
+          ].map((b) => (
+            <div key={b.titoloKey} className="border border-border/60 rounded-md p-4 bg-muted/10">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Titolo · {b.label}</Label>
+              <Input
+                value={c[b.titoloKey] ?? ""}
+                onChange={(e) => update(b.titoloKey, e.target.value)}
+                className="mt-1.5 mb-3"
+                data-testid={`input-${b.titoloKey}`}
+              />
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Testo</Label>
+              <Textarea
+                value={c[b.testoKey] ?? ""}
+                onChange={(e) => update(b.testoKey, e.target.value)}
+                rows={6}
+                className="mt-1.5 font-mono text-xs"
+                data-testid={`input-${b.testoKey}`}
+              />
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Template contratto */}
+      <Card className="p-6 mt-6" data-testid="contratto-template-card">
+        <div className="label-mini mb-2 flex items-center gap-1.5">
+          <FileSignature className="w-3.5 h-3.5" /> Template contratto
+        </div>
+        <h3 className="font-display text-xl font-semibold mb-1">Testo di partenza usato nella pagina Contratti</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-3xl">
+          Quando apri la pagina Contratti il testo qui sotto viene pre-caricato nell'editor. Puoi poi personalizzarlo per ogni singolo cliente prima di scaricare il PDF.
+        </p>
+        <Textarea
+          value={c.contratto_template ?? ""}
+          onChange={(e) => update("contratto_template", e.target.value)}
+          rows={12}
+          className="font-mono text-xs"
+          data-testid="input-contratto-template"
+        />
+      </Card>
 
       {/* Backup & Restore */}
       <Card className="p-6 mt-6" data-testid="backup-card">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, Link } from "react-router-dom";
-import { LayoutDashboard, Users, Grid3x3, Settings2, Sailboat, Building2, Home as HomeIcon, FileBarChart } from "lucide-react";
+import { LayoutDashboard, Users, Grid3x3, Settings2, Sailboat, Building2, Home as HomeIcon, FileBarChart, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import YearSelector from "@/components/YearSelector";
@@ -10,6 +10,7 @@ const nav = [
   { to: "/clienti", label: "Clienti", icon: Users, testId: "nav-clienti" },
   { to: "/posti-barca", label: "Posti Barca", icon: Grid3x3, testId: "nav-posti-barca" },
   { to: "/report", label: "Report", icon: FileBarChart, testId: "nav-report" },
+  { to: "/contratti", label: "Contratti", icon: FileSignature, testId: "nav-contratti" },
   { to: "/tariffe", label: "Tariffe", icon: Settings2, testId: "nav-tariffe" },
   { to: "/impostazioni", label: "Impostazioni", icon: Building2, testId: "nav-impostazioni" },
 ];

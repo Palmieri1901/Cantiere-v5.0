@@ -240,6 +240,53 @@ class Cantiere(BaseModel):
     sito_web: str = ""
     orari: str = ""
     logo_base64: str = ""
+    # Blocchi testuali stampati in coda al preventivo PDF (editabili)
+    preventivo_interno_titolo: str = "Interno cantiere:"
+    preventivo_interno_testo: str = (
+        "Previa disponibilità posti, il servizio prevede:\n"
+        "Alaggio/varo con camion e gru se necessario · sosta in cantiere al coperto · "
+        "assicurazione Incendio/furto · rimessaggio · tagliando al motore "
+        "(ricambi e materiali di consumo INCLUSI: olio, filtri, anodi, ecc.) · 2 lavaggi."
+    )
+    preventivo_piazzale_titolo: str = "Con sosta su piazzale:"
+    preventivo_piazzale_testo: str = (
+        "Previa disponibilità posti, il servizio prevede:\n"
+        "Alaggio/varo con camion e gru se necessario · sosta su piazzale · "
+        "copertura con telo termorestringente · rimessaggio · tagliando al motore "
+        "(ricambi e materiali di consumo INCLUSI: olio, filtri, anodi, ecc.) · 2 lavaggi.\n"
+        "Nessuna forma di assicurazione."
+    )
+    preventivo_esclusi_titolo: str = "Esclusi dal servizio sono:"
+    preventivo_esclusi_testo: str = ""
+    preventivo_condizioni_titolo: str = "Condizioni:"
+    preventivo_condizioni_testo: str = (
+        "1) Qualora il natante non vada in mare per cause non dipendenti dal cantiere, "
+        "verrà applicato solo uno sconto del 10% sull'importo totale.\n"
+        "2) Le tariffe di cui sopra sono comprensive di IVA e delle quote di assicurazione dove specificato.\n"
+        "3) Le tariffe relative alle voci 'sosta' sono relative ai metri quadrati di superficie occupata "
+        "e valevoli dal 1 settembre al 31 agosto di ogni anno.\n"
+        "4) Per la riconsegna del mezzo è richiesto un preavviso di 15 giorni.\n"
+        "5) In caso di sosta su piazzale, per furti o danni dovuti alla maggiore usura causati da intemperie "
+        "o condense (muffe, abrasioni, ecc.) il cantiere non si ritiene responsabile.\n"
+        "6) Foro competente: Portoferraio.\n"
+        "7) L'alaggio e il varo sono considerati dal porto di Marina di Campo.\n"
+        "8) Il cantiere non si assume alcuna responsabilità per gli oggetti lasciati sulle barche."
+    )
+    # Testo di default della pagina Contratti
+    contratto_template: str = (
+        "CONTRATTO DI RIMESSAGGIO E MANUTENZIONE\n\n"
+        "Il presente contratto disciplina i rapporti tra il cantiere e il cliente sotto indicato "
+        "relativi al servizio di rimessaggio invernale e manutenzione della sua imbarcazione.\n\n"
+        "Clausole:\n"
+        "1) Il cliente dichiara di aver preso visione delle condizioni generali riportate nel preventivo "
+        "e di accettarle integralmente.\n"
+        "2) Il cantiere non si assume responsabilità per gli oggetti lasciati a bordo dell'imbarcazione.\n"
+        "3) Il pagamento è dovuto secondo le modalità concordate; in caso di ritardo il cantiere "
+        "potrà esercitare il diritto di ritenzione sull'imbarcazione.\n"
+        "4) Per la riconsegna dell'imbarcazione è richiesto un preavviso di 15 giorni.\n"
+        "5) Foro competente: Portoferraio.\n\n"
+        "Il cliente dichiara di accettare integralmente il presente contratto e le sue clausole."
+    )
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -256,6 +303,15 @@ class CantiereUpdate(BaseModel):
     sito_web: Optional[str] = None
     orari: Optional[str] = None
     logo_base64: Optional[str] = None
+    preventivo_interno_titolo: Optional[str] = None
+    preventivo_interno_testo: Optional[str] = None
+    preventivo_piazzale_titolo: Optional[str] = None
+    preventivo_piazzale_testo: Optional[str] = None
+    preventivo_esclusi_titolo: Optional[str] = None
+    preventivo_esclusi_testo: Optional[str] = None
+    preventivo_condizioni_titolo: Optional[str] = None
+    preventivo_condizioni_testo: Optional[str] = None
+    contratto_template: Optional[str] = None
 
 
 class PreventivoInline(ClienteCreate):

@@ -27,6 +27,12 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 - `pdf_builders.py` — PDF preventivo + storico multi-anno
 - `routers/*.py` — un file per dominio: tariffe, clienti, lavori, stats, export, cantiere, backup, preventivo, report, anni
 
+## Preventivo condizioni editabili + Pagina Contratti (2026-02)
+- Nuovi campi in Cantiere/CantiereUpdate: `preventivo_interno_titolo/testo`, `preventivo_piazzale_titolo/testo`, `preventivo_esclusi_titolo/testo`, `preventivo_condizioni_titolo/testo`, `contratto_template` (tutti editabili in Impostazioni)
+- I 4 blocchi vengono stampati automaticamente in coda al PDF preventivo (default con testo da riferimento, ricambi INCLUSI)
+- Nuova pagina `/contratti` (voce sidebar dedicata): selezione cliente + titolo + textarea (pre-caricata dal template) → genera PDF con intestazione, dati cliente, clausole e spazio firma
+- Nuovo router backend `routers/contratti.py` con `POST /api/contratti/pdf` (nessun salvataggio in DB, solo download PDF)
+
 ## Motorizzazione Entrobordo/Fuoribordo (2026-02)
 - Nuovo campo `tipo_motore` (fuoribordo/entrobordo, default fuoribordo) su 1° e 2° motore in Cliente + ClienteCreate
 - **Fuoribordo**: manodopera a 4 scaglioni HP (`motore_labor_2_15hp`, `motore_labor_fino_40hp`, `motore_labor_40_150hp`, `motore_labor_oltre_150hp`)

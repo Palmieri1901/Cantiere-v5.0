@@ -489,6 +489,26 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
         elems.append(Paragraph("NOTE", h2))
         elems.append(Paragraph(doc["note_lavori"].replace("\n", "<br/>"), body))
 
+    # Blocchi editabili (condizioni preventivo)
+    def _block(titolo_key, testo_key):
+        titolo = (cantiere_doc.get(titolo_key) or "").strip()
+        testo = (cantiere_doc.get(testo_key) or "").strip()
+        if not titolo and not testo:
+            return
+        if titolo:
+            elems.append(Paragraph(titolo.upper(), h2))
+        if testo:
+            for para in testo.split("\n"):
+                if para.strip():
+                    elems.append(Paragraph(para.replace("<", "&lt;").replace(">", "&gt;"), body))
+                else:
+                    elems.append(Spacer(1, 1*mm))
+
+    _block("preventivo_interno_titolo", "preventivo_interno_testo")
+    _block("preventivo_piazzale_titolo", "preventivo_piazzale_testo")
+    _block("preventivo_esclusi_titolo", "preventivo_esclusi_testo")
+    _block("preventivo_condizioni_titolo", "preventivo_condizioni_testo")
+
     elems.append(Spacer(1, 3*mm))
     footer_name = cantiere_doc.get("nome") or "Portomare"
     elems.append(Paragraph(
