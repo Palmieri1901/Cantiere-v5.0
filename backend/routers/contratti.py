@@ -1,5 +1,6 @@
 """Endpoint generazione PDF contratto firma-cliente."""
 import io
+import re
 import base64 as _b64
 from datetime import date
 from fastapi import APIRouter, HTTPException
@@ -19,13 +20,52 @@ router = APIRouter()
 class ContrattoRequest(BaseModel):
     cliente_id: str
     testo: str
-    titolo: str = "CONTRATTO DI RIMESSAGGIO E MANUTENZIONE"
+    titolo: str = "CONTRATTO DI RIMESSAGGIO INVERNALE E MANUTENZIONE"
+
+
+def _fill_placeholders(testo: str, cliente: dict) -> str:
+    """Sostituisce i placeholder {{campo}} con i dati del cliente."""
+    posto = cliente.get("posto_barca")
+    posto_str = f"#{int(posto):03d}" if posto else "______________"
+    potenza = cliente.get("potenza_motore") or 0
+    tipo_m = cliente.get("tipo_motore") or ""
+    if potenza and tipo_m:
+        motore_str = f"{int(potenza)} HP {tipo_m}"
+    elif potenza:
+        motore_str = f"{int(potenza)} HP"
+    else:
+        motore_str = "______________"
+    lunghezza = cliente.get("lunghezza")
+    lung_str = f"{lunghezza:g}" if lunghezza else "______"
+
+    replacements = {
+        "{{cognome}}": cliente.get("cognome", "") or "______________",
+        "{{nome}}": cliente.get("nome", "") or "______________",
+        "{{codice_fiscale}}": cliente.get("codice_fiscale") or "____________________",
+        "{{indirizzo}}": cliente.get("indirizzo") or "________________________________________",
+        "{{telefono}}": cliente.get("telefono") or "____________",
+        "{{email}}": cliente.get("email") or "____________________",
+        "{{tipo_barca}}": cliente.get("tipo_barca") or "____________________",
+        "{{lunghezza}}": lung_str,
+        "{{potenza_motore}}": motore_str,
+        "{{posto_barca}}": posto_str,
+        "{{data_oggi}}": date.today().strftime("%d/%m/%Y"),
+    }
+    for k, v in replacements.items():
+        testo = testo.replace(k, str(v))
+    return testo
+
+
+def _md_to_html(line: str) -> str:
+    """Converte **grassetto** in tag <b> e mette in escape gli angoli."""
+    safe = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", safe)
 
 
 @router.post("/contratti/pdf")
 async def genera_contratto_pdf(payload: ContrattoRequest):
-    """Genera un PDF contratto per il cliente indicato, con testo/clausole personalizzabili
-    e spazio per la firma. Non salva nulla in DB."""
+    """Genera un PDF contratto per il cliente indicato con placeholder {{campo}} sostituiti
+    dai dati del cliente. Supporta **grassetto** nel testo. Include spazio firma."""
     if not payload.testo.strip():
         raise HTTPException(400, "Il testo del contratto è obbligatorio")
 
@@ -43,12 +83,11 @@ async def genera_contratto_pdf(payload: ContrattoRequest):
     styles = getSampleStyleSheet()
     NAVY = colors.HexColor("#0F1B3D")
     TEAK = colors.HexColor("#B0562E")
-    SAND = colors.HexColor("#F3EFE7")
     MUTED = colors.HexColor("#5B6478")
 
-    h1 = ParagraphStyle("h1", parent=styles["Heading1"], fontName="Helvetica-Bold", fontSize=18, textColor=NAVY, spaceAfter=4, leading=22)
-    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=10, textColor=TEAK, leading=13, letterSpace=1.5, spaceBefore=6, spaceAfter=3)
-    body = ParagraphStyle("body", parent=styles["Normal"], fontName="Helvetica", fontSize=10, textColor=NAVY, leading=14)
+    h1 = ParagraphStyle("h1", parent=styles["Heading1"], fontName="Helvetica-Bold", fontSize=15, textColor=NAVY, spaceAfter=1, leading=18, alignment=1)
+    subtitle = ParagraphStyle("sub", parent=styles["Normal"], fontName="Helvetica-Oblique", fontSize=9, textColor=MUTED, leading=11, alignment=1)
+    body = ParagraphStyle("body", parent=styles["Normal"], fontName="Helvetica", fontSize=9.5, textColor=NAVY, leading=13)
     small = ParagraphStyle("small", parent=styles["Normal"], fontName="Helvetica", fontSize=8, textColor=MUTED, leading=10)
 
     elems = []
@@ -64,79 +103,56 @@ async def genera_contratto_pdf(payload: ContrattoRequest):
     contatti_txt = " · ".join(contatti_parts)
 
     logo_b64 = cantiere.get("logo_base64") or ""
-    logo_cell = Paragraph(f"<b>{nome_cantiere}</b>", ParagraphStyle("brand", fontName="Helvetica-Bold", fontSize=18, textColor=NAVY))
+    logo_cell = Paragraph(f"<b>{nome_cantiere}</b>", ParagraphStyle("brand", fontName="Helvetica-Bold", fontSize=14, textColor=NAVY))
     if logo_b64 and "," in logo_b64:
         try:
             raw = _b64.b64decode(logo_b64.split(",", 1)[1])
-            logo_cell = RLImage(io.BytesIO(raw), width=30*mm, height=18*mm, kind="proportional")
+            logo_cell = RLImage(io.BytesIO(raw), width=28*mm, height=16*mm, kind="proportional")
         except Exception:
             pass
 
-    header_tbl = Table([
-        [logo_cell,
-         Paragraph(f"<para align=right><font color='#5B6478' size=8>CONTRATTO</font><br/>"
-                   f"<font size=12 color='#B0562E'><b>{date.today().strftime('%d/%m/%Y')}</b></font></para>", body)]
-    ], colWidths=[95*mm, 79*mm])
-    header_tbl.setStyle(TableStyle([("VALIGN", (0,0), (-1,-1), "MIDDLE")]))
+    header_line = Paragraph(f"<font color='#5B6478' size=8>{contatti_txt}</font>", small) if contatti_txt else Paragraph("", small)
+    header_tbl = Table([[logo_cell, header_line]], colWidths=[45*mm, 129*mm])
+    header_tbl.setStyle(TableStyle([("VALIGN", (0,0), (-1,-1), "MIDDLE"), ("ALIGN", (1,0), (1,0), "RIGHT")]))
     elems.append(header_tbl)
-    if contatti_txt:
-        elems.append(Spacer(1, 1*mm))
-        elems.append(Paragraph(f"<font color='#5B6478' size=8>{contatti_txt}</font>", body))
-    sep = Table([[""]], colWidths=[174*mm], rowHeights=[1.5])
+    sep = Table([[""]], colWidths=[174*mm], rowHeights=[0.8])
     sep.setStyle(TableStyle([("BACKGROUND", (0,0), (-1,-1), TEAK)]))
-    elems.append(Spacer(1, 3*mm))
+    elems.append(Spacer(1, 2*mm))
     elems.append(sep)
+    elems.append(Spacer(1, 3*mm))
+
+    # Titolo centrato
+    elems.append(Paragraph(payload.titolo.upper(), h1))
     elems.append(Spacer(1, 4*mm))
 
-    # Titolo
-    elems.append(Paragraph(f"<b>{payload.titolo}</b>", h1))
-    elems.append(Spacer(1, 3*mm))
-
-    # Anagrafica cliente
-    elems.append(Paragraph("DATI CLIENTE", h2))
-    tbl_data = [
-        ["Cliente", f"{cliente.get('cognome','')} {cliente.get('nome','')}"],
-        ["Codice Fiscale", cliente.get("codice_fiscale") or "—"],
-        ["Indirizzo", cliente.get("indirizzo") or "—"],
-        ["Contatti", " · ".join([x for x in [cliente.get("telefono"), cliente.get("cellulare"), cliente.get("email")] if x]) or "—"],
-        ["Imbarcazione", f"{cliente.get('tipo_barca') or '—'} · L. {cliente.get('lunghezza') or '—'} m"],
-        ["Posto barca", f"#{int(cliente['posto_barca']):03d}" if cliente.get("posto_barca") else "—"],
-    ]
-    info_tbl = Table(tbl_data, colWidths=[40*mm, 134*mm])
-    info_tbl.setStyle(TableStyle([
-        ("FONTNAME", (0,0), (0,-1), "Helvetica-Bold"),
-        ("FONTSIZE", (0,0), (-1,-1), 9),
-        ("TEXTCOLOR", (0,0), (0,-1), MUTED),
-        ("TEXTCOLOR", (1,0), (1,-1), NAVY),
-        ("ROWBACKGROUNDS", (0,0), (-1,-1), [colors.white, SAND]),
-        ("LINEBELOW", (0,0), (-1,-1), 0.3, colors.HexColor("#D9D9D9")),
-        ("TOPPADDING", (0,0), (-1,-1), 4),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
-        ("LEFTPADDING", (0,0), (-1,-1), 8),
-        ("RIGHTPADDING", (0,0), (-1,-1), 8),
-    ]))
-    elems.append(info_tbl)
-
-    # Testo contratto
-    elems.append(Spacer(1, 5*mm))
-    elems.append(Paragraph("CLAUSOLE E CONDIZIONI", h2))
-    for para in payload.testo.split("\n"):
-        if para.strip():
-            safe = para.replace("<", "&lt;").replace(">", "&gt;")
-            elems.append(Paragraph(safe, body))
+    # Testo contratto (con placeholder sostituiti e **grassetto**)
+    testo_finale = _fill_placeholders(payload.testo, cliente)
+    lines = testo_finale.split("\n")
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            elems.append(Spacer(1, 1.5*mm))
+            continue
+        # Titoli sezione (solo **bold** su tutta la riga): usa colore teak
+        if stripped.startswith("**") and stripped.endswith("**") and stripped.count("**") == 2:
+            titolo_sez = stripped.strip("*").strip()
+            sez_style = ParagraphStyle("sez", parent=body, fontName="Helvetica-Bold", fontSize=10, textColor=TEAK, spaceBefore=3, spaceAfter=1.5, leading=13)
+            elems.append(Paragraph(_md_to_html(titolo_sez), sez_style))
         else:
-            elems.append(Spacer(1, 2*mm))
+            elems.append(Paragraph(_md_to_html(line), body))
 
     # Spazio firma
-    elems.append(Spacer(1, 12*mm))
+    elems.append(Spacer(1, 10*mm))
     firma_tbl = Table([
-        [Paragraph("Luogo e data", small), Paragraph("Firma per accettazione", small)],
-        [Paragraph("_" * 40, body), Paragraph("_" * 40, body)],
-    ], colWidths=[87*mm, 87*mm])
+        [Paragraph("Luogo e data", small), Paragraph("Firma per accettazione e approvazione clausole vessatorie", small)],
+        ["", ""],
+    ], colWidths=[70*mm, 104*mm], rowHeights=[6*mm, 10*mm])
     firma_tbl.setStyle(TableStyle([
-        ("VALIGN", (0,0), (-1,-1), "BOTTOM"),
-        ("TOPPADDING", (0,0), (-1,-1), 4),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+        ("VALIGN", (0,0), (-1,0), "TOP"),
+        ("LINEBELOW", (0,1), (0,1), 0.5, NAVY),
+        ("LINEBELOW", (1,1), (1,1), 0.5, NAVY),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 0),
     ]))
     elems.append(firma_tbl)
 

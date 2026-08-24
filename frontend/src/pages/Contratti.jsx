@@ -17,7 +17,7 @@ export default function Contratti() {
   const [clienti, setClienti] = useState([]);
   const [cantiere, setCantiere] = useState(null);
   const [clienteId, setClienteId] = useState("");
-  const [titolo, setTitolo] = useState("CONTRATTO DI RIMESSAGGIO E MANUTENZIONE");
+  const [titolo, setTitolo] = useState("CONTRATTO DI RIMESSAGGIO INVERNALE E MANUTENZIONE");
   const [testo, setTesto] = useState("");
   const [generating, setGenerating] = useState(false);
 
@@ -144,7 +144,7 @@ export default function Contratti() {
               data-testid="input-testo-contratto"
             />
             <p className="text-[11px] text-muted-foreground mt-1.5">
-              Ogni riga vuota diventa una spaziatura nel PDF. In fondo al documento viene aggiunto automaticamente lo spazio per luogo, data e firma.
+              Ogni riga vuota diventa una spaziatura nel PDF. Usa <code className="font-mono">**parola**</code> per il grassetto. In fondo viene aggiunto automaticamente lo spazio per luogo, data e firma. Segnaposto disponibili: <code className="font-mono">{"{{cognome}}"}</code>, <code className="font-mono">{"{{nome}}"}</code>, <code className="font-mono">{"{{codice_fiscale}}"}</code>, <code className="font-mono">{"{{indirizzo}}"}</code>, <code className="font-mono">{"{{telefono}}"}</code>, <code className="font-mono">{"{{email}}"}</code>, <code className="font-mono">{"{{tipo_barca}}"}</code>, <code className="font-mono">{"{{lunghezza}}"}</code>, <code className="font-mono">{"{{potenza_motore}}"}</code>, <code className="font-mono">{"{{posto_barca}}"}</code>, <code className="font-mono">{"{{data_oggi}}"}</code>.
             </p>
           </div>
         </Card>

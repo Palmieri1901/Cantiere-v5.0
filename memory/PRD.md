@@ -32,6 +32,7 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 - I 4 blocchi vengono stampati automaticamente in coda al PDF preventivo (default con testo da riferimento, ricambi INCLUSI)
 - Nuova pagina `/contratti` (voce sidebar dedicata): selezione cliente + titolo + textarea (pre-caricata dal template) → genera PDF con intestazione, dati cliente, clausole e spazio firma
 - Nuovo router backend `routers/contratti.py` con `POST /api/contratti/pdf` (nessun salvataggio in DB, solo download PDF)
+- **Contratto v2 (2026-02)**: nuovo template legale completo (11 sezioni: parti/dati, oggetto giuridico, oggetti a bordo, assicurazione, limitazione responsabilità, sicurezza, pagamento/ritenzione, contestazioni, manleva, foro, clausole vessatorie art. 1341 c.c.). Supporto `**grassetto**` e sostituzione placeholder `{{cognome}}` `{{nome}}` `{{codice_fiscale}}` `{{indirizzo}}` `{{telefono}}` `{{email}}` `{{tipo_barca}}` `{{lunghezza}}` `{{potenza_motore}}` `{{posto_barca}}` `{{data_oggi}}`
 
 ## Motorizzazione Entrobordo/Fuoribordo (2026-02)
 - Nuovo campo `tipo_motore` (fuoribordo/entrobordo, default fuoribordo) su 1° e 2° motore in Cliente + ClienteCreate
