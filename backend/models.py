@@ -101,6 +101,7 @@ class Cliente(BaseModel):
     filtro_olio_attivo: bool = True
     anodi_interni_attivo: bool = True
     anodi_esterni_attivo: bool = True
+    olio_piede_attivo: bool = True
     primo_motore_attivo: bool = True
     secondo_motore: bool = False
     potenza_motore_2: float = 0.0
@@ -112,6 +113,7 @@ class Cliente(BaseModel):
     filtro_olio_2_attivo: bool = True
     anodi_interni_2_attivo: bool = True
     anodi_esterni_2_attivo: bool = True
+    olio_piede_2_attivo: bool = True
     girante_2_attivo: bool = True
     antivegetativa_attiva: bool = True
     scafo_sporco_attivo: bool = False
@@ -172,6 +174,7 @@ class ClienteCreate(BaseModel):
     filtro_olio_attivo: Optional[bool] = None
     anodi_interni_attivo: Optional[bool] = None
     anodi_esterni_attivo: Optional[bool] = None
+    olio_piede_attivo: Optional[bool] = None
     secondo_motore: Optional[bool] = False
     primo_motore_attivo: Optional[bool] = None
     potenza_motore_2: Optional[float] = 0.0
@@ -183,6 +186,7 @@ class ClienteCreate(BaseModel):
     filtro_olio_2_attivo: Optional[bool] = None
     anodi_interni_2_attivo: Optional[bool] = None
     anodi_esterni_2_attivo: Optional[bool] = None
+    olio_piede_2_attivo: Optional[bool] = None
     girante_2_attivo: Optional[bool] = None
     antivegetativa_attiva: Optional[bool] = True
     scafo_sporco_attivo: Optional[bool] = None

@@ -53,9 +53,11 @@ async def preventivo_pdf_inline(payload: PreventivoInline):
         bool(payload.filtro_olio_attivo if payload.filtro_olio_attivo is not None else True),
         bool(payload.anodi_interni_attivo if payload.anodi_interni_attivo is not None else True),
         bool(payload.anodi_esterni_attivo if payload.anodi_esterni_attivo is not None else True),
+        bool(payload.olio_piede_attivo if payload.olio_piede_attivo is not None else True),
         bool(payload.filtro_olio_2_attivo if payload.filtro_olio_2_attivo is not None else True),
         bool(payload.anodi_interni_2_attivo if payload.anodi_interni_2_attivo is not None else True),
         bool(payload.anodi_esterni_2_attivo if payload.anodi_esterni_2_attivo is not None else True),
+        bool(payload.olio_piede_2_attivo if payload.olio_piede_2_attivo is not None else True),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)

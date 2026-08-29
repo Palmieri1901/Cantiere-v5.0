@@ -27,12 +27,12 @@ const empty = {
   pagato: false,
   potenza_motore: 0, litri_olio_motore: 3, litri_olio_piede: 1, numero_candele: 4, numero_termostati: 1,
   tipo_motore: "fuoribordo",
-  filtro_olio_attivo: true, anodi_interni_attivo: true, anodi_esterni_attivo: true,
+  filtro_olio_attivo: true, anodi_interni_attivo: true, anodi_esterni_attivo: true, olio_piede_attivo: true,
   primo_motore_attivo: true,
   secondo_motore: false,
   potenza_motore_2: 0, litri_olio_motore_2: 3, litri_olio_piede_2: 1, numero_candele_2: 4, numero_termostati_2: 1,
   tipo_motore_2: "fuoribordo",
-  filtro_olio_2_attivo: true, anodi_interni_2_attivo: true, anodi_esterni_2_attivo: true,
+  filtro_olio_2_attivo: true, anodi_interni_2_attivo: true, anodi_esterni_2_attivo: true, olio_piede_2_attivo: true,
   girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
   scafo_sporco_attivo: false,
@@ -98,6 +98,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         filtro_olio_attivo: f.filtro_olio_attivo ? "true" : "false",
         anodi_interni_attivo: f.anodi_interni_attivo ? "true" : "false",
         anodi_esterni_attivo: f.anodi_esterni_attivo ? "true" : "false",
+        olio_piede_attivo: f.olio_piede_attivo ? "true" : "false",
         antivegetativa_attiva: f.antivegetativa_attiva ? "true" : "false",
         girante_attivo: f.girante_attivo ? "true" : "false",
         lavaggio_inizio_attivo: f.lavaggio_inizio_attivo ? "true" : "false",
@@ -113,6 +114,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         filtro_olio_2_attivo: f.filtro_olio_2_attivo ? "true" : "false",
         anodi_interni_2_attivo: f.anodi_interni_2_attivo ? "true" : "false",
         anodi_esterni_2_attivo: f.anodi_esterni_2_attivo ? "true" : "false",
+        olio_piede_2_attivo: f.olio_piede_2_attivo ? "true" : "false",
         scafo_sporco_attivo: f.scafo_sporco_attivo ? "true" : "false",
         copertura_attiva: f.copertura_attiva ? "true" : "false",
         litri_olio_piede: f.litri_olio_piede || 0,
@@ -143,7 +145,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.filtro_olio_attivo, f.anodi_interni_attivo, f.anodi_esterni_attivo, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.filtro_olio_2_attivo, f.anodi_interni_2_attivo, f.anodi_esterni_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.filtro_olio_attivo, f.anodi_interni_attivo, f.anodi_esterni_attivo, f.olio_piede_attivo, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.filtro_olio_2_attivo, f.anodi_interni_2_attivo, f.anodi_esterni_2_attivo, f.olio_piede_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
 
   // Sosta temporanea = sempre su piazzale (fuori) → attiva default alaggio/varo
   useEffect(() => {
@@ -226,6 +228,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       filtro_olio_attivo: !!f.filtro_olio_attivo,
       anodi_interni_attivo: !!f.anodi_interni_attivo,
       anodi_esterni_attivo: !!f.anodi_esterni_attivo,
+      olio_piede_attivo: !!f.olio_piede_attivo,
       antivegetativa_attiva: !!f.antivegetativa_attiva,
       girante_attivo: !!f.girante_attivo,
       lavaggio_inizio_attivo: !!f.lavaggio_inizio_attivo,
@@ -241,6 +244,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       filtro_olio_2_attivo: !!f.filtro_olio_2_attivo,
       anodi_interni_2_attivo: !!f.anodi_interni_2_attivo,
       anodi_esterni_2_attivo: !!f.anodi_esterni_2_attivo,
+      olio_piede_2_attivo: !!f.olio_piede_2_attivo,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -519,6 +523,15 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                   testId="switch-anodi-esterni"
                 />
               )}
+              {f.primo_motore_attivo !== false && (
+                <ToggleRow
+                  label={f.secondo_motore ? "Olio piede 1° motore" : "Olio piede"}
+                  description="Includi olio piede (calcolato al litro)"
+                  checked={!!f.olio_piede_attivo}
+                  onChange={(v) => update("olio_piede_attivo", v)}
+                  testId="switch-olio-piede"
+                />
+              )}
               <ToggleRow
                 label="Lavaggio inizio stagione"
                 description="Includi lavaggio a inizio stagione"
@@ -614,6 +627,13 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                     checked={!!f.anodi_esterni_2_attivo}
                     onChange={(v) => update("anodi_esterni_2_attivo", v)}
                     testId="switch-anodi-esterni-2"
+                  />
+                  <ToggleRow
+                    label="Olio piede 2° motore"
+                    description="Includi olio piede per il 2° motore (al litro)"
+                    checked={!!f.olio_piede_2_attivo}
+                    onChange={(v) => update("olio_piede_2_attivo", v)}
+                    testId="switch-olio-piede-2"
                   />
                 </div>
               )}
