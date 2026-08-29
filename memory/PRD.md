@@ -27,6 +27,12 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 - `pdf_builders.py` — PDF preventivo + storico multi-anno
 - `routers/*.py` — un file per dominio: tariffe, clienti, lavori, stats, export, cantiere, backup, preventivo, report, anni
 
+## Toggle ricambi motore ON/OFF (2026-02)
+- Nuovi campi Cliente + ClienteCreate: `filtro_olio_attivo`, `anodi_interni_attivo`, `anodi_esterni_attivo` (default True) + `filtro_olio_2_attivo`, `anodi_interni_2_attivo`, `anodi_esterni_2_attivo` per il 2° motore
+- `calcola_ricambi` accetta i flag e azzera le voci disattivate
+- UI: 3 toggle per motore (Filtro olio · Kit anodi interni · Kit anodi esterni) sotto al Girante
+- Verificato: differenza 118€ (18 filtro + 40 anodi int + 60 anodi est) tra cliente con tutto attivo vs tutto disattivato
+
 ## Preventivo condizioni editabili + Pagina Contratti (2026-02)
 - Nuovi campi in Cantiere/CantiereUpdate: `preventivo_interno_titolo/testo`, `preventivo_piazzale_titolo/testo`, `preventivo_esclusi_titolo/testo`, `preventivo_condizioni_titolo/testo`, `contratto_template` (tutti editabili in Impostazioni)
 - I 4 blocchi vengono stampati automaticamente in coda al PDF preventivo (default con testo da riferimento, ricambi INCLUSI)

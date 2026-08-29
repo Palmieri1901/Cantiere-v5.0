@@ -70,6 +70,12 @@ async def apri_anno(payload: ApriAnnoRequest):
                 bool(c.get("primo_motore_attivo", True)),
                 str(c.get("tipo_motore") or "fuoribordo"),
                 str(c.get("tipo_motore_2") or "fuoribordo"),
+                bool(c.get("filtro_olio_attivo", True)),
+                bool(c.get("anodi_interni_attivo", True)),
+                bool(c.get("anodi_esterni_attivo", True)),
+                bool(c.get("filtro_olio_2_attivo", True)),
+                bool(c.get("anodi_interni_2_attivo", True)),
+                bool(c.get("anodi_esterni_2_attivo", True)),
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)

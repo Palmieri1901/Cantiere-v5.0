@@ -98,6 +98,9 @@ class Cliente(BaseModel):
     numero_candele: int = 4
     numero_termostati: int = 1
     tipo_motore: str = "fuoribordo"  # "fuoribordo" | "entrobordo"
+    filtro_olio_attivo: bool = True
+    anodi_interni_attivo: bool = True
+    anodi_esterni_attivo: bool = True
     primo_motore_attivo: bool = True
     secondo_motore: bool = False
     potenza_motore_2: float = 0.0
@@ -106,6 +109,9 @@ class Cliente(BaseModel):
     numero_candele_2: int = 4
     numero_termostati_2: int = 1
     tipo_motore_2: str = "fuoribordo"
+    filtro_olio_2_attivo: bool = True
+    anodi_interni_2_attivo: bool = True
+    anodi_esterni_2_attivo: bool = True
     girante_2_attivo: bool = True
     antivegetativa_attiva: bool = True
     scafo_sporco_attivo: bool = False
@@ -163,6 +169,9 @@ class ClienteCreate(BaseModel):
     numero_candele: Optional[int] = 4
     numero_termostati: Optional[int] = 1
     tipo_motore: Optional[str] = None
+    filtro_olio_attivo: Optional[bool] = None
+    anodi_interni_attivo: Optional[bool] = None
+    anodi_esterni_attivo: Optional[bool] = None
     secondo_motore: Optional[bool] = False
     primo_motore_attivo: Optional[bool] = None
     potenza_motore_2: Optional[float] = 0.0
@@ -171,6 +180,9 @@ class ClienteCreate(BaseModel):
     numero_candele_2: Optional[int] = 4
     numero_termostati_2: Optional[int] = 1
     tipo_motore_2: Optional[str] = None
+    filtro_olio_2_attivo: Optional[bool] = None
+    anodi_interni_2_attivo: Optional[bool] = None
+    anodi_esterni_2_attivo: Optional[bool] = None
     girante_2_attivo: Optional[bool] = None
     antivegetativa_attiva: Optional[bool] = True
     scafo_sporco_attivo: Optional[bool] = None

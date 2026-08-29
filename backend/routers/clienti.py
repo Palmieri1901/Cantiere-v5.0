@@ -43,7 +43,13 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         numero_movimenti: int = 1,
                         primo_motore_attivo: bool = True,
                         tipo_motore: str = "fuoribordo",
-                        tipo_motore_2: str = "fuoribordo"):
+                        tipo_motore_2: str = "fuoribordo",
+                        filtro_olio_attivo: bool = True,
+                        anodi_interni_attivo: bool = True,
+                        anodi_esterni_attivo: bool = True,
+                        filtro_olio_2_attivo: bool = True,
+                        anodi_interni_2_attivo: bool = True,
+                        anodi_esterni_2_attivo: bool = True):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     t = await get_tariffe_doc()
@@ -57,7 +63,9 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          litri_olio_piede, litri_olio_piede_2,
                          giorni_sosta_temporanea, destinazione_alaggio_varo,
                          alaggio_varo_attivo, numero_movimenti,
-                         primo_motore_attivo, tipo_motore, tipo_motore_2)
+                         primo_motore_attivo, tipo_motore, tipo_motore_2,
+                         filtro_olio_attivo, anodi_interni_attivo, anodi_esterni_attivo,
+                         filtro_olio_2_attivo, anodi_interni_2_attivo, anodi_esterni_2_attivo)
 
 
 @router.get("/clienti", response_model=List[Cliente])
@@ -118,6 +126,12 @@ async def create_cliente(payload: ClienteCreate):
         bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else True),
         (payload.tipo_motore or "fuoribordo"),
         (payload.tipo_motore_2 or "fuoribordo"),
+        bool(payload.filtro_olio_attivo if payload.filtro_olio_attivo is not None else True),
+        bool(payload.anodi_interni_attivo if payload.anodi_interni_attivo is not None else True),
+        bool(payload.anodi_esterni_attivo if payload.anodi_esterni_attivo is not None else True),
+        bool(payload.filtro_olio_2_attivo if payload.filtro_olio_2_attivo is not None else True),
+        bool(payload.anodi_interni_2_attivo if payload.anodi_interni_2_attivo is not None else True),
+        bool(payload.anodi_esterni_2_attivo if payload.anodi_esterni_2_attivo is not None else True),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -185,6 +199,12 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         bool(payload.primo_motore_attivo if payload.primo_motore_attivo is not None else existing.get("primo_motore_attivo", True)),
         (payload.tipo_motore if payload.tipo_motore is not None else (existing.get("tipo_motore") or "fuoribordo")),
         (payload.tipo_motore_2 if payload.tipo_motore_2 is not None else (existing.get("tipo_motore_2") or "fuoribordo")),
+        bool(payload.filtro_olio_attivo if payload.filtro_olio_attivo is not None else existing.get("filtro_olio_attivo", True)),
+        bool(payload.anodi_interni_attivo if payload.anodi_interni_attivo is not None else existing.get("anodi_interni_attivo", True)),
+        bool(payload.anodi_esterni_attivo if payload.anodi_esterni_attivo is not None else existing.get("anodi_esterni_attivo", True)),
+        bool(payload.filtro_olio_2_attivo if payload.filtro_olio_2_attivo is not None else existing.get("filtro_olio_2_attivo", True)),
+        bool(payload.anodi_interni_2_attivo if payload.anodi_interni_2_attivo is not None else existing.get("anodi_interni_2_attivo", True)),
+        bool(payload.anodi_esterni_2_attivo if payload.anodi_esterni_2_attivo is not None else existing.get("anodi_esterni_2_attivo", True)),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)

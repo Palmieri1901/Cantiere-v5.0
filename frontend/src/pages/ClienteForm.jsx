@@ -27,10 +27,12 @@ const empty = {
   pagato: false,
   potenza_motore: 0, litri_olio_motore: 3, litri_olio_piede: 1, numero_candele: 4, numero_termostati: 1,
   tipo_motore: "fuoribordo",
+  filtro_olio_attivo: true, anodi_interni_attivo: true, anodi_esterni_attivo: true,
   primo_motore_attivo: true,
   secondo_motore: false,
   potenza_motore_2: 0, litri_olio_motore_2: 3, litri_olio_piede_2: 1, numero_candele_2: 4, numero_termostati_2: 1,
   tipo_motore_2: "fuoribordo",
+  filtro_olio_2_attivo: true, anodi_interni_2_attivo: true, anodi_esterni_2_attivo: true,
   girante_2_attivo: true,
   antivegetativa_attiva: true, girante_attivo: true,
   scafo_sporco_attivo: false,
@@ -93,6 +95,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         numero_candele: f.numero_candele || 0,
         numero_termostati: f.numero_termostati || 0,
         tipo_motore: f.tipo_motore || "fuoribordo",
+        filtro_olio_attivo: f.filtro_olio_attivo ? "true" : "false",
+        anodi_interni_attivo: f.anodi_interni_attivo ? "true" : "false",
+        anodi_esterni_attivo: f.anodi_esterni_attivo ? "true" : "false",
         antivegetativa_attiva: f.antivegetativa_attiva ? "true" : "false",
         girante_attivo: f.girante_attivo ? "true" : "false",
         lavaggio_inizio_attivo: f.lavaggio_inizio_attivo ? "true" : "false",
@@ -105,6 +110,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         numero_termostati_2: f.numero_termostati_2 || 0,
         tipo_motore_2: f.tipo_motore_2 || "fuoribordo",
         girante_2_attivo: f.girante_2_attivo ? "true" : "false",
+        filtro_olio_2_attivo: f.filtro_olio_2_attivo ? "true" : "false",
+        anodi_interni_2_attivo: f.anodi_interni_2_attivo ? "true" : "false",
+        anodi_esterni_2_attivo: f.anodi_esterni_2_attivo ? "true" : "false",
         scafo_sporco_attivo: f.scafo_sporco_attivo ? "true" : "false",
         copertura_attiva: f.copertura_attiva ? "true" : "false",
         litri_olio_piede: f.litri_olio_piede || 0,
@@ -135,7 +143,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.filtro_olio_attivo, f.anodi_interni_attivo, f.anodi_esterni_attivo, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.filtro_olio_2_attivo, f.anodi_interni_2_attivo, f.anodi_esterni_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
 
   // Sosta temporanea = sempre su piazzale (fuori) → attiva default alaggio/varo
   useEffect(() => {
@@ -215,6 +223,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       numero_candele: Number(f.numero_candele) || 0,
       numero_termostati: Number(f.numero_termostati) || 0,
       tipo_motore: f.tipo_motore || "fuoribordo",
+      filtro_olio_attivo: !!f.filtro_olio_attivo,
+      anodi_interni_attivo: !!f.anodi_interni_attivo,
+      anodi_esterni_attivo: !!f.anodi_esterni_attivo,
       antivegetativa_attiva: !!f.antivegetativa_attiva,
       girante_attivo: !!f.girante_attivo,
       lavaggio_inizio_attivo: !!f.lavaggio_inizio_attivo,
@@ -227,6 +238,9 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       numero_termostati_2: Number(f.numero_termostati_2) || 0,
       tipo_motore_2: f.tipo_motore_2 || "fuoribordo",
       girante_2_attivo: !!f.girante_2_attivo,
+      filtro_olio_2_attivo: !!f.filtro_olio_2_attivo,
+      anodi_interni_2_attivo: !!f.anodi_interni_2_attivo,
+      anodi_esterni_2_attivo: !!f.anodi_esterni_2_attivo,
       posto_barca: f.posto_barca === "" ? null : Number(f.posto_barca),
       costo_sosta: Number(f.costo_sosta) || 0,
       costo_copertura: Number(f.costo_copertura) || 0,
@@ -478,6 +492,33 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                   testId="switch-girante"
                 />
               )}
+              {f.primo_motore_attivo !== false && (
+                <ToggleRow
+                  label={f.secondo_motore ? "Filtro olio 1° motore" : "Filtro olio"}
+                  description="Includi ricambio filtro olio"
+                  checked={!!f.filtro_olio_attivo}
+                  onChange={(v) => update("filtro_olio_attivo", v)}
+                  testId="switch-filtro-olio"
+                />
+              )}
+              {f.primo_motore_attivo !== false && (
+                <ToggleRow
+                  label={f.secondo_motore ? "Kit anodi interni 1° motore" : "Kit anodi interni"}
+                  description="Includi kit anodi interni"
+                  checked={!!f.anodi_interni_attivo}
+                  onChange={(v) => update("anodi_interni_attivo", v)}
+                  testId="switch-anodi-interni"
+                />
+              )}
+              {f.primo_motore_attivo !== false && (
+                <ToggleRow
+                  label={f.secondo_motore ? "Kit anodi esterni 1° motore" : "Kit anodi esterni"}
+                  description="Includi kit anodi esterni"
+                  checked={!!f.anodi_esterni_attivo}
+                  onChange={(v) => update("anodi_esterni_attivo", v)}
+                  testId="switch-anodi-esterni"
+                />
+              )}
               <ToggleRow
                 label="Lavaggio inizio stagione"
                 description="Includi lavaggio a inizio stagione"
@@ -552,6 +593,27 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                     checked={!!f.girante_2_attivo}
                     onChange={(v) => update("girante_2_attivo", v)}
                     testId="switch-girante-2"
+                  />
+                  <ToggleRow
+                    label="Filtro olio 2° motore"
+                    description="Includi ricambio filtro olio del 2° motore"
+                    checked={!!f.filtro_olio_2_attivo}
+                    onChange={(v) => update("filtro_olio_2_attivo", v)}
+                    testId="switch-filtro-olio-2"
+                  />
+                  <ToggleRow
+                    label="Kit anodi interni 2° motore"
+                    description="Includi kit anodi interni per il 2° motore"
+                    checked={!!f.anodi_interni_2_attivo}
+                    onChange={(v) => update("anodi_interni_2_attivo", v)}
+                    testId="switch-anodi-interni-2"
+                  />
+                  <ToggleRow
+                    label="Kit anodi esterni 2° motore"
+                    description="Includi kit anodi esterni per il 2° motore"
+                    checked={!!f.anodi_esterni_2_attivo}
+                    onChange={(v) => update("anodi_esterni_2_attivo", v)}
+                    testId="switch-anodi-esterni-2"
                   />
                 </div>
               )}

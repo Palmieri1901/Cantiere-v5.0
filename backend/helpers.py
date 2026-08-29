@@ -102,8 +102,11 @@ def calcola_motore_labor(potenza_hp: float, t: Tariffe, tipo_motore: str = "fuor
 
 def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,
                     girante_attivo: bool = True, litri_olio_motore: float = 3.0,
-                    litri_olio_piede: float = 1.0) -> dict:
-    """Costo ricambi motore: girante, olio motore (× litri), filtro olio, candele, termostati, olio piede (× litri), anodi, ingrassaggio."""
+                    litri_olio_piede: float = 1.0,
+                    filtro_olio_attivo: bool = True,
+                    anodi_interni_attivo: bool = True,
+                    anodi_esterni_attivo: bool = True) -> dict:
+    """Costo ricambi motore: girante, olio motore (× litri), filtro olio, candele, termostati, olio piede (× litri), anodi, ingrassaggio. Ogni voce è opzionale via flag *_attivo."""
     nc = int(numero_candele or 0)
     nt = int(numero_termostati or 0)
     litri = float(litri_olio_motore or 0)
@@ -111,12 +114,12 @@ def calcola_ricambi(numero_candele: int, numero_termostati: int, t: Tariffe,
     return {
         "girante": round(t.costo_girante, 2) if girante_attivo else 0.0,
         "olio_motore": round(litri * t.costo_olio_motore, 2),
-        "filtro_olio": round(t.costo_filtro_olio, 2),
+        "filtro_olio": round(t.costo_filtro_olio, 2) if filtro_olio_attivo else 0.0,
         "candele": round(nc * t.costo_candela, 2),
         "termostati": round(nt * t.costo_termostato, 2),
         "olio_piede": round(litri_piede * t.costo_olio_piede, 2),
-        "anodi_interni": round(t.costo_anodi_interni, 2),
-        "anodi_esterni": round(t.costo_anodi_esterni, 2),
+        "anodi_interni": round(t.costo_anodi_interni, 2) if anodi_interni_attivo else 0.0,
+        "anodi_esterni": round(t.costo_anodi_esterni, 2) if anodi_esterni_attivo else 0.0,
         "ingrassaggio": round(t.costo_ingrassaggio, 2),
     }
 
@@ -145,11 +148,19 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   numero_movimenti: int = 1,
                   primo_motore_attivo: bool = True,
                   tipo_motore: str = "fuoribordo",
-                  tipo_motore_2: str = "fuoribordo") -> dict:
+                  tipo_motore_2: str = "fuoribordo",
+                  filtro_olio_attivo: bool = True,
+                  anodi_interni_attivo: bool = True,
+                  anodi_esterni_attivo: bool = True,
+                  filtro_olio_2_attivo: bool = True,
+                  anodi_interni_2_attivo: bool = True,
+                  anodi_esterni_2_attivo: bool = True) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     if primo_motore_attivo:
         manodopera = calcola_motore_labor(potenza_motore, t, tipo_motore)
-        ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo, litri_olio_motore, litri_olio_piede)
+        ricambi = calcola_ricambi(numero_candele, numero_termostati, t, girante_attivo,
+                                  litri_olio_motore, litri_olio_piede,
+                                  filtro_olio_attivo, anodi_interni_attivo, anodi_esterni_attivo)
         ricambi_tot = round(sum(ricambi.values()), 2)
     else:
         manodopera = 0.0
@@ -161,7 +172,9 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     ricambi_2 = {}
     if secondo_motore:
         manodopera_2 = calcola_motore_labor(potenza_motore_2, t, tipo_motore_2)
-        ricambi_2 = calcola_ricambi(numero_candele_2, numero_termostati_2, t, girante_2_attivo, litri_olio_motore_2, litri_olio_piede_2)
+        ricambi_2 = calcola_ricambi(numero_candele_2, numero_termostati_2, t, girante_2_attivo,
+                                    litri_olio_motore_2, litri_olio_piede_2,
+                                    filtro_olio_2_attivo, anodi_interni_2_attivo, anodi_esterni_2_attivo)
         ricambi_2_tot = round(sum(ricambi_2.values()), 2)
 
     motore_tot = round(manodopera + ricambi_tot + manodopera_2 + ricambi_2_tot, 2)
