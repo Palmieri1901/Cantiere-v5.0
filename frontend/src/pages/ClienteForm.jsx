@@ -42,6 +42,7 @@ const empty = {
   alaggio_varo_attivo: false,
   numero_movimenti: 1,
   destinazione_alaggio_varo: "marina_di_campo",
+  larghezza_personalizzata: "",
   destinazione_altra_nome: "",
   costo_sosta: 0, costo_copertura: 0, costo_alaggio: 0,
   costo_varo: 0, costo_antivegetativa: 0, costo_manutenzione_motore: 0,
@@ -123,6 +124,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         destinazione_alaggio_varo: destPerCalc,
         alaggio_varo_attivo: f.alaggio_varo_attivo ? "true" : "false",
         numero_movimenti: Number(f.numero_movimenti) || 1,
+        larghezza_personalizzata: (f.larghezza_personalizzata !== "" && Number(f.larghezza_personalizzata) > 0) ? Number(f.larghezza_personalizzata) : 0,
       });
       api.get(`/calcola-costi?${params}`)
         .then((r) => {
@@ -145,7 +147,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.filtro_olio_attivo, f.anodi_interni_attivo, f.anodi_esterni_attivo, f.olio_piede_attivo, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.filtro_olio_2_attivo, f.anodi_interni_2_attivo, f.anodi_esterni_2_attivo, f.olio_piede_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.override_costi, open]);
+  }, [f.lunghezza, f.tipo_sosta, f.giorni_sosta_temporanea, f.potenza_motore, f.litri_olio_motore, f.litri_olio_piede, f.numero_candele, f.numero_termostati, f.tipo_motore, f.filtro_olio_attivo, f.anodi_interni_attivo, f.anodi_esterni_attivo, f.olio_piede_attivo, f.antivegetativa_attiva, f.girante_attivo, f.lavaggio_inizio_attivo, f.lavaggio_fine_attivo, f.primo_motore_attivo, f.secondo_motore, f.potenza_motore_2, f.litri_olio_motore_2, f.litri_olio_piede_2, f.numero_candele_2, f.numero_termostati_2, f.tipo_motore_2, f.girante_2_attivo, f.filtro_olio_2_attivo, f.anodi_interni_2_attivo, f.anodi_esterni_2_attivo, f.olio_piede_2_attivo, f.scafo_sporco_attivo, f.copertura_attiva, f.alaggio_varo_attivo, f.destinazione_alaggio_varo, f.numero_movimenti, f.larghezza_personalizzata, f.override_costi, open]);
 
   // Sosta temporanea = sempre su piazzale (fuori) → attiva default alaggio/varo
   useEffect(() => {
@@ -269,6 +271,7 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
       alaggio_varo_attivo: !!f.alaggio_varo_attivo,
       numero_movimenti: Math.max(1, Number(f.numero_movimenti) || 1),
       destinazione_alaggio_varo: f.destinazione_alaggio_varo || "marina_di_campo",
+      larghezza_personalizzata: (f.larghezza_personalizzata !== "" && Number(f.larghezza_personalizzata) > 0) ? Number(f.larghezza_personalizzata) : null,
       destinazione_altra_nome: (f.destinazione_altra_nome || "").trim(),
       scadenza_antivegetativa: f.scadenza_antivegetativa || null,
       scadenza_manutenzione: f.scadenza_manutenzione || null,
@@ -364,14 +367,24 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
                 <Input type="number" step="0.1" min="0" value={f.lunghezza} onChange={(e) => update("lunghezza", e.target.value)} data-testid="input-lunghezza" />
                 {Number(f.lunghezza) > 0 && (() => {
                   const L = Number(f.lunghezza);
-                  const larg = L <= 6.5 ? 2.5 : L <= 9 ? 3 : 4;
+                  const largOverride = Number(f.larghezza_personalizzata) > 0 ? Number(f.larghezza_personalizzata) : null;
+                  const larg = largOverride || (L <= 6.5 ? 2.5 : L <= 9 ? 3 : 4);
                   const mq = (L * larg).toFixed(1).replace(/\.0$/, "");
                   return (
                     <div className="text-[11px] text-muted-foreground mt-1.5" data-testid="hint-mq">
-                      Larghezza applicata: <b>{larg} m</b> · Superficie: <b>{mq} mq</b> (usata per sosta, copertura, antivegetativa)
+                      Larghezza applicata: <b>{larg} m</b>{largOverride ? " (personalizzata)" : ""} · Superficie: <b>{mq} mq</b> (usata per sosta, copertura, antivegetativa)
                     </div>
                   );
                 })()}
+              </Field>
+              <Field label="Larghezza personalizzata (m)">
+                <Input
+                  type="number" step="0.1" min="0"
+                  placeholder="Auto (lascia vuoto)"
+                  value={f.larghezza_personalizzata ?? ""}
+                  onChange={(e) => update("larghezza_personalizzata", e.target.value)}
+                  data-testid="input-larghezza-personalizzata"
+                />
               </Field>
               <Field label="Tipo sosta *">
                 <Select value={f.tipo_sosta} onValueChange={(v) => update("tipo_sosta", v)}>

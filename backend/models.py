@@ -125,6 +125,7 @@ class Cliente(BaseModel):
     numero_movimenti: int = 1
     destinazione_alaggio_varo: str = "marina_di_campo"
     destinazione_altra_nome: Optional[str] = ""
+    larghezza_personalizzata: Optional[float] = None
     costo_sosta: float = 0.0
     costo_copertura: float = 0.0
     costo_alaggio: float = 0.0
@@ -202,6 +203,7 @@ class ClienteCreate(BaseModel):
     numero_movimenti: Optional[int] = None
     destinazione_alaggio_varo: Optional[str] = None
     destinazione_altra_nome: Optional[str] = None
+    larghezza_personalizzata: Optional[float] = None
     costo_antivegetativa: Optional[float] = None
     costo_manutenzione_motore: Optional[float] = None
     costo_lavaggio_inizio: Optional[float] = None

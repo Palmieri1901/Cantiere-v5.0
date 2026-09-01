@@ -82,9 +82,11 @@ def calcola_varo(lunghezza: float, t: Tariffe) -> float:
     return round(t.varo_oltre_5m_per_metro, 2)
 
 
-def larghezza_barca(lunghezza: float) -> float:
-    """Larghezza a scaglioni di lunghezza per il calcolo della superficie occupata (mq).
-    · ≤ 6,50 m → 2,5 m · ≤ 9 m → 3 m · > 9 m → 4 m"""
+def larghezza_barca(lunghezza: float, larghezza_personalizzata: float = None) -> float:
+    """Larghezza a scaglioni di lunghezza (2,5 / 3 / 4). Se `larghezza_personalizzata` > 0
+    viene usata come override manuale (catamarani, pontoon, ecc.)."""
+    if larghezza_personalizzata and float(larghezza_personalizzata) > 0:
+        return float(larghezza_personalizzata)
     L = float(lunghezza or 0)
     if L <= 6.5:
         return 2.5
@@ -168,7 +170,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
                   filtro_olio_2_attivo: bool = True,
                   anodi_interni_2_attivo: bool = True,
                   anodi_esterni_2_attivo: bool = True,
-                  olio_piede_2_attivo: bool = True) -> dict:
+                  olio_piede_2_attivo: bool = True,
+                  larghezza_personalizzata: float = None) -> dict:
     """Calcola costi automatici in base a lunghezza, tipo sosta e (uno o due) motori."""
     if primo_motore_attivo:
         manodopera = calcola_motore_labor(potenza_motore, t, tipo_motore)
@@ -195,8 +198,8 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
 
     motore_tot = round(manodopera + ricambi_tot + manodopera_2 + ricambi_2_tot, 2)
 
-    # Superficie occupata: lunghezza × larghezza a scaglioni (2,5 · 3 · 4)
-    larghezza = larghezza_barca(lunghezza)
+    # Superficie occupata: lunghezza × larghezza (override manuale se presente)
+    larghezza = larghezza_barca(lunghezza, larghezza_personalizzata)
     mq = round(float(lunghezza or 0) * larghezza, 2)
 
     antiveg = round(mq * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0

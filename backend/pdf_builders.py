@@ -260,12 +260,27 @@ def _build_preventivo_pdf(doc: dict, lavori_docs: list, cantiere_doc: dict, t_cu
                    else 'Fuori sede' if doc.get('tipo_sosta')=='fuori_sede'
                    else f"Temporanea · {int(doc.get('giorni_sosta_temporanea') or 0)} giorni" if doc.get('tipo_sosta')=='temporanea'
                    else 'Su piazzale (fuori)')
+    larg_pers = doc.get('larghezza_personalizzata')
+    _lung_val = doc.get('lunghezza')
+    if _lung_val:
+        if larg_pers and float(larg_pers) > 0:
+            _larg = float(larg_pers)
+        elif float(_lung_val) <= 6.5:
+            _larg = 2.5
+        elif float(_lung_val) <= 9.0:
+            _larg = 3.0
+        else:
+            _larg = 4.0
+        _mq_str = f"{float(_lung_val) * _larg:g} mq"
+        _lung_display = f"L. {_lung_val} m × {_larg:g} m ({_mq_str})"
+    else:
+        _lung_display = f"L. {_lung_val or '—'} m"
     info_tbl = Table([
         [Paragraph("Cliente", label), Paragraph("Contatti", label)],
         [Paragraph(f"<b>{doc.get('cognome','')} {doc.get('nome','')}</b>", val),
          Paragraph(f"{doc.get('telefono') or '—'} · {doc.get('email') or '—'}", body)],
         [Paragraph("Imbarcazione", label), Paragraph("Sosta", label)],
-        [Paragraph(f"<b>{doc.get('tipo_barca','')}</b> · <font color='#5B6478' size=8>L. {doc.get('lunghezza','')} m · Motore: {int(potenza) if potenza else '—'} HP · Olio: {litri_pdf:g} L</font>", body),
+        [Paragraph(f"<b>{doc.get('tipo_barca','')}</b> · <font color='#5B6478' size=8>{_lung_display} · Motore: {int(potenza) if potenza else '—'} HP · Olio: {litri_pdf:g} L</font>", body),
          Paragraph(f"<b>{sosta_label}</b> · <font color='#5B6478' size=8>Posto: #{str(doc.get('posto_barca') or '—').zfill(3) if doc.get('posto_barca') else '—'}</font>", body)],
     ], colWidths=[93*mm, 93*mm])
     info_tbl.setStyle(TableStyle([

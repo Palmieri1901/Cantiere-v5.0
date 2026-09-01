@@ -27,7 +27,12 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 - `pdf_builders.py` — PDF preventivo + storico multi-anno
 - `routers/*.py` — un file per dominio: tariffe, clienti, lavori, stats, export, cantiere, backup, preventivo, report, anni
 
-## Prezzi al mq per sosta/copertura/antivegetativa (2026-02)
+## MQ nel PDF + Larghezza personalizzata (2026-02)
+- Nuovo campo Cliente `larghezza_personalizzata` (opzionale): se impostato sovrascrive la larghezza automatica a scaglioni
+- Helper `larghezza_barca(lunghezza, larghezza_personalizzata)` gestisce l'override
+- Nel PDF preventivo la sezione Imbarcazione mostra ora "L. 8 m × 3 m (24 mq)" così il cliente vede la superficie applicata
+- Nel form cliente, sotto la lunghezza, l'hint mostra in tempo reale la larghezza (con indicazione "personalizzata" se override attivo) e i mq
+- Nuovo input "Larghezza personalizzata (m)" accanto alla lunghezza (lasciare vuoto per auto)
 - Sosta (dentro/fuori/temporanea), Copertura e Antivegetativa ora calcolati sulla **superficie occupata** in mq = lunghezza × larghezza a scaglioni
 - Larghezza automatica: **≤ 6,50 m → 2,5 m · ≤ 9 m → 3 m · > 9 m → 4 m** (helper `larghezza_barca` in `helpers.py`)
 - Tariffe rinominate a €/mq (chiavi campo invariate per compatibilità DB, solo etichette e listino PDF aggiornati)

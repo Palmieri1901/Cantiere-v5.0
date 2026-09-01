@@ -51,7 +51,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                         filtro_olio_2_attivo: bool = True,
                         anodi_interni_2_attivo: bool = True,
                         anodi_esterni_2_attivo: bool = True,
-                        olio_piede_2_attivo: bool = True):
+                        olio_piede_2_attivo: bool = True,
+                        larghezza_personalizzata: float = None):
     if tipo_sosta not in ("dentro", "fuori", "fuori_sede", "temporanea"):
         raise HTTPException(400, "tipo_sosta deve essere 'dentro', 'fuori', 'fuori_sede' o 'temporanea'")
     t = await get_tariffe_doc()
@@ -67,7 +68,8 @@ async def preview_costi(lunghezza: float, tipo_sosta: str,
                          alaggio_varo_attivo, numero_movimenti,
                          primo_motore_attivo, tipo_motore, tipo_motore_2,
                          filtro_olio_attivo, anodi_interni_attivo, anodi_esterni_attivo, olio_piede_attivo,
-                         filtro_olio_2_attivo, anodi_interni_2_attivo, anodi_esterni_2_attivo, olio_piede_2_attivo)
+                         filtro_olio_2_attivo, anodi_interni_2_attivo, anodi_esterni_2_attivo, olio_piede_2_attivo,
+                         larghezza_personalizzata)
 
 
 @router.get("/clienti", response_model=List[Cliente])
@@ -136,6 +138,7 @@ async def create_cliente(payload: ClienteCreate):
         bool(payload.anodi_interni_2_attivo if payload.anodi_interni_2_attivo is not None else True),
         bool(payload.anodi_esterni_2_attivo if payload.anodi_esterni_2_attivo is not None else True),
         bool(payload.olio_piede_2_attivo if payload.olio_piede_2_attivo is not None else True),
+        (float(payload.larghezza_personalizzata) if payload.larghezza_personalizzata else None),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)
@@ -211,6 +214,7 @@ async def update_cliente(cliente_id: str, payload: ClienteCreate):
         bool(payload.anodi_interni_2_attivo if payload.anodi_interni_2_attivo is not None else existing.get("anodi_interni_2_attivo", True)),
         bool(payload.anodi_esterni_2_attivo if payload.anodi_esterni_2_attivo is not None else existing.get("anodi_esterni_2_attivo", True)),
         bool(payload.olio_piede_2_attivo if payload.olio_piede_2_attivo is not None else existing.get("olio_piede_2_attivo", True)),
+        (float(payload.larghezza_personalizzata) if payload.larghezza_personalizzata else (existing.get("larghezza_personalizzata") or None)),
     )
     auto_costi.pop("ricambi_dettaglio", None)
     auto_costi.pop("ricambi_2_dettaglio", None)

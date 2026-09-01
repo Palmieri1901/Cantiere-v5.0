@@ -78,6 +78,7 @@ async def apri_anno(payload: ApriAnnoRequest):
                 bool(c.get("anodi_interni_2_attivo", True)),
                 bool(c.get("anodi_esterni_2_attivo", True)),
                 bool(c.get("olio_piede_2_attivo", True)),
+                c.get("larghezza_personalizzata") or None,
             )
             auto_costi.pop("ricambi_dettaglio", None)
             auto_costi.pop("ricambi_2_dettaglio", None)
