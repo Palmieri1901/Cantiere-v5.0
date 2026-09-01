@@ -14,9 +14,9 @@ const GROUPS = [
     title: "Sosta",
     icon: Anchor,
     fields: [
-      { key: "sosta_dentro_per_metro", label: "Sosta al coperto", desc: "€ / metro / anno (posto coperto/dentro)" },
-      { key: "sosta_fuori_per_metro", label: "Sosta su piazzale (fuori)", desc: "€ / metro / anno" },
-      { key: "sosta_temporanea_giornaliera", label: "Sosta temporanea", desc: "€ al mt / giorno" },
+      { key: "sosta_dentro_per_metro", label: "Sosta al coperto", desc: "€ / mq / anno (moltiplicato per la superficie occupata)" },
+      { key: "sosta_fuori_per_metro", label: "Sosta su piazzale (fuori)", desc: "€ / mq / anno" },
+      { key: "sosta_temporanea_giornaliera", label: "Sosta temporanea", desc: "€ / mq / giorno" },
       { key: "costo_movimentazione_per_metro", label: "Movimentazione (fuori sede)", desc: "€ / metro (sosta fuori sede)" },
       { key: "costo_taccaggio_per_metro", label: "Taccaggio (fuori sede)", desc: "€ / metro (sosta fuori sede)" },
     ],
@@ -35,8 +35,8 @@ const GROUPS = [
     title: "Copertura & Antivegetativa",
     icon: Waves,
     fields: [
-      { key: "copertura_per_metro", label: "Copertura", desc: "€ / metro (solo sosta fuori)" },
-      { key: "antivegetativa_per_metro", label: "Antivegetativa", desc: "€ / metro" },
+      { key: "copertura_per_metro", label: "Copertura", desc: "€ / mq (moltiplicato per la superficie occupata)" },
+      { key: "antivegetativa_per_metro", label: "Antivegetativa", desc: "€ / mq" },
       { key: "maggiorazione_scafo_sporco_per_metro", label: "Magg. scafo sporco", desc: "€ / metro (se antivegetativa disattivata)" },
     ],
   },

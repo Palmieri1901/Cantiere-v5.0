@@ -181,9 +181,9 @@ async def listino_prezzi_pdf():
 
     groups = [
         ("SOSTA", [
-            ("Sosta al coperto", "sosta_dentro_per_metro", "€ / metro / anno"),
-            ("Sosta su piazzale (fuori)", "sosta_fuori_per_metro", "€ / metro / anno"),
-            ("Sosta temporanea", "sosta_temporanea_giornaliera", "€ al mt / giorno"),
+            ("Sosta al coperto", "sosta_dentro_per_metro", "€ / mq / anno"),
+            ("Sosta su piazzale (fuori)", "sosta_fuori_per_metro", "€ / mq / anno"),
+            ("Sosta temporanea", "sosta_temporanea_giornaliera", "€ / mq / giorno"),
             ("Movimentazione (fuori sede)", "costo_movimentazione_per_metro", "€ / metro"),
             ("Taccaggio (fuori sede)", "costo_taccaggio_per_metro", "€ / metro"),
         ]),
@@ -194,8 +194,8 @@ async def listino_prezzi_pdf():
             ("Varo · oltre 5 m", "varo_oltre_5m_per_metro", "forfait"),
         ]),
         ("COPERTURA & TRATTAMENTI SCAFO", [
-            ("Copertura", "copertura_per_metro", "€ / metro"),
-            ("Antivegetativa", "antivegetativa_per_metro", "€ / metro"),
+            ("Copertura", "copertura_per_metro", "€ / mq"),
+            ("Antivegetativa", "antivegetativa_per_metro", "€ / mq"),
             ("Maggiorazione scafo sporco", "maggiorazione_scafo_sporco_per_metro", "€ / metro"),
             ("Lavaggio inizio stagione", "costo_lavaggio_inizio_stagione", "€ / metro"),
             ("Lavaggio fine stagione", "costo_lavaggio_fine_stagione", "€ / metro"),

@@ -82,6 +82,17 @@ def calcola_varo(lunghezza: float, t: Tariffe) -> float:
     return round(t.varo_oltre_5m_per_metro, 2)
 
 
+def larghezza_barca(lunghezza: float) -> float:
+    """Larghezza a scaglioni di lunghezza per il calcolo della superficie occupata (mq).
+    · ≤ 6,50 m → 2,5 m · ≤ 9 m → 3 m · > 9 m → 4 m"""
+    L = float(lunghezza or 0)
+    if L <= 6.5:
+        return 2.5
+    if L <= 9.0:
+        return 3.0
+    return 4.0
+
+
 def calcola_motore_labor(potenza_hp: float, t: Tariffe, tipo_motore: str = "fuoribordo") -> float:
     """Manodopera manutenzione motore.
     · Fuoribordo: 4 scaglioni HP (2-15, 16-40, 41-150, oltre 150)
@@ -184,7 +195,11 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
 
     motore_tot = round(manodopera + ricambi_tot + manodopera_2 + ricambi_2_tot, 2)
 
-    antiveg = round(lunghezza * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
+    # Superficie occupata: lunghezza × larghezza a scaglioni (2,5 · 3 · 4)
+    larghezza = larghezza_barca(lunghezza)
+    mq = round(float(lunghezza or 0) * larghezza, 2)
+
+    antiveg = round(mq * t.antivegetativa_per_metro, 2) if antivegetativa_attiva else 0.0
     scafo_sporco = round(lunghezza * t.maggiorazione_scafo_sporco_per_metro, 2) if scafo_sporco_attivo else 0.0
     lav_inizio = round(lunghezza * t.costo_lavaggio_inizio_stagione, 2) if lavaggio_inizio_attivo else 0.0
     lav_fine = round(lunghezza * t.costo_lavaggio_fine_stagione, 2) if lavaggio_fine_attivo else 0.0
@@ -208,7 +223,7 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     base["costo_movimentazione"] = movimentazione
     base["costo_taccaggio"] = taccaggio
 
-    copertura = round(lunghezza * t.copertura_per_metro, 2) if copertura_attiva else 0.0
+    copertura = round(mq * t.copertura_per_metro, 2) if copertura_attiva else 0.0
 
     mov = max(1, int(numero_movimenti or 1))
     if alaggio_varo_attivo:
@@ -224,7 +239,7 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
 
     if tipo_sosta == "fuori":
         base.update({
-            "costo_sosta": round(lunghezza * t.sosta_fuori_per_metro, 2),
+            "costo_sosta": round(mq * t.sosta_fuori_per_metro, 2),
             "costo_copertura": copertura,
             "costo_alaggio": alaggio_val,
             "costo_varo": varo_val,
@@ -239,14 +254,14 @@ def calcola_costi(lunghezza: float, tipo_sosta: str, t: Tariffe,
     elif tipo_sosta == "temporanea":
         giorni = int(giorni_sosta_temporanea or 0)
         base.update({
-            "costo_sosta": round(giorni * lunghezza * t.sosta_temporanea_giornaliera, 2),
+            "costo_sosta": round(giorni * mq * t.sosta_temporanea_giornaliera, 2),
             "costo_copertura": copertura,
             "costo_alaggio": alaggio_val,
             "costo_varo": varo_val,
         })
     else:
         base.update({
-            "costo_sosta": round(lunghezza * t.sosta_dentro_per_metro, 2),
+            "costo_sosta": round(mq * t.sosta_dentro_per_metro, 2),
             "costo_copertura": copertura,
             "costo_alaggio": alaggio_val,
             "costo_varo": varo_val,

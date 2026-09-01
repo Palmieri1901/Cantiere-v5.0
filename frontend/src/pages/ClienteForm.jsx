@@ -362,6 +362,16 @@ export default function ClienteForm({ open, onOpenChange, cliente, onSaved, mode
               </Field>
               <Field label="Lunghezza (metri) *">
                 <Input type="number" step="0.1" min="0" value={f.lunghezza} onChange={(e) => update("lunghezza", e.target.value)} data-testid="input-lunghezza" />
+                {Number(f.lunghezza) > 0 && (() => {
+                  const L = Number(f.lunghezza);
+                  const larg = L <= 6.5 ? 2.5 : L <= 9 ? 3 : 4;
+                  const mq = (L * larg).toFixed(1).replace(/\.0$/, "");
+                  return (
+                    <div className="text-[11px] text-muted-foreground mt-1.5" data-testid="hint-mq">
+                      Larghezza applicata: <b>{larg} m</b> · Superficie: <b>{mq} mq</b> (usata per sosta, copertura, antivegetativa)
+                    </div>
+                  );
+                })()}
               </Field>
               <Field label="Tipo sosta *">
                 <Select value={f.tipo_sosta} onValueChange={(v) => update("tipo_sosta", v)}>

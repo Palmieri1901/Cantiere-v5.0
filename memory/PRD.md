@@ -27,6 +27,13 @@ Backend spezzato in moduli (`server.py` ora 112 righe, prima 2761):
 - `pdf_builders.py` — PDF preventivo + storico multi-anno
 - `routers/*.py` — un file per dominio: tariffe, clienti, lavori, stats, export, cantiere, backup, preventivo, report, anni
 
+## Prezzi al mq per sosta/copertura/antivegetativa (2026-02)
+- Sosta (dentro/fuori/temporanea), Copertura e Antivegetativa ora calcolati sulla **superficie occupata** in mq = lunghezza × larghezza a scaglioni
+- Larghezza automatica: **≤ 6,50 m → 2,5 m · ≤ 9 m → 3 m · > 9 m → 4 m** (helper `larghezza_barca` in `helpers.py`)
+- Tariffe rinominate a €/mq (chiavi campo invariate per compatibilità DB, solo etichette e listino PDF aggiornati)
+- Restano al metro lineare: lavaggi stagionali, maggiorazione scafo sporco, movimentazione/taccaggio fuori sede
+- Verificato: L=5m (mq 12,5) sosta 2250€; L=8m (mq 24) sosta 4320€; L=10m (mq 40) sosta 7200€ + copertura 1800€ (tariffe default)
+
 ## Toggle ricambi motore ON/OFF (2026-02)
 - Nuovi campi Cliente + ClienteCreate: `filtro_olio_attivo`, `anodi_interni_attivo`, `anodi_esterni_attivo`, `olio_piede_attivo` (default True) + varianti `_2_attivo` per il 2° motore
 - `calcola_ricambi` accetta i flag e azzera le voci disattivate
